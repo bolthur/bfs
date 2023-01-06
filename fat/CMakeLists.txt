@@ -1,0 +1,28 @@
+
+aux_source_directory(. BFSFAT_SRC)
+if(BFS_BUILD_SHARED_LIB)
+  add_library(bfsfat SHARED ${BFSFAT_SRC})
+else()
+  add_library(bfsfat STATIC ${BFSFAT_SRC})
+endif()
+
+set_target_properties(bfsfat
+  PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION}
+    C_STANDARD 17
+    C_STANDARD_REQUIRED 17
+)
+
+GENERATE_EXPORT_HEADER(bfsfat)
+
+if(DEFINED INSTALL_LIB)
+  INSTALL(TARGETS bfsfat DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs)
+  INSTALL(
+    DIRECTORY ${PROJECT_BINARY_DIR}/fat/. DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/fat
+    FILES_MATCHING PATTERN "*.h*"
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "bfsfat_export.h" EXCLUDE)
+  INSTALL(DIRECTORY . DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/fat
+    FILES_MATCHING PATTERN "*.h*")
+endif()

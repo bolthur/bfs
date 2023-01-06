@@ -1,0 +1,28 @@
+
+aux_source_directory(. BFSCDFS_SRC)
+if(BFS_BUILD_SHARED_LIB)
+  add_library(bfscdfs SHARED ${BFSCDFS_SRC})
+else()
+  add_library(bfscdfs STATIC ${BFSCDFS_SRC})
+endif()
+
+set_target_properties(bfscdfs
+  PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION}
+    C_STANDARD 17
+    C_STANDARD_REQUIRED 17
+)
+
+GENERATE_EXPORT_HEADER(bfscdfs)
+
+if(DEFINED INSTALL_LIB)
+  INSTALL(TARGETS bfscdfs DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs)
+  INSTALL(
+    DIRECTORY ${PROJECT_BINARY_DIR}/ext/. DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/ext
+    FILES_MATCHING PATTERN "*.h*"
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "bfscdfs_export.h" EXCLUDE)
+  INSTALL(DIRECTORY . DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/ext
+    FILES_MATCHING PATTERN "*.h*")
+endif()

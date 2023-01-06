@@ -1,0 +1,13 @@
+
+- [ ] Prepare library to be able to build under non linux systems by adding necessary fallback functions
+- [ ] Finish FAT library read support
+  - [ ] Finish implementation of `fat_file_read`
+- [ ] Add FAT library write support
+- [x] Create unit tests
+  - [x] Prepare unit testing with cmake and ctest
+  - [x] Prepare a test blockdev driver for unit testing
+  - [x] Add unit tests for specific functions
+- [ ] Provide wrapper header for standard header with the possibility to disable a header per define switch
+- [ ] Add ext2 file system similar to fat as library
+- [x] Add custom commands to test folder to create necessary images for tests
+- [ ] Add code coverage collection

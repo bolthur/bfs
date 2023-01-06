@@ -1,0 +1,4 @@
+/build
+/.tools/**/*.img
+/.tools/tmp/**/*
+/.tools/image

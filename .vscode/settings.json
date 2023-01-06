@@ -1,0 +1,18 @@
+{
+  "editor.renderWhitespace": "all",
+  "editor.rulers": [ 80, 120 ],
+  "editor.tabSize": 2,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "cmake.configureOnOpen": true,
+  "cmake.generator": "Unix Makefiles",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.configureArgs": [
+    "-DCMAKE_TOOLCHAIN_FILE=../toolchain/generic-test-gcc.cmake"
+  ],
+  "cmake.debugConfig": {
+    "MIMode": "gdb"
+  },
+  "C_Cpp.autoAddFileAssociations": false
+}

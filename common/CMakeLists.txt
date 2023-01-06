@@ -1,0 +1,27 @@
+
+aux_source_directory(. COMMON_SRC)
+if(BFS_BUILD_SHARED_LIB)
+  add_library(bfscommon SHARED ${COMMON_SRC})
+else()
+  add_library(bfscommon STATIC ${COMMON_SRC})
+endif()
+
+set_target_properties(bfscommon
+  PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION}
+    C_STANDARD 17
+    C_STANDARD_REQUIRED 17
+)
+
+GENERATE_EXPORT_HEADER(bfscommon)
+
+if(DEFINED INSTALL_LIB)
+  INSTALL(TARGETS bfscommon DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs/common)
+  INSTALL(DIRECTORY ${PROJECT_BINARY_DIR}/common/. DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/common
+    FILES_MATCHING PATTERN "*.h*"
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "bfscommon_export.h" EXCLUDE)
+  INSTALL(DIRECTORY . DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/common
+    FILES_MATCHING PATTERN "*.h*")
+endif()

@@ -1,0 +1,40 @@
+
+find_package(GTest REQUIRED)
+
+enable_compiler_flag_if_supported("-Wno-analyzer-use-of-uninitialized-value")
+
+add_executable(blockdevice blockdevice.cc)
+target_link_libraries(blockdevice GTest::gtest_main bfsfat bfsblockdev bfscommon)
+gtest_discover_tests(blockdevice)
+
+add_executable(fat12 fat12.cc)
+target_link_libraries(fat12 GTest::gtest_main bfsfat bfsblockdev bfscommon)
+gtest_discover_tests(fat12)
+
+add_executable(fat16 fat16.cc)
+target_link_libraries(fat16 GTest::gtest_main bfsfat bfsblockdev bfscommon)
+gtest_discover_tests(fat16)
+
+add_executable(fat32 fat32.cc)
+target_link_libraries(fat32 GTest::gtest_main bfsfat bfsblockdev bfscommon)
+gtest_discover_tests(fat32)
+
+# custom commands for generation of image files
+add_custom_command(
+  TARGET fat12
+  COMMAND nim -d:release -d:ssl compile --hints:off --run image.nim fat12 fat12 ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.tools"
+  COMMENT "Generating FAT12 test image"
+)
+add_custom_command(
+  TARGET fat16
+  COMMAND nim -d:release -d:ssl compile --hints:off --run image.nim fat16 fat16 ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.tools"
+  COMMENT "Generating FAT16 test image"
+)
+add_custom_command(
+  TARGET fat32
+  COMMAND nim -d:release -d:ssl compile --hints:off --run image.nim fat32 fat32 ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.tools"
+  COMMENT "Generating FAT32 test image"
+)
