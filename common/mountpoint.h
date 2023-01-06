@@ -39,11 +39,29 @@ extern "C" {
     (m)->os_lock->unlock(); \
   }
 
+/**
+ * @brief Common mount point structure
+ */
 typedef struct common_mountpoint {
+  /**
+   * @brief Flag indicating whether mountpoint is actually mounted
+   */
   bool mounted;
+  /**
+   * @brief Name of the mountpoint
+   */
   char name[ PATH_MAX ];
+  /**
+   * @brief Pointer to file system structure
+   */
   void* fs;
+  /**
+   * @brief Operating system lock interface
+   */
   common_lock_t* os_lock;
+  /**
+   * @brief list management entry
+   */
   LIST_ENTRY( common_mountpoint ) list;
 } common_mountpoint_t;
 

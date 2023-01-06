@@ -30,7 +30,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Container for additional fat directory data
+ */
 typedef struct fat_directory_data {
+  /**
+   * @brief Whole fat directory name
+   */
   char name[ NAME_MAX ];
 } fat_directory_data_t;
 

@@ -49,6 +49,10 @@ add_compile_definitions(_BFS_COMPILING)
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(.)
 
+# build options
+option(BFS_BUILD_SHARED_LIB "Build shared library" OFF)
+option(BFS_BUILD_DOC "Build library documentation" OFF)
+
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
   set(SYSTEM_TYPE unknown)
@@ -60,6 +64,25 @@ endif()
 # set install lib to 0 for test
 if(${TEST_ACTIVE})
   set(INSTALL_LIB 0)
+  set(BFS_BUILD_SHARED_LIB OFF)
+endif()
+
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+  # set input and output files
+  set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
+  set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+  # request to configure the file
+  configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+  message("Doxygen build started")
+
+  # note the option ALL which allows to build the docs together with the application
+  add_custom_target(doc_doxygen ALL
+    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM )
 endif()
 
 # check for include files
@@ -90,9 +113,6 @@ macro(output_configure)
   endforeach()
 endmacro()
 output_configure()
-
-# build options
-option(BFS_BUILD_SHARED_LIB "Build shared library" OFF)
 
 # add subdirectory blockdev and fat
 add_subdirectory(blockdev)

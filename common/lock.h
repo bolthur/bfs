@@ -24,8 +24,17 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Common lock interface
+ */
 typedef struct {
+  /**
+   * @brief Method to perform lock
+   */
   void ( *lock )( void );
+  /**
+   * @brief Method to perform unlock
+   */
   void ( *unlock )( void );
 } common_lock_t;
 

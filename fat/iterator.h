@@ -29,15 +29,29 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Directory iterator information
+ */
 typedef struct fat_directory_iterator {
+  /**
+   * @brief Directory being iterated
+   */
   fat_directory_t* reference;
-  // fat block
+  /**
+   * @brief Some data block used during iteration
+   */
   fat_block_t block;
-  // current entry
+  /**
+   * @brief Current directory entry
+   */
   fat_structure_directory_entry_t* entry;
-  // current entry data
+  /**
+   * @brief Current directory data
+   */
   fat_directory_data_t* data;
-  // offset in current entry
+  /**
+   * @brief Iterator offset
+   */
   uint64_t offset;
 } fat_iterator_directory_t;
 

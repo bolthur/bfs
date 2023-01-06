@@ -29,21 +29,53 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Fat file system object
+ */
 typedef struct {
+  /**
+   * @brief Flag indicating access is read only or not
+   */
   bool read_only;
-
+  /**
+   * @brief Used block device for access
+   */
   common_blockdev_t* bdev;
-
+  /**
+   * @brief super block information
+   */
   fat_structure_superblock_t superblock;
-
+  /**
+   * @brief Evaluated fat type
+   */
   fat_type_t type;
-
+  /**
+   * @brief Total sector count
+   */
   uint32_t total_sectors;
+  /**
+   * @brief Fat table size
+   */
   uint32_t fat_size;
+  /**
+   * @brief Amount of root directory sectors
+   */
   uint32_t root_dir_sectors;
+  /**
+   * @brief First data sector
+   */
   uint32_t first_data_sector;
+  /**
+   * @brief First fat sector
+   */
   uint32_t first_fat_sector;
+  /**
+   * @brief Amount of data sectors
+   */
   uint32_t data_sectors;
+  /**
+   * @brief Amount of total clusters
+   */
   uint32_t total_clusters;
 } fat_fs_t;
 

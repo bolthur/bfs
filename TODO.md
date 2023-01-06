@@ -9,5 +9,7 @@
   - [x] Add unit tests for specific functions
 - [ ] Provide wrapper header for standard header with the possibility to disable a header per define switch
 - [ ] Add ext2 file system similar to fat as library
+- [ ] Add support for exfat
+- [ ] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
 - [ ] Add code coverage collection
