@@ -33,109 +33,8 @@
 #include <fat/fs.h>
 #include <fat/rootdir.h>
 #include <fat/structure.h>
+#include <fat/block.h>
 #include <fat/bfsfat_export.h>
-
-static int fat_directory_iterator_load_next_block(
-  fat_iterator_directory_t* it,
-  uint64_t current_block,
-  uint64_t next_block,
-  uint64_t pos
-) {
-  // get reference data
-  fat_directory_t* dir = it->reference;
-  // extract fs pointer
-  fat_fs_t* fs = it->reference->file.mp->fs;
-  // extract block device
-  common_blockdev_t* bdev = fs->bdev;
-  // check whether end is reached
-  if ( pos >= dir->file.fsize ) {
-    // clear block data if set
-    if ( it->block.data ) {
-      free( it->block.data );
-      // reset sector to 0 and data
-      it->block.data = NULL;
-      it->block.sector = 0;
-    }
-    // set offset
-    it->offset = pos;
-    return EOK;
-  }
-  // handle no sector loaded or different blocks
-  if ( ! it->block.data || current_block != next_block ) {
-    // free up set block
-    if ( it->block.data ) {
-      // free up block data
-      free( it->block.data );
-      // reset sector to 0 and data
-      it->block.data = NULL;
-      it->block.sector = 0;
-    }
-    // get next block index
-    if ( 0 == it->reference->file.cluster ) {
-      // next root block is root directory offset + sector
-      uint64_t rootdir_offset;
-      uint64_t rootdir_size;
-      // get offset and size of root directory
-      int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
-      if ( EOK != result ) {
-        return result;
-      }
-      // allocate buffer if not allocated
-      if ( ! it->block.data ) {
-        // allocate block
-        it->block.data = malloc( bdev->bdif->block_size );
-        if ( ! it->block.data ) {
-          return ENOMEM;
-        }
-        // clear out block
-        memset( it->block.data, 0, bdev->bdif->block_size );
-      }
-      // read bytes from device
-      result = common_blockdev_bytes_read(
-        bdev,
-        ( rootdir_offset + next_block ) * bdev->bdif->block_size,
-        it->block.data,
-        bdev->bdif->block_size
-      );
-      // handle error
-      if ( EOK != result ) {
-        return result;
-      }
-    } else {
-      // allocate buffer if not allocated
-      if ( ! it->block.data ) {
-        // allocate block
-        it->block.data = malloc( bdev->bdif->block_size );
-        if ( ! it->block.data ) {
-          return ENOMEM;
-        }
-        // clear out block
-        memset( it->block.data, 0, bdev->bdif->block_size );
-      }
-      uint64_t lba;
-      // transform data cluster to lba
-      int result = fat_cluster_to_lba( fs, it->reference->file.cluster, &lba );
-      if ( EOK != result ) {
-        return result;
-      }
-      // read bytes from device
-      result = common_blockdev_bytes_read(
-        bdev,
-        lba * bdev->bdif->block_size,
-        it->block.data,
-        bdev->bdif->block_size
-      );
-      // handle error
-      if ( EOK != result ) {
-        return result;
-      }
-    }
-  }
-  // set offset
-  it->offset = pos;
-  // return success
-  return EOK;
-}
 
 /**
  * @brief Direcotry iterator init
@@ -202,12 +101,24 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   uint64_t block_size = bdev->bdif->block_size;
   uint64_t current_block = it->offset / block_size;
   uint64_t next_block = pos / block_size;
-  // load next block
-  int result = fat_directory_iterator_load_next_block(
-    it, current_block, next_block, pos );
-  if ( EOK != result ) {
-    return result;
+  if ( ! it->block.data || current_block != next_block ) {
+    // backup file position
+    uint64_t pos_backup = it->reference->file.fpos;
+    it->reference->file.fpos = pos;
+    // load block
+    int result = fat_block_load(
+      &it->reference->file,
+      &it->block
+    );
+    // restore file pos
+    it->reference->file.fpos = pos_backup;
+    // validate return
+    if ( EOK != result ) {
+      return result;
+    }
   }
+  // update iterator position
+  it->offset = pos;
   // return result of iterator set
   return fat_iterator_directory_set( it, block_size );
 }
@@ -228,6 +139,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     return EINVAL;
   }
   uint64_t pos = it->offset;
+  int result;
 
   // allocate and fill data stuff
   if ( ! it->data ) {
@@ -245,12 +157,24 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     uint64_t current_block = it->offset / block_size;
     uint64_t next_block = pos / block_size;
     uint64_t offset_within_block = pos % block_size;
-    // load next block if necessary
-    int result = fat_directory_iterator_load_next_block(
-      it, current_block, next_block, pos );
-    if ( EOK != result ) {
-      return EOK;
+    if ( ! it->block.data || current_block != next_block ) {
+      // backup file position
+      uint64_t pos_backup = it->reference->file.fpos;
+      it->reference->file.fpos = pos;
+      // load block
+      result = fat_block_load(
+        &it->reference->file,
+        &it->block
+      );
+      // restore file pos
+      it->reference->file.fpos = pos_backup;
+      // validate return
+      if ( EOK != result ) {
+        return result;
+      }
     }
+    // update iterator position
+    it->offset = pos;
     // handle no valid one found ( end reached )
     if ( ! it->block.data ) {
       return EOK;
@@ -285,12 +209,24 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     uint64_t current_block = it->offset / block_size;
     uint64_t next_block = pos / block_size;
     uint64_t offset_within_block = pos % block_size;
-    // load next block if necessary
-    int result = fat_directory_iterator_load_next_block(
-      it, current_block, next_block, pos );
-    if ( EOK != result ) {
-      return EOK;
+    if ( ! it->block.data || current_block != next_block ) {
+      // backup file position
+      uint64_t pos_backup = it->reference->file.fpos;
+      it->reference->file.fpos = pos;
+      // load block
+      result = fat_block_load(
+        &it->reference->file,
+        &it->block
+      );
+      // restore file pos
+      it->reference->file.fpos = pos_backup;
+      // validate return
+      if ( EOK != result ) {
+        return result;
+      }
     }
+    // update iterator position
+    it->offset = pos;
     // handle no valid one found ( end reached )
     if ( ! it->block.data ) {
       return EOK;

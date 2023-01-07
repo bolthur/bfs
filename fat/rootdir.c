@@ -61,7 +61,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   // cache block size
   fat_fs_t* fs = mp->fs;
   // populate directory
-  dir->file.cluster = 0;
+  dir->file.cluster = FAT_FAT32 == fs->type
+    ? ( uint32_t )rootdir_offset : 0;
   dir->file.fpos = 0;
   dir->file.fsize = rootdir_size * fs->bdev->bdif->block_size;
   // return success

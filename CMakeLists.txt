@@ -52,6 +52,7 @@ include_directories(.)
 # build options
 option(BFS_BUILD_SHARED_LIB "Build shared library" OFF)
 option(BFS_BUILD_DOC "Build library documentation" OFF)
+option(BFS_BUILD_WITH_COVERAGE "Build with coverage data" OFF)
 
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
@@ -68,7 +69,7 @@ if(${TEST_ACTIVE})
 endif()
 
 find_package(Doxygen)
-if (DOXYGEN_FOUND)
+if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
   # set input and output files
   set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
   set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)

@@ -13,3 +13,5 @@
 - [ ] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
 - [ ] Add code coverage collection
+  - [x] Get ctest coverage command to run
+  - [ ] Get html coverage output

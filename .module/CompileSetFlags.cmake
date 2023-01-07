@@ -24,21 +24,21 @@ function(compile_set_flags)
   enable_compiler_flag_if_supported("-Wmissing-prototypes")
   enable_compiler_flag_if_supported("-Wconversion")
   enable_compiler_flag_if_supported("-fanalyzer")
-  # clang/gcc relase and debug options
-  enable_compiler_flag_debug_if_supported("-O0")
-  enable_compiler_flag_debug_if_supported("-g")
-  enable_compiler_flag_debug_if_supported("-ggdb3")
-  enable_compiler_flag_release_if_supported("-O2")
-  enable_compiler_flag_release_if_supported("-g")
-  enable_compiler_flag_release_if_supported("-ggdb3")
   # clang/gcc linker flags
   enable_linker_flag_if_supported("-lc")
 
-  if(${TEST_ACTIVE})
-    enable_compiler_flag_if_supported("-fprofile-arcs")
-    enable_compiler_flag_if_supported("-ftest-coverage")
-    enable_linker_flag_if_supported("-fprofile-arcs")
-    enable_linker_flag_if_supported("-ftest-coverage")
+  if(${BFS_BUILD_WITH_COVERAGE})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+  else()
+    # clang/gcc relase and debug options
+    enable_compiler_flag_debug_if_supported("-g")
+    enable_compiler_flag_debug_if_supported("-O0")
+    enable_compiler_flag_debug_if_supported("-ggdb3")
+    enable_compiler_flag_release_if_supported("-g")
+    enable_compiler_flag_release_if_supported("-O2")
+    enable_compiler_flag_release_if_supported("-ggdb3")
   endif()
 
   # bubble up flags
