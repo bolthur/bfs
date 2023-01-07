@@ -27,6 +27,7 @@
 #include <fat/file.h>
 #include <fat/type.h>
 #include <fat/iterator.h>
+#include <fat/block.h>
 #include <fat/directory.h>
 #include <fat/bfsfat_export.h>
 
@@ -221,6 +222,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   file->mp = dir->file.mp;
   file->cluster = ( ( uint32_t )it->entry->first_cluster_upper << 16 )
     | ( uint32_t )it->entry->first_cluster_lower;
+  file->fsize = it->entry->file_size;
   // finish iterator
   result = fat_iterator_directory_fini( it );
   if ( EOK != result ) {
@@ -309,6 +311,10 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
   if ( ! file ) {
     return EINVAL;
   }
+  // free up block
+  if ( file->block.data ) {
+    free( file->block.data );
+  }
   // overwrite everything with 0
   memset( file, 0, sizeof( fat_file_t ) );
   // return success
@@ -327,8 +333,8 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
 int fat_file_read(
   fat_file_t* file,
   void* buffer,
-  size_t size,
-  size_t* read_count
+  uint64_t size,
+  uint64_t* read_count
 ) {
   // validate parameter
   if ( ! file || ! buffer || ! read_count ) {
@@ -338,10 +344,56 @@ int fat_file_read(
   if ( ! file->cluster || ! file->mp ) {
     return EINVAL;
   }
-  // FIXME: read sector per sector into buffer
-  ( void )file;
-  ( void )buffer;
-  ( void )size;
-  ( void )read_count;
-  return ENOTSUP;
+  // cache mountpoint and fs
+  common_mountpoint_t*mp = file->mp;
+  fat_fs_t* fs = mp->fs;
+  // ensure that fs is valid
+  if ( ! fs ) {
+    return EINVAL;
+  }
+  // lock
+  COMMON_MP_LOCK( mp );
+  // cap read size to maximum if exceeding
+  if ( file->fpos + size > file->fsize ) {
+    size -= ( file->fpos + size - file->fsize );
+  }
+  // calculate sector to start with
+  uint64_t block_size = fs->bdev->bdif->block_size;
+  uint8_t* u8buffer = buffer;
+  *read_count = 0;
+  while ( size > 0 ) {
+    uint64_t copy_start = file->fpos % block_size;
+    uint64_t copy_size = block_size - copy_start;
+    // cap copy size
+    if ( copy_size > size )
+    {
+      copy_size = size;
+    }
+    // load block
+    int result = fat_block_load( file, &file->block );
+    if ( EOK != result ) {
+      COMMON_MP_UNLOCK( mp );
+      return result;
+    }
+    // handle nothing loaded
+    if ( ! file->block.data ) {
+      break;
+    }
+    // copy over content
+    memcpy(
+      u8buffer + *read_count,
+      file->block.data,
+      copy_size + copy_start
+    );
+    // increment read count
+    *read_count += copy_size;
+    // decrement size
+    size -= copy_size;
+    // increment position
+    file->fpos += copy_size;
+  }
+  // lock
+  COMMON_MP_UNLOCK( mp );
+  // return success
+  return EOK;
 }

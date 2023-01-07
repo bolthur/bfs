@@ -60,7 +60,7 @@ typedef struct fat_file {
    */
   uint32_t flags;
   /**
-   * @brief File size
+   * @brief File size in bytes
    */
   uint64_t fsize;
   /**
@@ -71,6 +71,10 @@ typedef struct fat_file {
    * @brief File start cluster
    */
   uint32_t cluster;
+  /**
+   * @brief Some data block used for reading
+   */
+  fat_block_t block;
 } fat_file_t;
 
 /**

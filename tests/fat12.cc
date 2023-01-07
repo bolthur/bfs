@@ -275,6 +275,7 @@ TEST( FAT12, OpenExistantFile ) {
   );
   EXPECT_EQ( result, EOK );
   EXPECT_NE( file.cluster, 0 );
+  EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // close file
   result = fat_file_close( &file );
@@ -296,7 +297,42 @@ TEST( FAT12, Open2ExistantFile ) {
   );
   EXPECT_EQ( result, EOK );
   EXPECT_NE( file.cluster, 0 );
+  EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
+  // close file
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
+TEST( FAT12, ReadFromFile ) {
+  mount_test_image();
+  // file variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // load root dir
+  int result = fat_file_open(
+    &file,
+    "/fat12/foobarlongfolder/foo/bar/hello.txt",
+    "r"
+  );
+  EXPECT_EQ( result, EOK );
+  EXPECT_NE( file.cluster, 0 );
+  EXPECT_NE( file.fsize, 0 );
+  EXPECT_TRUE( file.mp );
+  // allocate buffer for content
+  char* buffer = new char[ file.fsize + 1 ];
+  EXPECT_TRUE( buffer );
+  // read from file
+  uint64_t read_count = 0;
+  result = fat_file_read( &file, buffer, file.fsize, &read_count );
+  buffer[ file.fsize ] = '\0';
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( read_count, file.fsize );
+  EXPECT_STREQ( buffer, "world\n" );
+  // free again
+  delete[] buffer;
   // close file
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
