@@ -1,20 +1,22 @@
+// Copyright (C) 2022 - 2023 bolthur project.
+//
+// This file is part of bolthur/bfs.
+//
+// bolthur/bfs is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// bolthur/bfs is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
- * Copyright (C) 2022 bolthur project.
- *
- * This file is part of bolthur/bfs.
- *
- * bolthur/bfs is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * bolthur/bfs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
+ * @file common/blockdev.h
  */
 
 #include <stdint.h>
@@ -33,31 +35,19 @@ extern "C" {
 struct common_blockdev_iface;
 typedef struct common_blockdev_iface common_blockdev_iface_t;
 
-/**
- * @brief Common block device structure
- */
+/** @brief Common block device structure */
 typedef struct {
-  /**
-   * @brief Block device interface
-   */
+  /** @brief Block device interface */
   common_blockdev_iface_t* bdif;
-  /**
-   * @brief Partition offset
-   */
+  /** @brief Partition offset */
   uint64_t part_offset;
-  /**
-   * @brief Total partition size
-   */
+  /** @brief Total partition size */
   uint64_t part_size;
-  /**
-   * @brief Pointer to file system structure
-   */
+  /** @brief Pointer to file system structure */
   void* fs;
 } common_blockdev_t;
 
-/**
- * @brief Common block device interface structure
- */
+/** @brief Common block device interface structure */
 typedef struct common_blockdev_iface {
   /**
    * @brief Opens the block device
@@ -101,40 +91,25 @@ typedef struct common_blockdev_iface {
    * @return int
    */
   int ( *unlock )( common_blockdev_t* bdev );
-  /**
-   * @brief Size of one block in bytes
-   */
+  /** @brief Size of one block in bytes */
   uint32_t block_size;
-  /**
-   * @brief Internal block count
-   */
+  /** @brief Internal block count */
   uint64_t block_count;
-  /**
-   * @brief Internal block buffer
-   */
+  /** @brief Internal block buffer */
   uint8_t* block_buffer;
-  /**
-   * @brief Counter containing amount of started block dev inits
-   */
+  /** @brief Counter containing amount of started block dev inits */
   uint32_t reference_counter;
-  /**
-   * @brief Counter for read operations
-   */
+  /** @brief Counter for read operations */
   uint32_t read_counter;
-  /**
-   * @brief Counter for write operations
-   */
+  /** @brief Counter for write operations */
   uint32_t write_counter;
-  /**
-   * @brief File name used for interaction
-   */
+  /** @brief File name used for interaction */
   const char* filename;
-  /**
-   * @brief Optional user data
-   */
+  /** @brief Optional user data */
   void* p_user;
 } common_blockdev_iface_t;
 
+/** @brief Macro that can be used for single static blockdev instance */
 #define COMMON_BLOCKDEV_STATIC_INSTANCE(_name, _bsize, _open, _read, _write, _close, _lock, _unlock ) \
   static uint8_t _name##_block_buffer[(_bsize)]; \
   static common_blockdev_iface_t _name##_iface = { \

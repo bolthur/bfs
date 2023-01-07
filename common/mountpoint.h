@@ -1,21 +1,21 @@
-/**
- * Copyright (C) 2022 bolthur project.
- *
- * This file is part of bolthur/bfs.
- *
- * bolthur/bfs is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * bolthur/bfs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright (C) 2022 - 2023 bolthur project.
+//
+// This file is part of bolthur/bfs.
+//
+// bolthur/bfs is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// bolthur/bfs is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
+
+/** @file common/mountpoint.h */
 
 #include <stdbool.h>
 #include <limits.h>
@@ -29,39 +29,29 @@
 extern "C" {
 #endif
 
+/** @brief Macro to execute os lock method if set */
 #define COMMON_MP_LOCK(m) \
   if ((m)->os_lock) { \
     (m)->os_lock->lock(); \
   }
 
+/** @brief Macro to execute os unlock method if set */
 #define COMMON_MP_UNLOCK(m) \
   if ((m)->os_lock) { \
     (m)->os_lock->unlock(); \
   }
 
-/**
- * @brief Common mount point structure
- */
+/** @brief Common mount point structure */
 typedef struct common_mountpoint {
-  /**
-   * @brief Flag indicating whether mountpoint is actually mounted
-   */
+  /** @brief Flag indicating whether mountpoint is actually mounted */
   bool mounted;
-  /**
-   * @brief Name of the mountpoint
-   */
+  /** @brief Name of the mountpoint */
   char name[ PATH_MAX ];
-  /**
-   * @brief Pointer to file system structure
-   */
+  /** @brief Pointer to file system structure */
   void* fs;
-  /**
-   * @brief Operating system lock interface
-   */
+  /** @brief Operating system lock interface */
   common_lock_t* os_lock;
-  /**
-   * @brief list management entry
-   */
+  /** @brief list management entry */
   LIST_ENTRY( common_mountpoint ) list;
 } common_mountpoint_t;
 

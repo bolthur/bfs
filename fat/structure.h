@@ -1,21 +1,21 @@
-/**
- * Copyright (C) 2022 bolthur project.
- *
- * This file is part of bolthur/bfs.
- *
- * bolthur/bfs is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * bolthur/bfs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright (C) 2022 - 2023 bolthur project.
+//
+// This file is part of bolthur/bfs.
+//
+// bolthur/bfs is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// bolthur/bfs is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
+
+/** @file fat/structure.h */
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -30,191 +30,131 @@ extern "C" {
 #endif
 
 // entry specifiers
+/** @brief Available directory entry value */
 #define FAT_DIRECTORY_ENTRY_AVAILABLE 0x00
+/** @brief Pending deletion directory entry value */
 #define FAT_DIRECTORY_ENTRY_PENDING_DELETION 0x05
+/** @brief Dot entry directory entry value */
 #define FAT_DIRECTORY_ENTRY_DOT_ENTRY 0x2E
+/** @brief Erased available directory entry value */
 #define FAT_DIRECTORY_ENTRY_ERASED_AVAILABLE 0xE5
 // file attribute defines
+/** @brief Directory attribute file read only */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_READ_ONLY 0x01
+/** @brief Directory attribute hidden */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_HIDDEN 0x02
+/** @brief Directory attribute system */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_SYSTEM 0x04
+/** @brief Directory attribute volume id */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_VOLUME_ID 0x08
+/** @brief Directory attribute directory indicator */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY 0x10
+/** @brief Directory attribute archive */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_ARCHIVE 0x20
+/** @brief Directory attribute indicator for long file name */
 #define FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME \
   ( FAT_DIRECTORY_FILE_ATTRIBUTE_READ_ONLY | FAT_DIRECTORY_FILE_ATTRIBUTE_HIDDEN \
   | FAT_DIRECTORY_FILE_ATTRIBUTE_SYSTEM | FAT_DIRECTORY_FILE_ATTRIBUTE_VOLUME_ID )
 // helper to extract specific information from time field
+/** @brief Macro to extract hour of time field */
 #define FAT_DIRECTORY_TIME_EXTRACT_HOUR(x) ((x & 0x7C00) >> 11)
+/** @brief Macro to extract minute of time field */
 #define FAT_DIRECTORY_TIME_EXTRACT_MINUTE(x) ((x & 0x3F0) >> 5)
+/** @brief Macro to extract second of time field */
 #define FAT_DIRECTORY_TIME_EXTRACT_SECOND(x) (x & 0x1F)
-// helper to extract specific information from date field
-#define FAT_DIRECTORY_DATE_EXTRACT_HOUR(x) ((x & 0xFE00) >> 9)
-#define FAT_DIRECTORY_DATE_EXTRACT_MINUTE(x) ((x & 0x1E0) >> 5)
-#define FAT_DIRECTORY_DATE_EXTRACT_SECOND(x) (x & 0x1F)
+/** @brief Macro to extract year of date field */
+#define FAT_DIRECTORY_DATE_EXTRACT_YEAR(x) ((x & 0xFE00) >> 9)
+/** @brief Macro to extract month of date field */
+#define FAT_DIRECTORY_DATE_EXTRACT_MONTH(x) ((x & 0x1E0) >> 5)
+/** @brief Macro to extract day of date field */
+#define FAT_DIRECTORY_DATE_EXTRACT_DAY(x) (x & 0x1F)
 
 #pragma pack(push, 1)
 
-/**
- * @brief Fat12 / Fat16 related data of superblock aka bpb
- */
+/** @brief Fat12 / Fat16 related data of superblock aka bpb */
 typedef struct {
-  /**
-   * @brief drive number
-   */
+  /** @brief drive number */
   uint8_t bios_drive_number;
-  /**
-   * @brief Reserved
-   */
+  /** @brief Reserved */
   uint8_t reserved;
-  /**
-   * @brief Boot signature, must be 0x28 or 0x29
-   */
+  /** @brief Boot signature, must be 0x28 or 0x29 */
   uint8_t boot_signature;
-  /**
-   * @brief Serial number of the volume
-   */
+  /** @brief Serial number of the volume */
   uint32_t volume_id;
-  /**
-   * @brief Volume label
-   */
+  /** @brief Volume label */
   char volume_label[ 11 ];
-  /**
-   * @brief System identifier string, either FAT12 or FAT16
-   */
+  /** @brief System identifier string, either FAT12 or FAT16 */
   char fat_type_label[ 8 ];
-  /**
-   * @brief Remaining space for boot code
-   */
+  /** @brief Remaining space for boot code */
   uint8_t boot_code[ 448 ];
 } fat_structure_superblock_fat_t;
 
-/**
- * @brief Fat32 related data of superblock aka bpb
- */
+/** @brief Fat32 related data of superblock aka bpb */
 typedef struct {
-  /**
-   * @brief Sectors per fat
-   */
+  /** @brief Sectors per fat */
   uint32_t table_size_32;
-  /**
-   * @brief Some flags
-   */
+  /** @brief Some flags */
   uint16_t extended_flags;
-  /**
-   * @brief Fat version number
-   */
+  /** @brief Fat version number */
   uint16_t fat_version;
-  /**
-   * @brief Cluster number of the root directory
-   */
+  /** @brief Cluster number of the root directory */
   uint32_t root_cluster;
   /**
-   * @brief Fat32 file system info structure
+   * @brief Sector number of Fat32 file system info structure
    * @see fat_structure_fat32_fsinfo_t
    */
   uint16_t fat_info;
-  /**
-   * @brief Sector number of backup boot sector
-   */
+  /** @brief Sector number of backup boot sector */
   uint16_t backup_boot_sector;
-  /**
-   * @brief Reserved space
-   */
+  /** @brief Reserved space */
   uint8_t reserved0[ 12 ];
-  /**
-   * @brief Drive number
-   */
+  /** @brief Drive number */
   uint8_t drive_number;
-  /**
-   * @brief More reserved space
-   */
+  /** @brief More reserved space */
   uint8_t reserved1;
-  /**
-   * @brief Signature, must be 0x28 or 0x29
-   */
+  /** @brief Signature, must be 0x28 or 0x29 */
   uint8_t boot_signature;
-  /**
-   * @brief Serial number of the volume
-   */
+  /** @brief Serial number of the volume */
   uint32_t volume_id;
-  /**
-   * @brief Volume label
-   */
+  /** @brief Volume label */
   char volume_label[ 11 ];
-  /**
-   * @brief System identifier string, either FAT12 or FAT16
-   */
+  /** @brief System identifier string, either FAT12 or FAT16 */
   char fat_type_label[ 8 ];
-  /**
-   * @brief Remaining space for boot code
-   */
+  /** @brief Remaining space for boot code */
   uint8_t boot_code[ 420 ];
 } fat_structure_superblock_fat32_t;
 
-/**
- * @brief Fat superblock aka bpb
- */
+/** @brief Fat superblock aka bpb */
 typedef struct {
-  /**
-   * @brief Instruction to jump to boot code
-   */
+  /** @brief Instruction to jump to boot code */
   uint8_t bootjmp[ 3 ];
-  /**
-   * @brief OEM identifier
-   */
+  /** @brief OEM identifier */
   char oem_name[ 8 ];
-  /**
-   * @brief Amount of bytes per sector
-   */
+  /** @brief Amount of bytes per sector */
   uint16_t bytes_per_sector;
-  /**
-   * @brief Amount of sectors per cluster
-   */
+  /** @brief Amount of sectors per cluster */
   uint8_t sectors_per_cluster;
-  /**
-   * @brief Amount of reserved sectors
-   */
+  /** @brief Amount of reserved sectors */
   uint16_t reserved_sector_count;
-  /**
-   * @brief Amount of file allocation tables
-   */
+  /** @brief Amount of file allocation tables */
   uint8_t table_count;
-  /**
-   * @brief Amount of root directory entries ( only FAT12 and FAT16 )
-   */
+  /** @brief Amount of root directory entries ( only FAT12 and FAT16 ) */
   uint16_t root_entry_count;
-  /**
-   * @brief Total sector count in volume, 0 when more than 65535 sectors are within the volume
-   */
+  /** @brief Total sector count in volume, 0 when more than 65535 sectors are within the volume */
   uint16_t total_sectors_16;
-  /**
-   * @brief Media descriptor type
-   */
+  /** @brief Media descriptor type */
   uint8_t media_type;
-  /**
-   * @brief Number of sectors per fat ( only FAT12 and FAT16 )
-   */
+  /** @brief Number of sectors per fat ( only FAT12 and FAT16 ) */
   uint16_t table_size_16;
-  /**
-   * @brief Number of sectors per track
-   */
+  /** @brief Number of sectors per track */
   uint16_t sectors_per_track;
-  /**
-   * @brief Number of heads / sides on storage media
-   */
+  /** @brief Number of heads / sides on storage media */
   uint16_t head_side_count;
-  /**
-   * @brief Number of hidden sectors
-   */
+  /** @brief Number of hidden sectors */
   uint32_t hidden_sector_count;
-  /**
-   * @brief Large sector count, only set if more than 65535 are existing
-   */
+  /** @brief Large sector count, only set if more than 65535 are existing */
   uint32_t total_sectors_32;
-  /**
-   * @brief Extended boot record data
-   */
+  /** @brief Extended boot record data */
   union {
     /**
      * @brief FAT12 / FAT16 related data
@@ -226,14 +166,10 @@ typedef struct {
      * @see fat_structure_superblock_fat32_t
      */
     fat_structure_superblock_fat32_t fat32;
-    /**
-     * @brief Raw extension data
-     */
+    /** @brief Raw extension data */
     uint8_t raw[ 474 ];
   } extended;
-  /**
-   * @brief Bootable partition sector, must be 0xAA55
-   */
+  /** @brief Bootable partition sector, must be 0xAA55 */
   uint16_t boot_sector_signature;
 } fat_structure_superblock_t;
 static_assert(
@@ -241,61 +177,33 @@ static_assert(
   "invalid fat_structure_superblock_t size!"
 );
 
-/**
- * @brief Normal fat directory entry
- */
+/** @brief Normal fat directory entry */
 typedef struct {
-  /**
-   * @brief Entry name
-   */
+  /** @brief Entry name */
   char name[ 8 ];
-  /**
-   * @brief Entry extension
-   */
+  /** @brief Entry extension */
   char extension[ 3 ];
-  /**
-   * @brief Entry attributes
-   */
+  /** @brief Entry attributes */
   uint8_t attributes;
-  /**
-   * @brief Reserved, should be ignored
-   */
+  /** @brief Reserved, should be ignored */
   uint8_t reserved0;
-  /**
-   * @brief Creation time in tenths of a second
-   */
+  /** @brief Creation time in tenths of a second */
   uint8_t creation_time_tenths;
-  /**
-   * @brief Entry creation time
-   */
+  /** @brief Entry creation time */
   uint16_t creation_time;
-  /**
-   * @brief Entry creation date
-   */
+  /** @brief Entry creation date */
   uint16_t creation_date;
-  /**
-   * @brief Date of last access
-   */
+  /** @brief Date of last access */
   uint16_t last_accessed_date;
-  /**
-   * @brief Upper 16 bit of first cluster ( only for FAT32, everything else is 0 )
-   */
+  /** @brief Upper 16 bit of first cluster ( only for FAT32, everything else is 0 ) */
   uint16_t first_cluster_upper;
-  /**
-   * @brief Time of last modification
-   */
+  /** @brief Time of last modification */
   uint16_t last_modification_time;
-  /**
-   * @brief Date of last modification
-   */
+  /** @brief Date of last modification */
   uint16_t last_modification_date;
-  /**
-   * @brief Lower 16 bit of first cluster
-   */
+  /** @brief Lower 16 bit of first cluster */
   uint16_t first_cluster_lower;
-  /**
-   * @brief Entry size, 0 for folders
-   */
+  /** @brief Entry size, 0 for folders */
   uint32_t file_size;
 } fat_structure_directory_entry_t;
 static_assert(
@@ -303,41 +211,23 @@ static_assert(
   "invalid fat_structure_directory_entry_t size!"
 );
 
-/**
- * @brief Long file name structure
- */
+/** @brief Long file name structure */
 typedef struct {
-  /**
-   * @brief Order number of this sequence entry
-   */
+  /** @brief Order number of this sequence entry */
   uint8_t order;
-  /**
-   * @brief First five 2-byte characters
-   */
+  /** @brief First five 2-byte characters */
   uint8_t first_five_two_byte[ 10 ];
-  /**
-   * @brief Attribute information, always 0x0F
-   */
+  /** @brief Attribute information, always 0x0F */
   uint8_t attribute;
-  /**
-   * @brief Long entry type
-   */
+  /** @brief Long entry type */
   uint8_t type;
-  /**
-   * @brief Checksum
-   */
+  /**  @brief Checksum */
   uint8_t checksum;
-  /**
-   * @brief Next six 2-byte characters
-   */
+  /** @brief Next six 2-byte characters */
   uint8_t next_six_two_byte[ 12 ];
-  /**
-   * @brief Always zero
-   */
+  /** @brief Always zero */
   uint16_t zero;
-  /**
-   * @brief final two 2-byte characters
-   */
+  /** @brief final two 2-byte characters */
   uint8_t final_two_byte[ 4 ];
 } fat_structure_directory_entry_long_t;
 static_assert(
@@ -345,37 +235,21 @@ static_assert(
   "invalid fat_structure_directory_entry_long_t size!"
 );
 
-/**
- * @brief Fat32 file system info object
- */
+/** @brief Fat32 file system info object */
 typedef struct {
-  /**
-   * @brief Lead signature, must be 0x41615252
-   */
+  /** @brief Lead signature, must be 0x41615252 */
   uint32_t lead_signature;
-  /**
-   * @brief Reserved bytes that shouldn't be used
-   */
+  /** @brief Reserved bytes that shouldn't be used */
   uint8_t reserved[ 480 ];
-  /**
-   * @brief Second signature, must be 0x61417272
-   */
+  /** @brief Second signature, must be 0x61417272 */
   uint32_t signature;
-  /**
-   * @brief Amount of known free clusters, unknown if value is 0xFFFFFFFF
-   */
+  /** @brief Amount of known free clusters, unknown if value is 0xFFFFFFFF */
   uint32_t known_free_cluster_count;
-  /**
-   * @brief Available cluster start, unknown if value is 0xFFFFFFFF
-   */
+  /** @brief Available cluster start, unknown if value is 0xFFFFFFFF */
   uint32_t available_cluster_start;
-  /**
-   * @brief Reserved area
-   */
+  /** @brief Reserved area */
   uint8_t reserved2[ 12 ];
-  /**
-   * @brief Trailing signature, must be 0xAA550000
-   */
+  /** @brief Trailing signature, must be 0xAA550000 */
   uint32_t trail_signature;
 } fat_structure_fat32_fsinfo_t;
 static_assert(
@@ -385,9 +259,13 @@ static_assert(
 
 #pragma pack(pop)
 
+/** @brief enum containing different supported fat types */
 typedef enum {
+  /** @brief FAT12 is used */
   FAT_FAT12 = 1,
+  /** @brief FAT16 is used */
   FAT_FAT16 = 2,
+  /** @brief FAT32 is used*/
   FAT_FAT32 = 3,
 } fat_type_t;
 

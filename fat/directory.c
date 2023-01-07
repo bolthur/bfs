@@ -1,21 +1,19 @@
-/**
- * Copyright (C) 2022 bolthur project.
- *
- * This file is part of bolthur/bfs.
- *
- * bolthur/bfs is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * bolthur/bfs is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
- */
+// Copyright (C) 2022 - 2023 bolthur project.
+//
+// This file is part of bolthur/bfs.
+//
+// bolthur/bfs is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// bolthur/bfs is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 // IWYU pragma: no_include <errno.h>
 #include <string.h>
@@ -40,7 +38,6 @@
  * @brief Get directory size
  *
  * @param dir
- * @param offset
  * @param size
  * @return int
  */
@@ -119,7 +116,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
 /**
  * @brief Open a directory
  *
- * @param directory
+ * @param dir
  * @param path
  * @return int
  */
@@ -236,7 +233,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
 /**
  * @brief Close a directory
  *
- * @param directory
+ * @param dir
  * @return int
  */
 BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
@@ -269,7 +266,7 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
 /**
  * @brief Get next entry of directory
  *
- * @param directory
+ * @param dir
  * @return int
  */
 BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
@@ -386,7 +383,7 @@ BFSFAT_NO_EXPORT int fat_directory_entry_is_free(
  * @brief Check whether entry is a valid one
  *
  * @param entry
- * @param is_free
+ * @param is_valid
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_directory_entry_is_valid(
@@ -423,7 +420,7 @@ BFSFAT_NO_EXPORT int fat_directory_entry_is_valid(
  * @brief Check whether entry is a dot entry
  *
  * @param entry
- * @param is_free
+ * @param is_dot
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_directory_entry_is_dot(

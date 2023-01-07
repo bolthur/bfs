@@ -71,7 +71,7 @@ endif()
 find_package(Doxygen)
 if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
   # set input and output files
-  set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
+  set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/.doc/Doxyfile.in)
   set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
   # request to configure the file
