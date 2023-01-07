@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-int fat_block_load( fat_file_t* file, fat_block_t* block );
+int fat_block_load( fat_file_t* file );
 
 #ifdef __cplusplus
 }

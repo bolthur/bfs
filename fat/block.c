@@ -29,17 +29,13 @@
 #include <fat/rootdir.h>
 
 /**
- * @brief
+ * @brief Method to load a fat block by file offset
  *
  * @param file
- * @param block
  * @return int
  */
-int fat_block_load(
-  fat_file_t* file,
-  fat_block_t* block
-) {
-  if ( ! file || ! block ) {
+int fat_block_load( fat_file_t* file ) {
+  if ( ! file ) {
     return EINVAL;
   }
   // extract fs pointer
@@ -49,22 +45,22 @@ int fat_block_load(
   // check whether end is reached
   if ( file->fpos >= file->fsize ) {
     // clear block data if set
-    if ( block->data ) {
-      free( block->data );
+    if ( file->block.data ) {
+      free( file->block.data );
       // reset sector to 0 and data
-      block->data = NULL;
-      block->sector = 0;
+      file->block.data = NULL;
+      file->block.sector = 0;
     }
     // success
     return EOK;
   }
   // free up set block
-  if ( block->data ) {
+  if ( file->block.data ) {
     // free up block data
-    free( block->data );
+    free( file->block.data );
     // reset sector to 0 and data
-    block->data = NULL;
-    block->sector = 0;
+    file->block.data = NULL;
+    file->block.sector = 0;
   }
   // calculate current block
   uint64_t block_size = fs->bdev->bdif->block_size;
@@ -84,20 +80,20 @@ int fat_block_load(
       return result;
     }
     // allocate buffer if not allocated
-    if ( ! block->data ) {
+    if ( ! file->block.data ) {
       // allocate block
-      block->data = malloc( block_size );
-      if ( ! block->data ) {
+      file->block.data = malloc( block_size );
+      if ( ! file->block.data ) {
         return ENOMEM;
       }
       // clear out block
-      memset( block->data, 0, block_size );
+      memset( file->block.data, 0, block_size );
     }
     // read bytes from device
     result = common_blockdev_bytes_read(
       bdev,
       ( rootdir_offset + current_block ) * block_size,
-      block->data,
+      file->block.data,
       block_size
     );
     // handle error
@@ -106,14 +102,14 @@ int fat_block_load(
     }
   } else {
     // allocate buffer if not allocated
-    if ( ! block->data ) {
+    if ( ! file->block.data ) {
       // allocate block
-      block->data = malloc( block_size );
-      if ( ! block->data ) {
+      file->block.data = malloc( block_size );
+      if ( ! file->block.data ) {
         return ENOMEM;
       }
       // clear out block
-      memset( block->data, 0, block_size );
+      memset( file->block.data, 0, block_size );
     }
     uint64_t lba;
     // transform data cluster to lba
@@ -125,7 +121,7 @@ int fat_block_load(
     result = common_blockdev_bytes_read(
       bdev,
       lba * block_size,
-      block->data,
+      file->block.data,
       block_size
     );
     // handle error

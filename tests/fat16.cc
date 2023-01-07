@@ -186,10 +186,57 @@ TEST( FAT16, RootDirRead ) {
   EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "foobarlongfolder", it.data->name );
 
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
   // finish
   result = fat_iterator_directory_fini( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_FALSE( it.entry );
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
+TEST( FAT16, RootDirReadDirUtils ) {
+  mount_test_image();
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = fat_rootdir_open( mp, &dir );
+  EXPECT_EQ( result, EOK );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "HELLO", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "LOREM.TXT", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "foobarlongfolder", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
   unmount_test_image();
 }
 
@@ -212,6 +259,10 @@ TEST( FAT16, OpenSubDirectory ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "HELLO.TXT", it.data->name );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
 
   // finish
   result = fat_iterator_directory_fini( &it );

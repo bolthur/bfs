@@ -210,8 +210,9 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
     ! it->entry
     || ( it->entry->attributes & FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY )
   ) {
-    fat_iterator_directory_fini( it );
     COMMON_MP_UNLOCK( dir->file.mp );
+    fat_iterator_directory_fini( it );
+    fat_directory_close( dir );
     free( it );
     free( pathdup_base );
     free( pathdup_dir );
@@ -226,8 +227,20 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   // finish iterator
   result = fat_iterator_directory_fini( it );
   if ( EOK != result ) {
-    fat_iterator_directory_fini( it );
     COMMON_MP_UNLOCK( dir->file.mp );
+    fat_iterator_directory_fini( it );
+    fat_directory_close( dir );
+    free( it );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // close directory
+  result = fat_directory_close( dir );
+  if ( EOK != result ) {
+    COMMON_MP_UNLOCK( dir->file.mp );
+    fat_directory_close( dir );
     free( it );
     free( pathdup_base );
     free( pathdup_dir );
@@ -370,7 +383,7 @@ int fat_file_read(
       copy_size = size;
     }
     // load block
-    int result = fat_block_load( file, &file->block );
+    int result = fat_block_load( file );
     if ( EOK != result ) {
       COMMON_MP_UNLOCK( mp );
       return result;

@@ -54,11 +54,10 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_init(
     return EINVAL;
   }
   // set reference
+  dir->file.fpos = 0;
   it->reference = dir;
   it->entry = NULL;
   it->data = NULL;
-  it->offset = 0;
-  it->block.sector = 0;
   // return result of seek
   return fat_iterator_directory_seek( it, pos );
 }
@@ -73,7 +72,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_next( fat_iterator_directory_t* it )
   // skip value is sizeof entry structure
   uint64_t skip = sizeof( fat_structure_directory_entry_t );
   // get next directory
-  return fat_iterator_directory_seek( it, it->offset + skip );
+  return fat_iterator_directory_seek( it, it->reference->file.fpos + skip );
 }
 
 /**
@@ -99,26 +98,19 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   it->entry = NULL;
   // cache block size
   uint64_t block_size = bdev->bdif->block_size;
-  uint64_t current_block = it->offset / block_size;
+  uint64_t current_block = it->reference->file.fpos / block_size;
   uint64_t next_block = pos / block_size;
-  if ( ! it->block.data || current_block != next_block ) {
-    // backup file position
-    uint64_t pos_backup = it->reference->file.fpos;
+  if ( ! it->reference->file.block.data || current_block != next_block ) {
     it->reference->file.fpos = pos;
     // load block
-    int result = fat_block_load(
-      &it->reference->file,
-      &it->block
-    );
-    // restore file pos
-    it->reference->file.fpos = pos_backup;
+    int result = fat_block_load( &it->reference->file );
     // validate return
     if ( EOK != result ) {
       return result;
     }
   }
   // update iterator position
-  it->offset = pos;
+  it->reference->file.fpos = pos;
   // return result of iterator set
   return fat_iterator_directory_set( it, block_size );
 }
@@ -138,7 +130,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   if ( ! it || ! block_size ) {
     return EINVAL;
   }
-  uint64_t pos = it->offset;
+  uint64_t pos = it->reference->file.fpos;
   int result;
 
   // allocate and fill data stuff
@@ -154,34 +146,27 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // skip all invalid entries
   while ( true ) {
     // cache block size
-    uint64_t current_block = it->offset / block_size;
+    uint64_t current_block = it->reference->file.fsize / block_size;
     uint64_t next_block = pos / block_size;
     uint64_t offset_within_block = pos % block_size;
-    if ( ! it->block.data || current_block != next_block ) {
-      // backup file position
-      uint64_t pos_backup = it->reference->file.fpos;
+    if ( ! it->reference->file.block.data || current_block != next_block ) {
       it->reference->file.fpos = pos;
       // load block
-      result = fat_block_load(
-        &it->reference->file,
-        &it->block
-      );
-      // restore file pos
-      it->reference->file.fpos = pos_backup;
+      result = fat_block_load( &it->reference->file );
       // validate return
       if ( EOK != result ) {
         return result;
       }
     }
     // update iterator position
-    it->offset = pos;
+    it->reference->file.fpos = pos;
     // handle no valid one found ( end reached )
-    if ( ! it->block.data ) {
+    if ( ! it->reference->file.block.data ) {
       return EOK;
     }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->block.data + offset_within_block
+      it->reference->file.block.data + offset_within_block
     );
     // valid flag
     bool is_valid;
@@ -206,34 +191,27 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // get correct entry
   while ( true ) {
     // cache block size
-    uint64_t current_block = it->offset / block_size;
+    uint64_t current_block = it->reference->file.fsize / block_size;
     uint64_t next_block = pos / block_size;
     uint64_t offset_within_block = pos % block_size;
-    if ( ! it->block.data || current_block != next_block ) {
-      // backup file position
-      uint64_t pos_backup = it->reference->file.fpos;
+    if ( ! it->reference->file.block.data || current_block != next_block ) {
       it->reference->file.fpos = pos;
       // load block
-      result = fat_block_load(
-        &it->reference->file,
-        &it->block
-      );
-      // restore file pos
-      it->reference->file.fpos = pos_backup;
+      result = fat_block_load( &it->reference->file );
       // validate return
       if ( EOK != result ) {
         return result;
       }
     }
     // update iterator position
-    it->offset = pos;
+    it->reference->file.fpos = pos;
     // handle no valid one found ( end reached )
-    if ( ! it->block.data ) {
+    if ( ! it->reference->file.block.data ) {
       return EOK;
     }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->block.data + offset_within_block
+      it->reference->file.block.data + offset_within_block
     );
     // push filename with extension to data
     if ( FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME == entry->attributes ) {
@@ -310,14 +288,6 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_fini( fat_iterator_directory_t* it )
   if ( it->data ) {
     free( it->data );
     it->data = NULL;
-  }
-  // cleanup block data
-  if ( it->block.data ) {
-    // free up block data
-    free( it->block.data );
-    // reset sector to 0 and data
-    it->block.data = NULL;
-    it->block.sector = 0;
   }
   // return success
   return EOK;

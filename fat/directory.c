@@ -32,6 +32,7 @@
 #include <fat/iterator.h>
 #include <fat/cluster.h>
 #include <fat/fs.h>
+#include <fat/file.h>
 #include <fat/bfsfat_export.h>
 #include <bfsconfig.h>
 
@@ -203,12 +204,14 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       COMMON_MP_UNLOCK( mp );
       return ENOENT;
     }
+    uint32_t found_start_cluster = ( ( uint32_t )it->entry->first_cluster_upper << 16 )
+      | ( uint32_t )it->entry->first_cluster_lower;
     // we found a matching entry, so close current directory
     fat_directory_close( dir );
     // prepare directory file object
     dir->file.mp = mp;
     dir->file.fpos = 0;
-    dir->file.cluster = it->entry->first_cluster_lower;
+    dir->file.cluster = found_start_cluster;
     // extract offset and size
     result = fat_directory_size( dir, &size );
     if ( EOK != result ) {
@@ -265,6 +268,11 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
   if ( dir->entry ) {
     free( dir->entry );
   }
+  // close file
+  int result = fat_file_close( &dir->file );
+  if ( EOK != result ) {
+    return result;
+  }
   // overwrite everything with 0
   memset( dir, 0, sizeof( *dir ) );
   // return success
@@ -288,6 +296,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // allocate iterator
   fat_iterator_directory_t* it = malloc( sizeof( *it ) );
   if ( ! it ) {
+    COMMON_MP_UNLOCK( dir->file.mp );
     return ENOMEM;
   }
   // clear out
@@ -295,17 +304,25 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // setup iterator
   int result = fat_iterator_directory_init( it, dir, dir->file.fpos );
   if ( EOK != result ) {
+    free( it );
+    COMMON_MP_UNLOCK( dir->file.mp );
     return result;
   }
-  // get next iterator
-  result = fat_iterator_directory_next( it );
-  if ( EOK != result ) {
-    return result;
+  if ( dir->data && dir->entry ) {
+    // get next iterator
+    result = fat_iterator_directory_next( it );
+    if ( EOK != result ) {
+      free( it );
+      COMMON_MP_UNLOCK( dir->file.mp );
+      return result;
+    }
   }
   // allocate data
   if ( ! dir->data && it->data ) {
     dir->data = malloc( sizeof( fat_directory_data_t ) );
     if ( ! dir->data ) {
+      free( it );
+      COMMON_MP_UNLOCK( dir->file.mp );
       return ENOMEM;
     }
     memset( dir->data, 0, sizeof( fat_directory_data_t ) );
@@ -314,13 +331,15 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   if ( ! dir->entry && it->entry ) {
     dir->entry = malloc( sizeof( fat_structure_directory_entry_t ) );
     if ( ! dir->entry ) {
+      free( it );
       free( dir->data );
+      COMMON_MP_UNLOCK( dir->file.mp );
       return ENOMEM;
     }
     memset( dir->entry, 0, sizeof( fat_structure_directory_entry_t ) );
   }
   // update position offset
-  dir->file.fpos = it->entry ? it->offset : dir->file.fsize;
+  dir->file.fpos = it->entry ? it->reference->file.fpos : dir->file.fsize;
   // copy over entry
   if ( it->entry ) {
     memcpy( dir->entry, it->entry, sizeof( fat_structure_directory_entry_t ) );
@@ -332,6 +351,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // finish iterator
   result = fat_iterator_directory_fini( it );
   free( it );
+  COMMON_MP_UNLOCK( dir->file.mp );
   // return success
   return EOK;
 }

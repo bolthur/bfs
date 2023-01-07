@@ -29,6 +29,7 @@
 #include <fat/directory.h>
 #include <fat/type.h>
 #include <fat/fs.h>
+#include <fat/file.h>
 #include <fat/structure.h>
 #include <fat/bfsfat_export.h>
 
@@ -85,6 +86,11 @@ BFSFAT_NO_EXPORT int fat_rootdir_close( fat_directory_t* dir ) {
   }
   if ( dir->entry ) {
     free( dir->entry );
+  }
+  // close file
+  int result = fat_file_close( &dir->file );
+  if ( EOK != result ) {
+    return result;
   }
   // overwrite everything with 0
   memset( dir, 0, sizeof( *dir ) );

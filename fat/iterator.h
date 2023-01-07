@@ -38,10 +38,6 @@ typedef struct fat_directory_iterator {
    */
   fat_directory_t* reference;
   /**
-   * @brief Some data block used during iteration
-   */
-  fat_block_t block;
-  /**
    * @brief Current directory entry
    */
   fat_structure_directory_entry_t* entry;
@@ -49,10 +45,6 @@ typedef struct fat_directory_iterator {
    * @brief Current directory data
    */
   fat_directory_data_t* data;
-  /**
-   * @brief Iterator offset
-   */
-  uint64_t offset;
 } fat_iterator_directory_t;
 
 int fat_iterator_directory_init( fat_iterator_directory_t* it, fat_directory_t* dir, uint64_t pos );
