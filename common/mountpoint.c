@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <common/sys/queue.h>
 #include <common/errno.h>
 #include <common/mountpoint.h>

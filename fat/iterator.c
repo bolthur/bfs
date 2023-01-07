@@ -225,19 +225,19 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
         order -= 0x40;
       }
       // calculate index start by order
-      size_t long_index = ( ( size_t )order - 1 ) * 13;
+      uint64_t long_index = ( order - 1U ) * 13U;
       // fill entry
-      for ( size_t idx = 0; idx < 10; idx += 2 ) {
+      for ( uint64_t idx = 0; idx < 10; idx += 2 ) {
         it->data->name[ long_index++ ] = ( char )entry_long->first_five_two_byte[ idx ];
       }
-      for ( size_t idx = 0; idx < 12; idx += 2 ) {
+      for ( uint64_t idx = 0; idx < 12; idx += 2 ) {
         it->data->name[ long_index++ ] = ( char )entry_long->next_six_two_byte[ idx ];
       }
-      for ( size_t idx = 0; idx < 4; idx += 2 ) {
+      for ( uint64_t idx = 0; idx < 4; idx += 2 ) {
         it->data->name[ long_index++ ] = ( char )entry_long->final_two_byte[ idx ];
       }
     } else if ( FAT_DIRECTORY_ENTRY_DOT_ENTRY == entry->name[ 0 ] ) {
-      size_t idx = 0;
+      uint64_t idx = 0;
       // set first dot
       it->data->name[ idx++ ] = entry->name[ 0 ];
       // check for second dot

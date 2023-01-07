@@ -1,17 +1,18 @@
 
-- [ ] Prepare library to be able to build under non linux systems by adding necessary fallback functions
-- [ ] Finish FAT library read support
+- [ ] Test and fix library, so that it will also compile under linux
+- [ ] Provide necessary fallback stuff, so that library can also be used without c library
+- [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
-- [ ] Add proper locking
 - [ ] Add FAT library write support
+- [ ] Add proper locking
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest
   - [x] Prepare a test blockdev driver for unit testing
   - [x] Add unit tests for specific functions
-- [ ] Provide wrapper header for standard header with the possibility to disable a header per define switch
-- [ ] Add ext2 file system similar to fat as library
-- [ ] Add support for exfat
-- [ ] Fix and complete documentation
+- [ ] Add support for ext2 (?)
+- [ ] Add support for exfat (?)
+- [ ] Add support for ntfs (?)
+- [x] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
 - [ ] Add code coverage collection
   - [x] Get ctest coverage command to run

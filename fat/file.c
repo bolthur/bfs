@@ -382,7 +382,7 @@ int fat_file_read(
     memcpy(
       u8buffer + *read_count,
       file->block.data,
-      copy_size + copy_start
+      ( size_t )( copy_size + copy_start )
     );
     // increment read count
     *read_count += copy_size;

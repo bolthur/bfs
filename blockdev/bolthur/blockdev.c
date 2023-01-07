@@ -107,18 +107,18 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   common_blockdev_t* bdev,
   void* buf,
   uint64_t blk_id,
-  size_t blk_cnt
+  uint64_t blk_cnt
 ) {
   if ( ! blk_cnt ) {
     return EOK;
   }
   // calculate size and offset
-  size_t size = bdev->bdif->block_size * blk_cnt;
+  size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
   off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
   // read from device
   ssize_t result = pread( blockdev_get_handle( bdev ), buf, size, offset );
   // handle error
-  if ( -1 == result || ( size_t )result != size ) {
+  if ( -1 == result || ( uint64_t )result != size ) {
     return EIO;
   }
   // return success
@@ -138,18 +138,18 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   common_blockdev_t* bdev,
   const void* buf,
   uint64_t blk_id,
-  size_t blk_cnt
+  uint64_t blk_cnt
 ) {
   if ( ! blk_cnt ) {
     return EOK;
   }
   // calculate size and offset
-  size_t size = bdev->bdif->block_size * blk_cnt;
+  size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
   off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
   // read from device
   ssize_t result = pwrite( blockdev_get_handle( bdev ), buf, size, offset );
   // handle error
-  if ( -1 == result || ( size_t )result != size ) {
+  if ( -1 == result || ( uint64_t )result != size ) {
     return EIO;
   }
   // return success
@@ -190,6 +190,31 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_lock( common_blockdev_t* bdev ) {
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
   ( void )bdev;
+  return EOK;
+}
+
+/**
+ * @brief
+ *
+ * @param bdev
+ * @param block_size
+ * @return int
+ */
+int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
+  // free existing buffer
+  if ( bdev->bdif->block_buffer ) {
+    free( bdev->bdif->block_buffer );
+    bdev->bdif->block_buffer = NULL;
+  }
+  // allocate new buffer
+  uint8_t* block_buffer = malloc( sizeof( char ) * ( size_t )block_size );
+  if ( ! block_buffer ) {
+    return ENOMEM;
+  }
+  // overwrite block size and buffer
+  bdev->bdif->block_size = block_size;
+  bdev->bdif->block_buffer = block_buffer;
+  // return success
   return EOK;
 }
 
@@ -250,6 +275,7 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
   bdif->close = blockdev_close;
   bdif->lock = blockdev_lock;
   bdif->unlock = blockdev_unlock;
+  bdif->resize = blockdev_resize;
   bdif->block_size = 512;
   bdif->block_count = 0;
   bdif->block_buffer = buffer;
@@ -287,14 +313,16 @@ BFSBLOCKDEV_EXPORT int common_blockdev_destruct( common_blockdev_t* bdev ) {
     return EIO;
   }
   // free dynamically allocated data structures
-  if ( bdev->p_user ) {
-    free( bdev->p_user );
+  if ( bdev->bdif->p_user ) {
+    free( bdev->bdif->p_user );
   }
-  if ( bdev->buffer ) {
-    free( bdev->buffer );
+  if ( bdev->bdif->block_buffer ) {
+    free( bdev->bdif->block_buffer );
   }
   if ( bdev->bdif ) {
     free( bdev->bdif );
   }
   free( bdev );
+  // return success
+  return EOK;
 }

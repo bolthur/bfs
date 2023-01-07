@@ -33,11 +33,12 @@ extern "C" {
   int blockdev_get_handle( common_blockdev_t* bdev );
   void blockdev_set_handle( common_blockdev_t* bdev, int new_handle );
   int blockdev_open( common_blockdev_t *bdev );
-  int blockdev_read( common_blockdev_t *bdev, void *buf, uint64_t blk_id, size_t blk_cnt );
-  int blockdev_write( common_blockdev_t *bdev, const void *buf, uint64_t blk_id, size_t blk_cnt );
+  int blockdev_read( common_blockdev_t *bdev, void *buf, uint64_t blk_id, uint64_t blk_cnt );
+  int blockdev_write( common_blockdev_t *bdev, const void *buf, uint64_t blk_id, uint64_t blk_cnt );
   int blockdev_close( common_blockdev_t *bdev );
   int blockdev_lock( common_blockdev_t *bdev );
   int blockdev_unlock( common_blockdev_t *bdev );
+  int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size );
 #endif
 
 common_blockdev_t* common_blockdev_get( const char* path );

@@ -63,7 +63,7 @@ typedef struct common_blockdev_iface {
    * @param blk_cnt amount of subsequent blocks to read
    * @return int
    */
-  int ( *read )( common_blockdev_t *bdev, void *buf, uint64_t blk_id, size_t blk_cnt );
+  int ( *read )( common_blockdev_t *bdev, void *buf, uint64_t blk_id, uint64_t blk_cnt );
   /**
    * @brief Writes to block dev
    * @param bdev device to use
@@ -72,7 +72,7 @@ typedef struct common_blockdev_iface {
    * @param blk_cnt amount of subsequent blocks to write
    * @return int
    */
-  int ( *write )( common_blockdev_t *bdev, const void *buf, uint64_t blk_id, size_t blk_cnt );
+  int ( *write )( common_blockdev_t *bdev, const void *buf, uint64_t blk_id, uint64_t blk_cnt );
   /**
    * @brief Close block device
    * @param bdev device to open
@@ -91,18 +91,25 @@ typedef struct common_blockdev_iface {
    * @return int
    */
   int ( *unlock )( common_blockdev_t* bdev );
+  /**
+   * @brief resize block buffer
+   * @param bdev device to perform buffer resize
+   * @param block_size new block size
+   * @return int
+   */
+  int ( *resize )( common_blockdev_t* bdev, uint64_t block_size );
   /** @brief Size of one block in bytes */
-  uint32_t block_size;
+  uint64_t block_size;
   /** @brief Internal block count */
   uint64_t block_count;
   /** @brief Internal block buffer */
   uint8_t* block_buffer;
   /** @brief Counter containing amount of started block dev inits */
-  uint32_t reference_counter;
+  uint64_t reference_counter;
   /** @brief Counter for read operations */
-  uint32_t read_counter;
+  uint64_t read_counter;
   /** @brief Counter for write operations */
-  uint32_t write_counter;
+  uint64_t write_counter;
   /** @brief File name used for interaction */
   const char* filename;
   /** @brief Optional user data */
@@ -110,7 +117,7 @@ typedef struct common_blockdev_iface {
 } common_blockdev_iface_t;
 
 /** @brief Macro that can be used for single static blockdev instance */
-#define COMMON_BLOCKDEV_STATIC_INSTANCE(_name, _bsize, _open, _read, _write, _close, _lock, _unlock ) \
+#define COMMON_BLOCKDEV_STATIC_INSTANCE(_name, _bsize, _open, _read, _write, _close, _lock, _unlock, _resize ) \
   static uint8_t _name##_block_buffer[(_bsize)]; \
   static common_blockdev_iface_t _name##_iface = { \
 		.open = _open, \
@@ -119,6 +126,7 @@ typedef struct common_blockdev_iface {
 		.close = _close, \
 		.lock = _lock, \
 		.unlock = _unlock, \
+    .resize = _resize, \
     .block_size = _bsize, \
     .block_count = 0, \
     .block_buffer = _name##_block_buffer, \
@@ -147,8 +155,8 @@ typedef struct common_blockdev_iface {
 
   void common_blockdev_if_lock( common_blockdev_t* bdev );
   void common_blockdev_if_unlock( common_blockdev_t* bdev );
-  int common_blockdev_if_bytes_read( common_blockdev_t* bdev, void* buf, uint64_t block_id, size_t block_count );
-  int common_blockdev_if_bytes_write( common_blockdev_t* bdev, void* buf, uint64_t block_id, size_t block_count );
+  int common_blockdev_if_bytes_read( common_blockdev_t* bdev, void* buf, uint64_t block_id, uint64_t block_count );
+  int common_blockdev_if_bytes_write( common_blockdev_t* bdev, void* buf, uint64_t block_id, uint64_t block_count );
 #endif
 
 int common_blockdev_register_device( common_blockdev_t* bdev, const char* device_name );
@@ -158,8 +166,8 @@ void common_blockdev_unregister_all( void );
 int common_blockdev_init( common_blockdev_t* bdev );
 int common_blockdev_fini( common_blockdev_t* bdev );
 
-int common_blockdev_bytes_write( common_blockdev_t* bdev, uint64_t off, void* buf, size_t len );
-int common_blockdev_bytes_read( common_blockdev_t* bdev, uint64_t off, void* buf, size_t len );
+int common_blockdev_bytes_write( common_blockdev_t* bdev, uint64_t off, void* buf, uint64_t len );
+int common_blockdev_bytes_read( common_blockdev_t* bdev, uint64_t off, void* buf, uint64_t len );
 
 #ifdef __cplusplus
 }

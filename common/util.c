@@ -29,7 +29,7 @@
 BFSCOMMON_NO_EXPORT char* util_trim( char* str ) {
   char* end;
   // trim leading space
-  while( isspace( *str ) ) {
+  while( isspace( ( int )*str ) ) {
     str++;
   }
   // handle end reached
@@ -38,7 +38,7 @@ BFSCOMMON_NO_EXPORT char* util_trim( char* str ) {
   }
   // trim trailing space
   end = str + strlen( str ) - 1;
-  while( end > str && isspace( *end ) ) {
+  while( end > str && isspace( ( int )*end ) ) {
     end--;
   }
   // write new null terminator character

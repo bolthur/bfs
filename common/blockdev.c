@@ -229,7 +229,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   common_blockdev_t* bdev,
   uint64_t off,
   void* buf,
-  size_t len
+  uint64_t len
 ) {
   ( void )bdev,
   ( void )off,
@@ -251,7 +251,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   common_blockdev_t* bdev,
   uint64_t off,
   void* buf,
-  size_t len
+  uint64_t len
 ) {
   // check parameters
   if ( ! bdev || ! buf ) {
@@ -270,12 +270,12 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   uint8_t* buffer = buf;
   int result;
   // check whether start is misaligned block
-  size_t unaligned = ( size_t )( off & ( bdev->bdif->block_size - 1 ) );
+  uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
     // determine read length
-    size_t rlen = len;
+    size_t rlen = ( size_t )len;
     if ( len > bdev->bdif->block_size - unaligned ) {
-      rlen = bdev->bdif->block_size - unaligned;
+      rlen = ( size_t )( bdev->bdif->block_size - unaligned );
     }
     // read whole block index
     result = common_blockdev_if_bytes_read(
@@ -292,7 +292,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
     block_index++;
   }
   // continue with aligned data
-  size_t blen = len / bdev->bdif->block_size;
+  uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
     // read block index
     result = common_blockdev_if_bytes_read(
@@ -302,7 +302,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
       return result;
     }
     // increment buffer and decrement length
-    size_t read_length = bdev->bdif->block_size * blen;
+    uint64_t read_length = bdev->bdif->block_size * blen;
     buffer += read_length;
     len -= read_length;
     block_index += blen;
@@ -317,7 +317,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
       return result;
     }
     // copy over content
-    memcpy( buffer, bdev->bdif->block_buffer, len );
+    memcpy( buffer, bdev->bdif->block_buffer, ( size_t )len );
   }
   // return success
   return EOK;
@@ -360,7 +360,7 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
   common_blockdev_t* bdev,
   void* buf,
   uint64_t block_id,
-  size_t block_count
+  uint64_t block_count
 ) {
   common_blockdev_if_lock( bdev );
   int result = bdev->bdif->read( bdev, buf, block_id, block_count );
@@ -382,7 +382,7 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   common_blockdev_t* bdev,
   void* buf,
   uint64_t block_id,
-  size_t block_count
+  uint64_t block_count
 ) {
   common_blockdev_if_lock( bdev );
   int result = bdev->bdif->read( bdev, buf, block_id, block_count );

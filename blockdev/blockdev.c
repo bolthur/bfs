@@ -28,7 +28,8 @@ COMMON_BLOCKDEV_STATIC_INSTANCE(
   blockdev_write,
   blockdev_close,
   blockdev_lock,
-  blockdev_unlock
+  blockdev_unlock,
+  blockdev_resize
 );
 
 /**
@@ -55,7 +56,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   common_blockdev_t *bdev,
   void *buf,
   uint64_t blk_id,
-  size_t blk_cnt
+  uint64_t blk_cnt
 ) {
   ( void )bdev;
   ( void )buf;
@@ -77,7 +78,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   common_blockdev_t *bdev,
   const void *buf,
   uint64_t blk_id,
-  size_t blk_cnt
+  uint64_t blk_cnt
 ) {
   ( void )bdev;
   ( void )buf;
@@ -117,6 +118,19 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_lock( common_blockdev_t *bdev ) {
 BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
   ( void )bdev;
   return EIO;
+}
+
+/**
+ * @brief
+ *
+ * @param bdev
+ * @param block_size
+ * @return int
+ */
+int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
+  ( void )bdev;
+  ( void )block_size;
+  return EOK;
 }
 
 /**

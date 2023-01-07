@@ -80,12 +80,12 @@ int fat_block_load( fat_file_t* file ) {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
       // allocate block
-      file->block.data = malloc( block_size );
+      file->block.data = malloc( ( size_t )block_size );
       if ( ! file->block.data ) {
         return ENOMEM;
       }
       // clear out block
-      memset( file->block.data, 0, block_size );
+      memset( file->block.data, 0, ( size_t )block_size );
     }
     // read bytes from device
     result = common_blockdev_bytes_read(
@@ -102,12 +102,12 @@ int fat_block_load( fat_file_t* file ) {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
       // allocate block
-      file->block.data = malloc( block_size );
+      file->block.data = malloc( ( size_t )block_size );
       if ( ! file->block.data ) {
         return ENOMEM;
       }
       // clear out block
-      memset( file->block.data, 0, block_size );
+      memset( file->block.data, 0, ( size_t )block_size );
     }
     uint64_t lba;
     // transform data cluster to lba
