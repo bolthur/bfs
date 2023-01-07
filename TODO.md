@@ -1,7 +1,8 @@
 
 - [ ] Prepare library to be able to build under non linux systems by adding necessary fallback functions
 - [ ] Finish FAT library read support
-  - [ ] Finish implementation of `fat_file_read`
+  - [x] Finish implementation of `fat_file_read`
+- [ ] Add proper locking
 - [ ] Add FAT library write support
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest

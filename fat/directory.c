@@ -135,24 +135,19 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   if ( ! mp ) {
     return ENOENT;
   }
-  // lock
-  COMMON_MP_LOCK( mp );
   // open root folder
   int result = fat_rootdir_open( mp, dir );
   if ( EOK != result ) {
-    COMMON_MP_UNLOCK( mp );
     return result;
   }
   // handle root directory
   if ( strlen( path ) == strlen( mp->name ) ) {
-    COMMON_MP_UNLOCK( mp );
     return EOK;
   }
 
   const char* real_path = path + strlen( mp->name ) - 1;
   char* duppath = strdup( real_path );
   if ( ! duppath ) {
-    COMMON_MP_UNLOCK( mp );
     return ENOMEM;
   }
   char* p = duppath;
@@ -161,7 +156,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   fat_iterator_directory_t* it = malloc( sizeof( *it ) );
   if ( ! it ) {
     free( duppath );
-    COMMON_MP_UNLOCK( mp );
     return ENOMEM;
   }
   // clear space
@@ -177,7 +171,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       fat_iterator_directory_fini( it );
       free( it );
       free( duppath );
-      COMMON_MP_UNLOCK( mp );
       return result;
     }
     // loop while an entry is existing
@@ -192,7 +185,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
         fat_iterator_directory_fini( it );
         free( it );
         free( duppath );
-        COMMON_MP_UNLOCK( mp );
         return result;
       }
     }
@@ -201,7 +193,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       fat_iterator_directory_fini( it );
       free( it );
       free( duppath );
-      COMMON_MP_UNLOCK( mp );
       return ENOENT;
     }
     uint32_t found_start_cluster = ( ( uint32_t )it->entry->first_cluster_upper << 16 )
@@ -218,7 +209,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       fat_iterator_directory_fini( it );
       free( it );
       free( duppath );
-      COMMON_MP_UNLOCK( mp );
       return result;
     }
     // finish iterator
@@ -227,7 +217,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       fat_iterator_directory_fini( it );
       free( it );
       free( duppath );
-      COMMON_MP_UNLOCK( mp );
       return result;
     }
     // calculate total size
@@ -240,8 +229,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   free( duppath );
   // set offset to 0
   dir->file.fpos = 0;
-  // unlock again
-  COMMON_MP_UNLOCK( mp );
   // return result of open
   return EOK;
 }
@@ -286,17 +273,13 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
  * @return int
  */
 BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
-  // call for lock
-  COMMON_MP_LOCK( dir->file.mp );
   // handle end reached
   if ( dir->file.fpos >= dir->file.fsize ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     return EOK;
   }
   // allocate iterator
   fat_iterator_directory_t* it = malloc( sizeof( *it ) );
   if ( ! it ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     return ENOMEM;
   }
   // clear out
@@ -305,7 +288,6 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   int result = fat_iterator_directory_init( it, dir, dir->file.fpos );
   if ( EOK != result ) {
     free( it );
-    COMMON_MP_UNLOCK( dir->file.mp );
     return result;
   }
   if ( dir->data && dir->entry ) {
@@ -313,7 +295,6 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     result = fat_iterator_directory_next( it );
     if ( EOK != result ) {
       free( it );
-      COMMON_MP_UNLOCK( dir->file.mp );
       return result;
     }
   }
@@ -322,7 +303,6 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     dir->data = malloc( sizeof( fat_directory_data_t ) );
     if ( ! dir->data ) {
       free( it );
-      COMMON_MP_UNLOCK( dir->file.mp );
       return ENOMEM;
     }
     memset( dir->data, 0, sizeof( fat_directory_data_t ) );
@@ -333,7 +313,6 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     if ( ! dir->entry ) {
       free( it );
       free( dir->data );
-      COMMON_MP_UNLOCK( dir->file.mp );
       return ENOMEM;
     }
     memset( dir->entry, 0, sizeof( fat_structure_directory_entry_t ) );
@@ -351,30 +330,31 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // finish iterator
   result = fat_iterator_directory_fini( it );
   free( it );
-  COMMON_MP_UNLOCK( dir->file.mp );
   // return success
-  return EOK;
+  return result;
 }
 
 /**
  * @brief Rewind directory offset to beginning
  *
- * @param directory
+ * @param dir
  * @return int
  */
-BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* directory ) {
+BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* dir ) {
   // validate parameter
-  if ( ! directory ) {
+  if ( ! dir ) {
     return EINVAL;
   }
   // reset offset information
-  directory->file.fpos = 0;
+  dir->file.fpos = 0;
   // free data and entry
-  if ( directory->data ) {
-    free( directory->data );
+  if ( dir->data ) {
+    free( dir->data );
+    dir->data = NULL;
   }
-  if ( directory->entry ) {
-    free( directory->entry );
+  if ( dir->entry ) {
+    free( dir->entry );
+    dir->entry = NULL;
   }
   // return success
   return EOK;

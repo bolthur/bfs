@@ -163,12 +163,9 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
     free( dir );
     return result;
   }
-  // lock
-  COMMON_MP_LOCK( dir->file.mp );
   // allocate iterator
   fat_iterator_directory_t* it = malloc( sizeof( *it ) );
   if ( ! it ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -180,7 +177,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   result = fat_iterator_directory_init( it, dir, 0 );
   if ( EOK != result ) {
     fat_iterator_directory_fini( it );
-    COMMON_MP_UNLOCK( dir->file.mp );
     free( it );
     free( pathdup_base );
     free( pathdup_dir );
@@ -197,7 +193,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
     result = fat_iterator_directory_next( it );
     if ( EOK != result ) {
       fat_iterator_directory_fini( it );
-      COMMON_MP_UNLOCK( dir->file.mp );
       free( it );
       free( pathdup_base );
       free( pathdup_dir );
@@ -210,7 +205,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
     ! it->entry
     || ( it->entry->attributes & FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY )
   ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     fat_iterator_directory_fini( it );
     fat_directory_close( dir );
     free( it );
@@ -227,7 +221,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   // finish iterator
   result = fat_iterator_directory_fini( it );
   if ( EOK != result ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     fat_iterator_directory_fini( it );
     fat_directory_close( dir );
     free( it );
@@ -239,7 +232,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   // close directory
   result = fat_directory_close( dir );
   if ( EOK != result ) {
-    COMMON_MP_UNLOCK( dir->file.mp );
     fat_directory_close( dir );
     free( it );
     free( pathdup_base );
@@ -252,7 +244,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   free( pathdup_base );
   free( pathdup_dir );
   free( dir );
-  COMMON_MP_UNLOCK( file->mp );
   // return success
   return EOK;
 }
@@ -364,8 +355,6 @@ int fat_file_read(
   if ( ! fs ) {
     return EINVAL;
   }
-  // lock
-  COMMON_MP_LOCK( mp );
   // cap read size to maximum if exceeding
   if ( file->fpos + size > file->fsize ) {
     size -= ( file->fpos + size - file->fsize );
@@ -385,7 +374,6 @@ int fat_file_read(
     // load block
     int result = fat_block_load( file );
     if ( EOK != result ) {
-      COMMON_MP_UNLOCK( mp );
       return result;
     }
     // handle nothing loaded
@@ -405,8 +393,6 @@ int fat_file_read(
     // increment position
     file->fpos += copy_size;
   }
-  // lock
-  COMMON_MP_UNLOCK( mp );
   // return success
   return EOK;
 }
