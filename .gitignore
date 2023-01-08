@@ -1,4 +1,6 @@
 /build
+/cov
+/doc
 /.tools/**/*.img
 /.tools/tmp/**/*
 /.tools/image

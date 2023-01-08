@@ -37,6 +37,8 @@
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_get_handle( common_blockdev_t* bdev ) {
   int handle = 0;
@@ -49,6 +51,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_get_handle( common_blockdev_t* bdev ) {
  *
  * @param bdev
  * @param new_handle
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT void blockdev_set_handle( common_blockdev_t* bdev, int new_handle ) {
   memcpy( bdev->bdif->p_user, &new_handle, sizeof( int ) );
@@ -59,6 +63,8 @@ BFSBLOCKDEV_NO_EXPORT void blockdev_set_handle( common_blockdev_t* bdev, int new
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
   // handle not yet set
@@ -102,6 +108,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
  * @param blk_id
  * @param blk_cnt
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   common_blockdev_t* bdev,
@@ -133,6 +141,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
  * @param blk_id
  * @param blk_cnt
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   common_blockdev_t* bdev,
@@ -161,6 +171,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_write(
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_close( common_blockdev_t* bdev ) {
   int fd = blockdev_get_handle( bdev );
@@ -176,6 +188,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_close( common_blockdev_t* bdev ) {
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_lock( common_blockdev_t* bdev ) {
   ( void )bdev;
@@ -194,11 +208,13 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
 }
 
 /**
- * @brief
+ * @brief Resize block device buffer
  *
  * @param bdev
  * @param block_size
  * @return int
+ *
+ * @private
  */
 int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
   // free existing buffer
@@ -223,6 +239,8 @@ int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
  *
  * @param filename
  * @return common_blockdev_t*
+ *
+ * @public
  */
 BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename ) {
   // allocate block device
@@ -298,6 +316,8 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
  *
  * @param bdev
  * @return int
+ *
+ * @public
  */
 BFSBLOCKDEV_EXPORT int common_blockdev_destruct( common_blockdev_t* bdev ) {
   // validate parameter

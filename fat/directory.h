@@ -33,10 +33,11 @@ extern "C" {
 int fat_directory_remove( const char* path, bool recursive );
 int fat_directory_move( const char* old_path, const char* new_path );
 int fat_directory_make( const char* path );
-int fat_directory_open( fat_directory_t* directory, const char* path );
-int fat_directory_close( fat_directory_t* directory );
-int fat_directory_next_entry( fat_directory_t* directory );
-int fat_directory_rewind( fat_directory_t* directory );
+int fat_directory_open( fat_directory_t* dir, const char* path );
+int fat_directory_close( fat_directory_t* dir );
+int fat_directory_next_entry( fat_directory_t* dir );
+int fat_directory_rewind( fat_directory_t* dir );
+int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
 
 int fat_directory_size( fat_directory_t* dir, uint64_t* size );
 int fat_directory_entry_is_valid( fat_structure_directory_entry_t* entry, bool* is_valid );

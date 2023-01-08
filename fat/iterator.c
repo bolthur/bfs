@@ -143,6 +143,18 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_structure_directory_entry_t* entry = NULL;
   // skip all invalid entries
   while ( true ) {
+    // handle position exceeds size
+    if ( pos >= it->reference->file.fsize ) {
+      // free possible data
+      if ( it->data ) {
+        free( it->data );
+        it->data = NULL;
+      }
+      // set fpos to position
+      it->reference->file.fpos = pos;
+      // return no entry
+      return EOK;
+    }
     // cache block size
     uint64_t current_block = it->reference->file.fsize / block_size;
     uint64_t next_block = pos / block_size;
@@ -265,6 +277,8 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
 
   // push entry
   it->entry = entry;
+  // update position
+  it->reference->file.fpos = pos;
   // return success
   return EOK;
 }

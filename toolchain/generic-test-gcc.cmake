@@ -9,3 +9,4 @@ set(OBJDUMP objdump)
 
 # test active flag
 set(TEST_ACTIVE ON)
+set(CMAKE_BUILD_TYPE Debug)

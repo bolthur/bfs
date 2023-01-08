@@ -272,6 +272,17 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
 BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // handle end reached
   if ( dir->file.fpos >= dir->file.fsize ) {
+    // free up data
+    if ( dir->data ) {
+      free( dir->data );
+      dir->data = NULL;
+    }
+    // free up entry
+    if ( dir->entry ) {
+      free( dir->entry );
+      dir->entry = NULL;
+    }
+    // return success
     return EOK;
   }
   // allocate iterator
@@ -355,6 +366,38 @@ BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* dir ) {
   }
   // return success
   return EOK;
+}
+
+/**
+ * @brief Function to get entry of directory by name
+ *
+ * @param dir
+ * @param name
+ * @return int
+ */
+BFSFAT_EXPORT int fat_directory_entry_by_name(
+  fat_directory_t* dir,
+  const char* name
+) {
+  // validate parameter
+  if ( ! dir || ! name ) {
+    return EINVAL;
+  }
+  // space for variable
+  int result;
+  // loop through entries
+  while ( EOK == ( result = fat_directory_next_entry( dir ) ) ) {
+    // handle nothing in there
+    if ( ! dir->data && ! dir->entry ) {
+      return ENOENT;
+    }
+    // having entry, check for match
+    if ( 0 == strcasecmp( dir->data->name, name ) ) {
+      return EOK;
+    }
+  }
+  // return last error of next entry
+  return result;
 }
 
 /**

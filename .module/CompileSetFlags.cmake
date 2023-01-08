@@ -27,19 +27,13 @@ function(compile_set_flags)
   # clang/gcc linker flags
   enable_linker_flag_if_supported("-lc")
 
-  if(${BFS_BUILD_WITH_COVERAGE})
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
-  else()
-    # clang/gcc relase and debug options
-    enable_compiler_flag_debug_if_supported("-g")
-    enable_compiler_flag_debug_if_supported("-O0")
-    enable_compiler_flag_debug_if_supported("-ggdb3")
-    enable_compiler_flag_release_if_supported("-g")
-    enable_compiler_flag_release_if_supported("-O2")
-    enable_compiler_flag_release_if_supported("-ggdb3")
-  endif()
+  # clang/gcc relase and debug options
+  enable_compiler_flag_debug_if_supported("-g")
+  enable_compiler_flag_debug_if_supported("-O0")
+  enable_compiler_flag_debug_if_supported("-ggdb3")
+  enable_compiler_flag_release_if_supported("-g")
+  enable_compiler_flag_release_if_supported("-O2")
+  enable_compiler_flag_release_if_supported("-ggdb3")
 
   # bubble up flags
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}" PARENT_SCOPE)

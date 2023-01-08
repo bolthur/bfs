@@ -79,11 +79,44 @@ if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
   message("Doxygen build started")
 
   # note the option ALL which allows to build the docs together with the application
-  add_custom_target(doc_doxygen ALL
+  add_custom_target(doc
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM )
+endif()
+
+if(${BFS_BUILD_WITH_COVERAGE})
+  # find necessary programs
+  find_program(LCOV_PATH lcov)
+  find_program(GENHTML_PATH genhtml)
+  # hide behind the 'advanced' mode flag for GUI/ccmake
+  mark_as_advanced(FORCE LCOV_PATH GENHTML_PATH)
+  # code coverage is only possible with gnu compiler
+  if(CMAKE_COMPILER_IS_GNUCXX AND LCOV_PATH AND GENHTML_PATH)
+    # adjust cflags according to compiler
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+    # set output directory
+    set(CMAKE_COVERAGE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/cov)
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target(coverage_collect
+      COMMAND lcov --capture --directory . --output-file coverage.info
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating lcov information"
+      VERBATIM )
+    add_custom_target(coverage_strip
+      COMMAND lcov --remove coverage.info '/usr/*' --remove coverage.info '*tests/*' --output-file ${CMAKE_CURRENT_BINARY_DIR}/coverage.info
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Strip out test and system include"
+      DEPENDS coverage_collect )
+    add_custom_target(coverage
+      COMMAND genhtml coverage.info --output-directory ${CMAKE_SOURCE_DIR}/cov
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating coverage report"
+      DEPENDS coverage_strip
+      VERBATIM )
+  endif()
 endif()
 
 # check for include files

@@ -37,6 +37,8 @@ COMMON_BLOCKDEV_STATIC_INSTANCE(
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
   ( void )bdev;
@@ -51,6 +53,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
  * @param blk_id
  * @param blk_cnt
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   common_blockdev_t *bdev,
@@ -73,6 +77,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
  * @param blk_id
  * @param blk_cnt
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   common_blockdev_t *bdev,
@@ -92,6 +98,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_write(
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_close( common_blockdev_t *bdev ) {
   ( void )bdev;
@@ -103,6 +111,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_close( common_blockdev_t *bdev ) {
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_lock( common_blockdev_t *bdev ) {
   ( void )bdev;
@@ -114,6 +124,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_lock( common_blockdev_t *bdev ) {
  *
  * @param bdev
  * @return int
+ *
+ * @private
  */
 BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
   ( void )bdev;
@@ -121,11 +133,13 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
 }
 
 /**
- * @brief
+ * @brief Resize block device buffer
  *
  * @param bdev
  * @param block_size
  * @return int
+ *
+ * @private
  */
 int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
   ( void )bdev;
@@ -137,6 +151,8 @@ int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
  * @brief Get block device object
  *
  * @return common_blockdev_t*
+ *
+ * @public
  */
 BFSBLOCKDEV_EXPORT common_blockdev_t *common_blockdev_get( void ) {
   return &blockdev;
