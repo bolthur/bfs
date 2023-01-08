@@ -152,6 +152,58 @@ TEST( FAT12, NormalMountRw ) {
 }
 
 // Demonstrate some basic assertions.
+TEST( FAT12, RootDirNewFolder ) {
+  mount_test_image();
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = fat_directory_make( "/fat12/wup/" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = fat_rootdir_open( mp, &dir );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = fat_directory_entry_by_name( &dir, "wup" );
+  EXPECT_EQ( result, EOK );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
+TEST( FAT12, DirNewFolder ) {
+  mount_test_image();
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = fat_directory_make( "/fat12/hello/foobar" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = fat_directory_open( &dir, "/fat12/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = fat_directory_entry_by_name( &dir, "foobar" );
+  EXPECT_EQ( result, EOK );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
 TEST( FAT12, RootDirRead ) {
   mount_test_image();
   // get mountpoint
@@ -280,7 +332,7 @@ TEST( FAT12, RootDirReadDirUtilsRewind ) {
 }
 
 // Demonstrate some basic assertions.
-TEST( FAT12, DirGetExistingEntryByName ) {
+TEST( FAT12, RootDirGetExistingEntryByName ) {
   mount_test_image();
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
@@ -307,7 +359,30 @@ TEST( FAT12, DirGetExistingEntryByName ) {
 }
 
 // Demonstrate some basic assertions.
-TEST( FAT12, DirGetNonExistingEntryByName ) {
+TEST( FAT12, DirGetExistingEntryByName ) {
+  mount_test_image();
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = fat_directory_open( &dir, "/fat12/hello" );
+  EXPECT_EQ( result, EOK );
+
+  result = fat_directory_entry_by_name( &dir, "world.txt" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "WORLD.TXT", dir.data->name );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
+TEST( FAT12, RootDirGetNonExistingEntryByName ) {
   mount_test_image();
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
@@ -320,6 +395,28 @@ TEST( FAT12, DirGetNonExistingEntryByName ) {
   EXPECT_EQ( result, EOK );
 
   result = fat_directory_entry_by_name( &dir, "nonexistant" );
+  EXPECT_EQ( result, ENOENT );
+  EXPECT_FALSE( dir.entry );
+  EXPECT_FALSE( dir.data );
+
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  unmount_test_image();
+}
+
+// Demonstrate some basic assertions.
+TEST( FAT12, DirGetNonExistingEntryByName ) {
+  mount_test_image();
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = fat_directory_open( &dir, "/fat12/hello" );
+  EXPECT_EQ( result, EOK );
+
+  result = fat_directory_entry_by_name( &dir, "foo" );
   EXPECT_EQ( result, ENOENT );
   EXPECT_FALSE( dir.entry );
   EXPECT_FALSE( dir.data );

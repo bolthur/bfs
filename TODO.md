@@ -4,7 +4,10 @@
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
 - [ ] Add FAT library write support
-- [ ] Add proper locking
+  - [ ] Add test where cluster chain needs to be extended
+  - [ ] Add file write support
+  - [ ] Check written code and simplify it once everything works
+- [ ] Add proper locking to library functions
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest
   - [x] Prepare a test blockdev driver for unit testing
@@ -14,6 +17,7 @@
 - [ ] Add support for ntfs (?)
 - [x] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
+- [ ] Check usages of block size and evaluate whether automatical adjustment is meaningful for fat
 - [ ] Add code coverage collection
   - [x] Get ctest coverage command to run
   - [ ] Get html coverage output

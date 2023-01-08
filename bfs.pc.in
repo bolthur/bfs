@@ -17,5 +17,5 @@ Version: @CMAKE_PROJECT_VERSION@
 Requires: @pc_req_public@
 Requires.private: @pc_req_private@
 Cflags: -I"${includedir}"
-Libs: -L"${libdir}" -lbfsfat -lbfsext -lbfcdfs -L"${libdir}/blockdev" -lbfsblockdev -L"${libdir}/common" -lbfscommon
-Libs.private: -L"${libdir}" -lbfsfat -lbfsext -lbfcdfs -L"${libdir}/blockdev" -lbfsblockdev -L"${libdir}/common" -lbfscommon @pc_libs_private@
+Libs: -L"${libdir}" -lbfsfat -lbfsext -lbfcdfs
+Libs.private: @pc_libs_private@

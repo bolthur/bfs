@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-int fat_directory_remove( const char* path, bool recursive );
+int fat_directory_remove( const char* path );
 int fat_directory_move( const char* old_path, const char* new_path );
 int fat_directory_make( const char* path );
 int fat_directory_open( fat_directory_t* dir, const char* path );
@@ -44,6 +44,7 @@ int fat_directory_entry_is_valid( fat_structure_directory_entry_t* entry, bool* 
 int fat_directory_entry_is_free( fat_structure_directory_entry_t* entry, bool* is_free );
 int fat_directory_entry_is_dot( fat_structure_directory_entry_t* entry, bool* is_dot );
 int fat_directory_extract_name_short( fat_structure_directory_entry_t* entry, char* name );
+int fat_directory_extend( fat_directory_t* dir, void* buffer, uint64_t size );
 
 #ifdef __cplusplus
 }

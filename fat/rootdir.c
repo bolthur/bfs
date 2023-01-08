@@ -63,7 +63,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   dir->file.cluster = FAT_FAT32 == fs->type
     ? ( uint32_t )rootdir_offset : 0;
   dir->file.fpos = 0;
-  dir->file.fsize = rootdir_size * fs->bdev->bdif->block_size;
+  dir->file.fsize = FAT_FAT32 == fs->type
+    ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
   // return success
   return EOK;
 }
@@ -129,7 +130,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
       fs->superblock.root_entry_count
         * sizeof( fat_structure_directory_entry_t )
         + ( block_size - 1 )
-    ) / 512;
+    ) / block_size;
   } else if ( FAT_FAT32 == fs->type ) {
     // root dir in fat32 is stored within data section
     dir->file.cluster = fs->superblock.extended.fat32.root_cluster;
@@ -148,4 +149,111 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
   *size = rootdir_size;
   // return success
   return EOK;
+}
+
+/**
+ * @brief Helper to extend root directory
+ *
+ * @param dir
+ * @param buffer
+ * @param size
+ * @return int
+ */
+int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size ) {
+  // validate
+  if ( ! dir || ! dir->file.mp->fs || ! buffer || ! size ) {
+    return EINVAL;
+  }
+  // bunch of necessary variables
+  fat_fs_t* fs = dir->file.mp->fs;
+  uint64_t block_size = fs->bdev->bdif->block_size;
+  uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
+  // root dir of fat12 and 16 fixed sized
+  if ( FAT_FAT12 == fs->type || FAT_FAT16 == fs->type ) {
+    // FAT12 and FAT16 have fixed offset and root directory size
+    uint64_t rootdir_offset = ( uint64_t )( fs->superblock.reserved_sector_count + (
+      fs->superblock.table_count * fs->superblock.table_size_16
+    ) );
+    // calculate root dir size with round up
+    uint64_t rootdir_size = (
+      fs->superblock.root_entry_count
+        * sizeof( fat_structure_directory_entry_t )
+        + ( block_size - 1 )
+    ) / block_size;
+    fat_structure_directory_entry_t* entry = malloc( rootdir_size * block_size );
+    if ( ! entry ) {
+      return ENOMEM;
+    }
+    // load whole root directory
+    int result = common_blockdev_bytes_read(
+      fs->bdev,
+      rootdir_offset * block_size,
+      entry,
+      rootdir_size * block_size
+    );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
+    }
+    // loop through root directory and try to find a entry
+    fat_structure_directory_entry_t* current = entry;
+    fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
+      ( uint8_t* )entry + rootdir_size * block_size
+    );
+    fat_structure_directory_entry_t* start = NULL;
+    uint64_t found_size = 0;
+    while ( current < end ) {
+      // handle found enough space
+      if ( start && found_size == necessary_entry_count ) {
+        break;
+      }
+      bool is_free;
+      result = fat_directory_entry_is_free( current, &is_free );
+      if ( EOK != result ) {
+        free( entry );
+        return ENOSPC;
+      }
+      // handle non free
+      if ( ! is_free ) {
+        found_size = 0;
+        start = NULL;
+      // handle free block
+      } else if ( is_free ) {
+        if ( ! start ) {
+          start = current;
+        }
+        found_size++;
+      }
+      // increment current
+      current++;
+    }
+    // handle not enough free stuff
+    if ( ! start || found_size != necessary_entry_count ) {
+      free( entry );
+      return ENOSPC;
+    }
+    // copy over changes
+    memcpy( start, buffer, size );
+    // write back whole root directory
+    result = common_blockdev_bytes_write(
+      fs->bdev,
+      rootdir_offset * block_size,
+      entry,
+      rootdir_size * block_size
+    );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
+    }
+    free( entry );
+    return EOK;
+  } else if ( FAT_FAT32 == fs->type ) {
+    // fat32 root directory is a normal directory
+    // overwrite cluster
+    dir->file.cluster = fs->superblock.extended.fat32.root_cluster;
+    // try to extend directory
+    return fat_directory_extend( dir, buffer, size );
+  } else {
+    return EINVAL;
+  }
 }

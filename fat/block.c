@@ -32,7 +32,7 @@
  * @param file
  * @return int
  */
-int fat_block_load( fat_file_t* file ) {
+int fat_block_load( fat_file_t* file, uint64_t size ) {
   if ( ! file ) {
     return EINVAL;
   }
@@ -102,16 +102,26 @@ int fat_block_load( fat_file_t* file ) {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
       // allocate block
-      file->block.data = malloc( ( size_t )block_size );
+      file->block.data = malloc( ( size_t )size );
       if ( ! file->block.data ) {
         return ENOMEM;
       }
       // clear out block
-      memset( file->block.data, 0, ( size_t )block_size );
+      memset( file->block.data, 0, ( size_t )size );
     }
-    uint64_t lba;
+    // adjust current block
+    current_block = file->fpos / size;
+    // get cluster by number
+    uint64_t cluster;
+    int result = fat_cluster_get_by_num(
+      fs, file->cluster, current_block, &cluster
+    );
+    if ( EOK != result ) {
+      return result;
+    }
     // transform data cluster to lba
-    int result = fat_cluster_to_lba( fs, file->cluster, &lba );
+    uint64_t lba;
+    result = fat_cluster_to_lba( fs, cluster, &lba );
     if ( EOK != result ) {
       return result;
     }
@@ -120,7 +130,7 @@ int fat_block_load( fat_file_t* file ) {
       bdev,
       lba * block_size,
       file->block.data,
-      block_size
+      size
     );
     // handle error
     if ( EOK != result ) {

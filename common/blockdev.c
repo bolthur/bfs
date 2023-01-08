@@ -231,11 +231,88 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   void* buf,
   uint64_t len
 ) {
-  ( void )bdev,
-  ( void )off,
-  ( void )buf,
-  ( void )len;
-  return ENOSYS;
+  // check parameters
+  if ( ! bdev || ! buf ) {
+    return EINVAL;
+  }
+  // handle not opened
+  if ( ! bdev->bdif->reference_counter ) {
+    return EIO;
+  }
+  // handle out of range
+  if ( ( off + len ) > bdev->part_size ) {
+    return EINVAL;
+  }
+  // calculate block index
+  uint64_t block_index = ( off + bdev->part_offset ) / bdev->bdif->block_size;
+  uint8_t* buffer = buf;
+  int result;
+  // check whether start is misaligned block
+  uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
+  if ( unaligned ) {
+    // determine read length
+    size_t wlen = ( size_t )len;
+    if ( len > bdev->bdif->block_size - unaligned ) {
+      wlen = ( size_t )( bdev->bdif->block_size - unaligned );
+    }
+    // read whole block index
+    result = common_blockdev_if_bytes_read(
+      bdev, bdev->bdif->block_buffer, block_index, 1
+    );
+    if ( EOK != result ) {
+      return result;
+    }
+    // copy over partially
+    memcpy( bdev->bdif->block_buffer + unaligned, buffer, wlen );
+    // write whole block index
+    result = common_blockdev_if_bytes_write(
+      bdev, bdev->bdif->block_buffer, block_index, 1
+    );
+    if ( EOK != result ) {
+      return result;
+    }
+    // increase pointer, decrease length and increase block index
+    buffer += wlen;
+    len -= wlen;
+    block_index++;
+  }
+  // continue with aligned data
+  uint64_t blen = len / bdev->bdif->block_size;
+  if ( blen ) {
+    // read block index
+    result = common_blockdev_if_bytes_write(
+      bdev, buffer, block_index, blen
+    );
+    if ( EOK != result ) {
+      return result;
+    }
+    // increment buffer and decrement length
+    uint64_t read_length = bdev->bdif->block_size * blen;
+    buffer += read_length;
+    len -= read_length;
+    block_index += blen;
+  }
+  // remaining data
+  if ( len ) {
+    // read remaining block
+    result = common_blockdev_if_bytes_read(
+      bdev, bdev->bdif->block_buffer, block_index, 1
+    );
+    if ( EOK != result ) {
+      return result;
+    }
+    // copy over content
+    memcpy( bdev->bdif->block_buffer, buffer, ( size_t )len );
+    // write whole block index
+    result = common_blockdev_if_bytes_write(
+      bdev, bdev->bdif->block_buffer, block_index, 1
+    );
+    if ( EOK != result ) {
+      return result;
+    }
+  }
+  // return success
+  return EOK;
 }
 
 /**
@@ -385,7 +462,7 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   uint64_t block_count
 ) {
   common_blockdev_if_lock( bdev );
-  int result = bdev->bdif->read( bdev, buf, block_id, block_count );
+  int result = bdev->bdif->write( bdev, buf, block_id, block_count );
   bdev->bdif->read_counter++;
   common_blockdev_if_unlock( bdev );
   return result;

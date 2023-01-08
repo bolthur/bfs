@@ -27,6 +27,10 @@
 extern "C" {
 #endif
 
+/** @brief Macro containing representation of an unused cluster */
+#define FAT_CLUSTER_UNUSED 0
+/** @brief EOF entry, used when inserting new clusters as used */
+#define FAT_CLUSTER_EOF 0xFFFFFFFF
 /** @brief FAT12 bad cluster identifier */
 #define FAT_FAT12_BAD_CLUSTER 0xFF7
 /** @brief FAT12 cluster chain end identifier */
@@ -42,6 +46,9 @@ extern "C" {
 
 int fat_cluster_next( fat_fs_t* fs, uint64_t current, uint64_t* next );
 int fat_cluster_to_lba( fat_fs_t* fs, uint64_t cluster, uint64_t* lba );
+int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster );
+int fat_cluster_set_cluster( fat_fs_t* fs, uint64_t cluster, uint64_t value );
+int fat_cluster_get_by_num( fat_fs_t* fs, uint64_t cluster, uint64_t num, uint64_t* target );
 
 #ifdef __cplusplus
 }

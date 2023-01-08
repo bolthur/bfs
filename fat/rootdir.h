@@ -31,6 +31,7 @@ extern "C" {
 int fat_rootdir_open( common_mountpoint_t *mp, fat_directory_t* dir );
 int fat_rootdir_close( fat_directory_t* dir );
 int fat_rootdir_offset_size( fat_directory_t* dir, uint64_t* offset, uint64_t* size );
+int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size );
 
 #ifdef __cplusplus
 }

@@ -146,3 +146,188 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
   free( buffer );
   return EOK;
 }
+
+/**
+ * @brief Method to get a free cluster
+ *
+ * @param fs
+ * @param cluster
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
+  uint64_t index;
+  // loop through data sectors and look for a free one
+  for ( index = 0; index < fs->data_sectors; index++ ) {
+    uint64_t internal_cluster;
+    // get next cluster
+    int result = fat_cluster_next( fs, index, &internal_cluster );
+    if ( EOK != result ) {
+      return result;
+    }
+    // check if it's free
+    if ( FAT_CLUSTER_UNUSED == internal_cluster ) {
+      break;
+    }
+  }
+  // handle no free found
+  if ( index >= fs->data_sectors ) {
+    return ENOSPC;
+  }
+  // update cluster
+  *cluster = index;
+  // return success
+  return EOK;
+}
+
+/**
+ * @brief Set a fat cluster to a value
+ *
+ * @param fs
+ * @param cluster
+ * @param value
+ * @return int
+ */
+BFSFAT_EXPORT int fat_cluster_set_cluster(
+  fat_fs_t* fs,
+  uint64_t cluster,
+  uint64_t value
+) {
+  // allocate buffer
+  uint8_t* buffer = malloc( fs->superblock.bytes_per_sector );
+  if ( ! buffer ) {
+    return ENOMEM;
+  }
+  // bunch of variables
+  uint64_t fat_sector;
+  uint64_t fat_index;
+  uint64_t fat_bit_offset = 0;
+  // determine fat sector and index
+  if ( FAT_FAT12 == fs->type ) {
+    fat_bit_offset = cluster * 12;
+    fat_sector = fat_bit_offset / SECTOR_BITS
+      + fs->superblock.reserved_sector_count;
+    fat_bit_offset %= SECTOR_BITS;
+    fat_index = fat_bit_offset / 8;
+  } else if ( FAT_FAT16 == fs->type ) {
+    uint64_t cluster_size = fs->superblock.bytes_per_sector
+      * fs->superblock.sectors_per_cluster;
+    fat_sector = ( cluster * sizeof( uint16_t ) ) / cluster_size
+      + fs->first_fat_sector;
+    fat_index = ( cluster * sizeof( uint16_t ) ) % cluster_size;
+  } else if ( FAT_FAT32 == fs->type ) {
+    uint64_t cluster_size = fs->superblock.bytes_per_sector
+      * fs->superblock.sectors_per_cluster;
+    fat_sector = ( cluster * sizeof( uint32_t ) ) / cluster_size
+      + fs->first_fat_sector;
+    fat_index = ( cluster * sizeof( uint32_t ) ) % cluster_size;
+  } else {
+    free( buffer );
+    return ENOTSUP;
+  }
+  // read sector to memory
+  int result = common_blockdev_bytes_read(
+    fs->bdev,
+    fat_sector * fs->bdev->bdif->block_size,
+    buffer,
+    fs->bdev->bdif->block_size
+  );
+  if ( EOK != result ) {
+    free( buffer );
+    return result;
+  }
+  if ( FAT_FAT12 == fs->type ) {
+    // read fat entry
+    uint16_t* pvalue = ( uint16_t* )&buffer[ fat_index ];
+    uint16_t rvalue = ( uint16_t )value & 0xFFF;
+    // adjust value if necessary
+    if ( 0 == ( fat_bit_offset & 7 ) ) {
+      *pvalue &= ( uint16_t )~0x0FFF;
+      *pvalue |= rvalue;
+    } else {
+      *pvalue &= ( uint16_t )~0xFFF0;
+      *pvalue |= ( rvalue << 4 );
+    }
+  } else if ( FAT_FAT16 == fs->type ) {
+    // read fat entry
+    uint16_t* pvalue = ( uint16_t* )&buffer[ fat_index ];
+    *pvalue = ( uint16_t )value;
+  } else if ( FAT_FAT32 == fs->type ) {
+    // read fat entry
+    uint32_t* pvalue = ( uint32_t* )&buffer[ fat_index ];
+    *pvalue = ( uint32_t )value;
+  } else {
+    free( buffer );
+    return ENOTSUP;
+  }
+  // write sector to memory
+  result = common_blockdev_bytes_write(
+    fs->bdev,
+    fat_sector * fs->bdev->bdif->block_size,
+    buffer,
+    fs->bdev->bdif->block_size
+  );
+  // handle error
+  if ( EOK != result ) {
+    free( buffer );
+    return result;
+  }
+  // return success
+  free( buffer );
+  return EOK;
+}
+
+/**
+ * @brief Helper to get cluster by number in cluster chain
+ *
+ * @param fs
+ * @param cluster
+ * @param num
+ * @param target
+ * @return int
+ */
+int fat_cluster_get_by_num(
+  fat_fs_t* fs,
+  uint64_t cluster,
+  uint64_t num,
+  uint64_t* target
+) {
+  // validate parameter
+  if ( ! fs || ! target || ! cluster ) {
+    return EINVAL;
+  }
+  // handle num is 0 => just return cluster
+  if ( ! num ) {
+    *target = cluster;
+    return EOK;
+  }
+  // walk the chain until index
+  uint64_t current = 0;
+  for ( uint64_t index = 0; index < num; index++ ) {
+    // handle begin
+    if ( 0 == current ) {
+      current = cluster;
+      continue;
+    }
+    // variable for next
+    uint64_t next;
+    // fetch next cluster
+    int result = fat_cluster_next( fs, current, &next );
+    // handle error
+    if ( EOK != result ) {
+      return result;
+    }
+    // handle chain end reached
+    if (
+      ( FAT_FAT12 == fs->type && next >= FAT_FAT12_CLUSTER_CHAIN_END )
+      || ( FAT_FAT16 == fs->type && next >= FAT_FAT16_CLUSTER_CHAIN_END )
+      || ( FAT_FAT32 == fs->type && next >= FAT_FAT32_CLUSTER_CHAIN_END )
+    ) {
+      return ENXIO;
+    }
+    // overwrite current with next
+    current = next;
+  }
+  // set target
+  *target = current;
+  return EOK;
+}

@@ -169,6 +169,7 @@ include(CPack)
 
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 
+set(pc_libs_private "-L\${libdir}/blockdev -lbfsblockdev -L\${libdir}/common -lbfscommon")
 configure_file(bfs.pc.in bfs.pc @ONLY)
 if(DEFINED INSTALL_LIB)
   INSTALL(FILES ${PROJECT_BINARY_DIR}/bfs.pc DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig)

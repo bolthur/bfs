@@ -88,20 +88,35 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   if ( ! it ) {
     return EINVAL;
   }
+  // handle position exceeds size
+  if ( pos >= it->reference->file.fsize ) {
+    // free possible data
+    if ( it->data ) {
+      free( it->data );
+      it->data = NULL;
+    }
+    // set fpos to position
+    it->reference->file.fpos = pos;
+    // return no entry
+    return EOK;
+  }
   // extract fs pointer
   fat_fs_t* fs = it->reference->file.mp->fs;
-  // extract block device
-  common_blockdev_t* bdev = fs->bdev;
   // set iterator current to null as long as set isn't done
   it->entry = NULL;
   // cache block size
-  uint64_t block_size = bdev->bdif->block_size;
-  uint64_t current_block = it->reference->file.fpos / block_size;
-  uint64_t next_block = pos / block_size;
-  if ( ! it->reference->file.block.data || current_block != next_block ) {
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
+  // different cluster size for root directory for non fat32
+  if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
+    cluster_size = fs->superblock.bytes_per_sector;
+  }
+  uint64_t current_cluster = it->reference->file.fpos / cluster_size;
+  uint64_t next_cluster = pos / cluster_size;
+  if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
     it->reference->file.fpos = pos;
     // load block
-    int result = fat_block_load( &it->reference->file );
+    int result = fat_block_load( &it->reference->file, cluster_size );
     // validate return
     if ( EOK != result ) {
       return result;
@@ -110,7 +125,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   // update iterator position
   it->reference->file.fpos = pos;
   // return result of iterator set
-  return fat_iterator_directory_set( it, block_size );
+  return fat_iterator_directory_set( it, cluster_size );
 }
 
 /**
@@ -122,15 +137,19 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
  */
 BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_iterator_directory_t* it,
-  uint64_t block_size
+  uint64_t cluster_size
 ) {
   // validate parameter
-  if ( ! it || ! block_size ) {
+  if ( ! it || ! cluster_size ) {
     return EINVAL;
   }
   uint64_t pos = it->reference->file.fpos;
   int result;
-
+  // different cluster size for root directory for non fat32
+  fat_fs_t* fs = it->reference->file.mp->fs;
+  if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
+    cluster_size = fs->superblock.bytes_per_sector;
+  }
   // allocate and fill data stuff
   if ( ! it->data ) {
     it->data = malloc( sizeof( fat_directory_data_t ) );
@@ -143,26 +162,14 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_structure_directory_entry_t* entry = NULL;
   // skip all invalid entries
   while ( true ) {
-    // handle position exceeds size
-    if ( pos >= it->reference->file.fsize ) {
-      // free possible data
-      if ( it->data ) {
-        free( it->data );
-        it->data = NULL;
-      }
-      // set fpos to position
-      it->reference->file.fpos = pos;
-      // return no entry
-      return EOK;
-    }
     // cache block size
-    uint64_t current_block = it->reference->file.fsize / block_size;
-    uint64_t next_block = pos / block_size;
-    uint64_t offset_within_block = pos % block_size;
-    if ( ! it->reference->file.block.data || current_block != next_block ) {
+    uint64_t current_cluster = it->reference->file.fpos / cluster_size;
+    uint64_t next_cluster = pos / cluster_size;
+    uint64_t offset_within_block = pos % cluster_size;
+    if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
       it->reference->file.fpos = pos;
       // load block
-      result = fat_block_load( &it->reference->file );
+      result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
       if ( EOK != result ) {
         return result;
@@ -194,6 +201,18 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     }
     // increment position
     pos += sizeof( fat_structure_directory_entry_t );
+    // handle position exceeds size
+    if ( pos >= it->reference->file.fsize ) {
+      // free possible data
+      if ( it->data ) {
+        free( it->data );
+        it->data = NULL;
+      }
+      // set fpos to position
+      it->reference->file.fpos = pos;
+      // return no entry
+      return EOK;
+    }
   }
 
   entry = NULL;
@@ -201,13 +220,13 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // get correct entry
   while ( true ) {
     // cache block size
-    uint64_t current_block = it->reference->file.fsize / block_size;
-    uint64_t next_block = pos / block_size;
-    uint64_t offset_within_block = pos % block_size;
-    if ( ! it->reference->file.block.data || current_block != next_block ) {
+    uint64_t current_cluster = it->reference->file.fsize / cluster_size;
+    uint64_t next_cluster = pos / cluster_size;
+    uint64_t offset_within_block = pos % cluster_size;
+    if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
       it->reference->file.fpos = pos;
       // load block
-      result = fat_block_load( &it->reference->file );
+      result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
       if ( EOK != result ) {
         return result;

@@ -213,8 +213,11 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path ) {
   }
   // copy over necessary information
   file->mp = dir->file.mp;
-  file->cluster = ( ( uint32_t )it->entry->first_cluster_upper << 16 )
-    | ( uint32_t )it->entry->first_cluster_lower;
+  fat_fs_t* fs = dir->file.mp->fs;
+  file->cluster = ( uint32_t )it->entry->first_cluster_lower;
+  if ( FAT_FAT32 == fs->type ) {
+    file->cluster |= ( ( uint32_t )it->entry->first_cluster_upper << 16 );
+  }
   file->fsize = it->entry->file_size;
   // finish iterator
   result = fat_iterator_directory_fini( it );
@@ -358,19 +361,19 @@ int fat_file_read(
     size -= ( file->fpos + size - file->fsize );
   }
   // calculate sector to start with
-  uint64_t block_size = fs->bdev->bdif->block_size;
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
   uint8_t* u8buffer = buffer;
   *read_count = 0;
   while ( size > 0 ) {
-    uint64_t copy_start = file->fpos % block_size;
-    uint64_t copy_size = block_size - copy_start;
+    uint64_t copy_start = file->fpos % cluster_size;
+    uint64_t copy_size = cluster_size - copy_start;
     // cap copy size
-    if ( copy_size > size )
-    {
+    if ( copy_size > size ) {
       copy_size = size;
     }
     // load block
-    int result = fat_block_load( file );
+    int result = fat_block_load( file, cluster_size );
     if ( EOK != result ) {
       return result;
     }

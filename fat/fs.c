@@ -56,8 +56,7 @@ BFSFAT_EXPORT int fat_fs_init( fat_fs_t* fs, common_blockdev_t* bdev, bool read_
     return result;
   }
   // resize block device buffer
-  return bdev->bdif->resize( bdev, fs->superblock.bytes_per_sector
-    * fs->superblock.sectors_per_cluster );
+  return bdev->bdif->resize( bdev, fs->superblock.bytes_per_sector );
 }
 
 /**
