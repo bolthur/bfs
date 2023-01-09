@@ -35,8 +35,10 @@
 
 /**
  * @brief Helper to mount test image
+ *
+ * @param read_only
  */
-static void mount_test_image( void ) {
+static void mount_test_image( bool read_only ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );
@@ -48,7 +50,7 @@ static void mount_test_image( void ) {
   int result = common_blockdev_register_device( bdev, "fat16" );
   EXPECT_EQ( result, EOK );
   // mount device
-  result = fat_mountpoint_mount( "fat16", "/fat16/", true );
+  result = fat_mountpoint_mount( "fat16", "/fat16/", read_only );
   EXPECT_EQ( result, EOK );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 1 );
@@ -56,7 +58,7 @@ static void mount_test_image( void ) {
   fat_fs_t* fs = static_cast< fat_fs_t* >( bdev->fs );
   // assert fs and fs type
   EXPECT_TRUE( fs );
-  EXPECT_TRUE( fs->read_only );
+  EXPECT_TRUE( fs->read_only == read_only );
   EXPECT_EQ( FAT_FAT16, fs->type );
 }
 
@@ -141,19 +143,19 @@ TEST( FAT16, MountInvalidBlockDevice ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, NormalMountRo ) {
-  mount_test_image();
+  mount_test_image( true );
   unmount_test_image();
 }
 
 // Demonstrate some basic assertions.
 TEST( FAT16, NormalMountRw ) {
-  mount_test_image();
+  mount_test_image( false );
   unmount_test_image();
 }
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirNewFolder ) {
-  mount_test_image();
+  mount_test_image( false );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -169,17 +171,18 @@ TEST( FAT16, RootDirNewFolder ) {
   // try to find created folder
   result = fat_directory_entry_by_name( &dir, "wup" );
   EXPECT_EQ( result, EOK );
-
   // close directory
   result = fat_directory_close( &dir );
   EXPECT_EQ( result, EOK );
-
+  // create new folder
+  result = fat_directory_make( "/fat16/wup/" );
+  EXPECT_EQ( result, EEXIST );
   unmount_test_image();
 }
 
 // Demonstrate some basic assertions.
 TEST( FAT16, DirNewFolder ) {
-  mount_test_image();
+  mount_test_image( false );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -195,17 +198,18 @@ TEST( FAT16, DirNewFolder ) {
   // try to find created folder
   result = fat_directory_entry_by_name( &dir, "foobar" );
   EXPECT_EQ( result, EOK );
-
   // close directory
   result = fat_directory_close( &dir );
   EXPECT_EQ( result, EOK );
-
+  // create new folder
+  result = fat_directory_make( "/fat16/hello/foobar" );
+  EXPECT_EQ( result, EEXIST );
   unmount_test_image();
 }
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirRead ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -249,7 +253,7 @@ TEST( FAT16, RootDirRead ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirReadDirUtils ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -292,7 +296,7 @@ TEST( FAT16, RootDirReadDirUtils ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirReadDirUtilsRewind ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -332,7 +336,7 @@ TEST( FAT16, RootDirReadDirUtilsRewind ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirGetExistingEntryByName ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -359,7 +363,7 @@ TEST( FAT16, RootDirGetExistingEntryByName ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, DirGetExistingEntryByName ) {
-  mount_test_image();
+  mount_test_image( true );
   // directory variable
   fat_directory_t dir;
   memset( &dir, 0, sizeof( dir ) );
@@ -382,7 +386,7 @@ TEST( FAT16, DirGetExistingEntryByName ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, RootDirGetNonExistingEntryByName ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -407,7 +411,7 @@ TEST( FAT16, RootDirGetNonExistingEntryByName ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, DirGetNonExistingEntryByName ) {
-  mount_test_image();
+  mount_test_image( true );
   // directory variable
   fat_directory_t dir;
   memset( &dir, 0, sizeof( dir ) );
@@ -429,7 +433,7 @@ TEST( FAT16, DirGetNonExistingEntryByName ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, OpenSubDirectory ) {
-  mount_test_image();
+  mount_test_image( true );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
   EXPECT_TRUE( mp );
@@ -460,7 +464,7 @@ TEST( FAT16, OpenSubDirectory ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, OpenNonExistantFile ) {
-  mount_test_image();
+  mount_test_image( true );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -481,7 +485,7 @@ TEST( FAT16, OpenNonExistantFile ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, Open2NonExistantFile ) {
-  mount_test_image();
+  mount_test_image( true );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -502,7 +506,7 @@ TEST( FAT16, Open2NonExistantFile ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, OpenExistantFile ) {
-  mount_test_image();
+  mount_test_image( true );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -524,7 +528,7 @@ TEST( FAT16, OpenExistantFile ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, Open2ExistantFile ) {
-  mount_test_image();
+  mount_test_image( true );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -546,7 +550,7 @@ TEST( FAT16, Open2ExistantFile ) {
 
 // Demonstrate some basic assertions.
 TEST( FAT16, ReadFromFile ) {
-  mount_test_image();
+  mount_test_image( true );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );

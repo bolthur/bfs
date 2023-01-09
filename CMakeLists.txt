@@ -53,6 +53,7 @@ include_directories(.)
 option(BFS_BUILD_SHARED_LIB "Build shared library" OFF)
 option(BFS_BUILD_DOC "Build library documentation" OFF)
 option(BFS_BUILD_WITH_COVERAGE "Build with coverage data" OFF)
+option(BFS_MALLOC_FALLBACK_SIZE "Malloc fallback size" 0)
 
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
@@ -119,8 +120,23 @@ if(${BFS_BUILD_WITH_COVERAGE})
   endif()
 endif()
 
+if(${BFS_BUILD_WITH_PROFILING})
+  # adjust cflags according to compiler
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+endif()
+
 # check for include files
 check_include_file("errno.h" HAVE_ERRNO_H)
+check_include_file("stdlib.h" HAVE_STDLIB_H)
+check_include_file("string.h" HAVE_STRING_H)
+check_include_file("stddef.h" HAVE_STDDEF_H)
+check_include_file("stdint.h" HAVE_STDINT_H)
+check_include_file("limits.h" HAVE_LIMITS_H)
+check_include_file("stdbool.h" HAVE_STDBOOL_H)
+check_include_file("libgen.h" HAVE_LIBGEN_H)
 check_include_file("stdio.h" HAVE_STDIO_H)
 check_include_file("sys/queue.h" HAVE_SYS_QUEUE_H)
 # set compile flags
@@ -132,7 +148,19 @@ add_definitions(
   -DCONFIG_PATH_SEPARATOR_STRING="/"
   -DCONFIG_HAVE_ERRNO_H=${HAVE_ERRNO_H}
   -DCONFIG_HAVE_STDIO_H=${HAVE_STDIO_H}
-  -DCONFIG_HAVE_SYS_QUEUE_H=${HAVE_SYS_QUEUE_H})
+  -DCONFIG_HAVE_SYS_QUEUE_H=${HAVE_SYS_QUEUE_H}
+  -DCONFIG_HAVE_STDLIB_H=${HAVE_STDLIB_H}
+  -DCONFIG_HAVE_STRING_H=${HAVE_STRING_H}
+  -DCONFIG_HAVE_STDDEF_H=${HAVE_STDDEF_H}
+  -DCONFIG_HAVE_STDINT_H=${HAVE_STDINT_H}
+  -DCONFIG_HAVE_LIMITS_H=${HAVE_LIMITS_H}
+  -DCONFIG_HAVE_STDBOOL_H=${HAVE_STDBOOL_H}
+  -DCONFIG_HAVE_LIBGEN_H=${HAVE_LIBGEN_H})
+
+if (NOT ${HAVE_STDLIB_H} AND ${BFS_MALLOC_FALLBACK_SIZE})
+  add_definitions(-DCONFIG_MALLOC_FALLBACK_AREA=${BFS_MALLOC_FALLBACK_SIZE})
+endif()
+
 # macro for configuration header with defines
 macro(output_configure)
   get_property(definitions DIRECTORY PROPERTY COMPILE_DEFINITIONS)

@@ -5,8 +5,17 @@
   - [x] Finish implementation of `fat_file_read`
 - [ ] Add FAT library write support
   - [ ] Add test where cluster chain needs to be extended
+  - [x] Extend test creating a folder to fail on second try
+  - [ ] Add test creating a long file name directory
   - [ ] Add file write support
+  - [ ] Add test for creating a plain file with O_CREAT
+  - [ ] Add test to ensure that read only is working correctly
+  - [ ] Add test writing a file ( extending )
+  - [ ] Add test creating a file with short name
+  - [ ] Add test creating a file with long name
   - [ ] Check written code and simplify it once everything works
+- [ ] Split up tests in single files
+- [ ] Check and add some sort of cache, when writing is to slow on real hardware
 - [ ] Add proper locking to library functions
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest

@@ -45,6 +45,7 @@ int fat_directory_entry_is_free( fat_structure_directory_entry_t* entry, bool* i
 int fat_directory_entry_is_dot( fat_structure_directory_entry_t* entry, bool* is_dot );
 int fat_directory_extract_name_short( fat_structure_directory_entry_t* entry, char* name );
 int fat_directory_extend( fat_directory_t* dir, void* buffer, uint64_t size );
+int fat_directory_update( fat_directory_t* dir, const char* name, bool directory );
 
 #ifdef __cplusplus
 }

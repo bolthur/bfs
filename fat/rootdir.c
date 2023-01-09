@@ -166,6 +166,10 @@ int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size ) {
   }
   // bunch of necessary variables
   fat_fs_t* fs = dir->file.mp->fs;
+  // check for readonly
+  if ( fs->read_only ) {
+    return EROFS;
+  }
   uint64_t block_size = fs->bdev->bdif->block_size;
   uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
   // root dir of fat12 and 16 fixed sized

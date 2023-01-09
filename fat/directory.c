@@ -94,6 +94,17 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   if ( ! path ) {
     return EINVAL;
   }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  // get fs
+  fat_fs_t* fs = mp->fs;
+  // handle create flag with read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
   return ENOSYS;
 }
 
@@ -108,8 +119,21 @@ BFSFAT_EXPORT int fat_directory_move(
   const char* old_path,
   const char* new_path
 ) {
-  ( void )old_path;
-  ( void )new_path;
+  // validate parameter
+  if ( ! old_path || ! new_path ) {
+    return EINVAL;
+  }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( old_path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  // get fs
+  fat_fs_t* fs = mp->fs;
+  // handle create flag with read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
   return ENOSYS;
 }
 
@@ -123,6 +147,15 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // validate parameter
   if ( ! path ) {
     return EINVAL;
+  }
+  common_mountpoint_t* mp = common_mountpoint_find( path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  fat_fs_t* fs = mp->fs;
+  // handle create flag with read only
+  if ( fs->read_only ) {
+    return EROFS;
   }
   // duplicate path for base
   char* pathdup_base = strdup( path );
@@ -144,7 +177,10 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     free( pathdup_dir );
     return ENOTSUP;
   }
-  strcat( dirpath, "/" );
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
   // local variable for directory operations
   fat_directory_t dir;
   memset( &dir, 0, sizeof( dir ) );
@@ -155,145 +191,23 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     free( pathdup_dir );
     return result;
   }
-  // extract mount point and fs
-  common_mountpoint_t* mp = dir.file.mp;
-  fat_fs_t* fs = mp->fs;
   // check whether folder doesn't exist
   result = fat_directory_entry_by_name( &dir, base );
   if ( ENOENT != result ) {
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
-    return result;
+    return EOK != result ? result : EEXIST;
   }
-  // get a free cluster
-  uint64_t free_cluster;
-  result = fat_cluster_get_free( fs, &free_cluster );
-  if ( EOK != result ) {
+  // update directory entry
+  result = fat_directory_update( &dir, base, true );
+  if ( ENOENT != result ) {
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
     return result;
   }
-
-  // save length
-  size_t base_length = strlen( base );
-  uint64_t entry_size;
-  void* entry_data = NULL;
-  // build directory entry
-  if ( 8 >= base_length ) {
-    // short entry is enough
-    fat_structure_directory_entry_t* data = ( fat_structure_directory_entry_t* )
-      malloc( sizeof( *data ) );
-    if ( ! data ) {
-      fat_directory_close( &dir );
-      free( pathdup_base );
-      free( pathdup_dir );
-      return result;
-    }
-    entry_size = sizeof( *data );
-    memset( data, 0, entry_size );
-    // copy over name
-    char* p = base;
-    while ( *p && ( p - base ) < 8 ) {
-      data->name[ ( p - base ) ] = *p;
-      p++;
-    }
-    // set directory flag
-    data->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
-    // set first cluster
-    data->first_cluster_lower = ( uint16_t )free_cluster;
-    if ( FAT_FAT32 == fs->type ) {
-      data->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
-    }
-    // set entry data
-    entry_data = data;
-  } else {
-    // calculate amount of long entries necessary
-    size_t long_name_length = base_length / 13;
-    if ( base_length % 13 ) {
-      long_name_length++;
-    }
-    // add final short entry
-    long_name_length++;
-    // allocate
-    fat_structure_directory_entry_long_t* data = ( fat_structure_directory_entry_long_t* )
-      malloc( sizeof( *data ) * long_name_length );
-    if ( ! data ) {
-      fat_directory_close( &dir );
-      free( pathdup_base );
-      free( pathdup_dir );
-      return result;
-    }
-    entry_size = sizeof( *data ) * long_name_length;
-    memset( data, 0, entry_size );
-    // loop through long name parts and fill them
-    for ( size_t index = 0; index < long_name_length - 1; index++ ) {
-      data[ index ].order = ( uint8_t )index;
-      uint8_t* base_offsetted = ( uint8_t* )( base + ( index * 13 ) );
-      uint8_t* end = ( uint8_t* )( base + base_length );
-      // populate long entry names
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 10;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].first_five_two_byte[ local_index ] = *base_offsetted;
-      }
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 12;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].next_six_two_byte[ local_index ] = *base_offsetted;
-      }
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 4;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].final_two_byte[ local_index ] = *base_offsetted;
-      }
-    }
-    // build finalizing short name
-    fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
-      ( &data[ long_name_length - 1 ] );
-    // set directory flag
-    short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
-    // set first cluster
-    short_entry->first_cluster_lower = ( uint16_t )free_cluster;
-    if ( FAT_FAT32 == fs->type ) {
-      short_entry->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
-    }
-    strncpy( short_entry->name, base, 7 );
-    short_entry->name[ 7 ] = '~';
-    for ( uint64_t idx = 0; idx < 7; idx++ ) {
-      short_entry->name[ idx ] = ( char )toupper( ( int )short_entry->name[ idx ] );
-    }
-    // set entry data
-    entry_data = data;
-  }
-  // try to mark cluster as used
-  result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
-  if ( EOK != result ) {
-    free( entry_data );
-    fat_directory_close( &dir );
-    free( pathdup_base );
-    free( pathdup_dir );
-    return result;
-  }
-  // insert directory
-  result = fat_directory_extend( &dir, entry_data, entry_size );
-  if ( EOK != result ) {
-    fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_UNUSED );
-    free( entry_data );
-    fat_directory_close( &dir );
-    free( pathdup_base );
-    free( pathdup_dir );
-    return result;
-  }
-  // free up everything
-  free( entry_data );
+  // return success
   fat_directory_close( &dir );
   free( pathdup_base );
   free( pathdup_dir );
@@ -595,7 +509,7 @@ BFSFAT_EXPORT int fat_directory_entry_by_name(
     }
   }
   // return last error of next entry
-  return result;
+  return EOK != result ? result : ENOENT;
 }
 
 /**
@@ -738,6 +652,15 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   void* buffer,
   uint64_t size
 ) {
+  // validate parameter
+  if ( ! dir || ! dir->file.mp->fs ) {
+    return EINVAL;
+  }
+  // check for readonly
+  fat_fs_t* fs = dir->file.mp->fs;
+  if ( fs->read_only ) {
+    return EROFS;
+  }
   // handle root directory
   if ( dir && 0 == dir->file.cluster ) {
     return fat_rootdir_extend( dir, buffer, size );
@@ -747,7 +670,6 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     return EINVAL;
   }
   int result;
-  fat_fs_t* fs = dir->file.mp->fs;
   uint64_t necessary_entry_count = size
     / sizeof( fat_structure_directory_entry_t );
   // allocate buffer
@@ -755,6 +677,8 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   if ( ! entry ) {
     return ENOMEM;
   }
+  // clear out space
+  memset( entry, 0, dir->file.fsize );
   // load whole directory
   dir->file.fpos = 0;
   if ( dir->file.fpos >= dir->file.fsize ) {
@@ -817,68 +741,28 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   // handle not enough free stuff
   if ( ! start || found_size != necessary_entry_count ) {
     while ( found_size < necessary_entry_count ) {
-      // find a free cluster
-      uint64_t new_cluster;
-      result = fat_cluster_get_free( fs, &new_cluster );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      uint64_t cluster_size = fs->superblock.bytes_per_sector
-        * fs->superblock.sectors_per_cluster;
-      // get last block
-      uint64_t last_cluster;
-      result = fat_cluster_get_by_num(
-        fs,
-        dir->file.cluster,
-        dir->file.fsize / cluster_size,
-        &last_cluster
-      );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      uint64_t value;
-      if ( FAT_FAT12 == fs->type ) {
-        value = FAT_FAT12_CLUSTER_CHAIN_END;
-      } else if ( FAT_FAT16 == fs->type ) {
-        value = FAT_FAT16_CLUSTER_CHAIN_END;
-      } else if ( FAT_FAT32 == fs->type ) {
-        value = FAT_FAT32_CLUSTER_CHAIN_END;
-      } else {
-        free( entry );
-        return EINVAL;
-      }
-      // try to mark new cluster as chain end
-      result = fat_cluster_set_cluster( fs, new_cluster, value );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      // set new cluster within block current
-      result = fat_cluster_set_cluster( fs, last_cluster, new_cluster );
-      if ( EOK != result ) {
-        fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
-        free( entry );
-        return result;
-      }
       // save start offset
       uint64_t start_offset = ( uint64_t )( start - entry );
       if ( ! start ) {
         start_offset = ( uint64_t )( end - entry );
       }
-      // realloc entry space
-      void* tmp_entry_extended = realloc( entry, dir->file.fsize + cluster_size );
-      // handle error
-      if ( ! tmp_entry_extended ) {
-        fat_cluster_set_cluster( fs, last_cluster, value );
+      // save old size
+      uint64_t old_size = dir->file.fsize;
+      // extend
+      result = fat_file_extend_cluster( &dir->file, 1 );
+      if ( EOK != result ) {
         free( entry );
         return result;
       }
-      // increase directory file size
-      dir->file.fsize += cluster_size;
+      // realloc entry space
+      void* tmp_entry_extended = realloc( entry, dir->file.fsize );
+      // handle error
+      if ( ! tmp_entry_extended ) {
+        free( entry );
+        return result;
+      }
       // increase found count by newly added entries
-      found_size += cluster_size
+      found_size += ( dir->file.fsize - old_size )
         / sizeof( fat_structure_directory_entry_t );
       // overwrite entry pointer
       entry = tmp_entry_extended;
@@ -938,5 +822,169 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   // freeup entry again
   free( entry );
   // return success
+  return EOK;
+}
+
+/**
+ * @brief Extend update directory by adding path
+ *
+ * @param dir
+ * @param name
+ * @param directory
+ * @return int
+ */
+int fat_directory_update(
+  fat_directory_t* dir,
+  const char* name,
+  bool directory
+) {
+  if ( ! dir || ! name ) {
+    return EINVAL;
+  }
+  fat_fs_t* fs = dir->file.mp->fs;
+  // handle create flag with read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // get a free cluster
+  uint64_t free_cluster;
+  int result = fat_cluster_get_free( fs, &free_cluster );
+  if ( EOK != result ) {
+    return result;
+  }
+  // save length
+  size_t name_length = strlen( name );
+  // handle invalid name length
+  if ( ! name_length ) {
+    return EINVAL;
+  }
+  uint64_t entry_size;
+  void* entry_data = NULL;
+  size_t extension_length = 0;
+  const char* ext = strchr( name, '.' );
+  if ( ! directory && ext ) {
+    extension_length = strlen( name ) - ( size_t )( ext - name );
+  }
+  // build directory entry
+  if (
+    8 >= name_length
+    && ( directory || ( ! directory && 3 >= extension_length ) )
+  ) {
+    // short entry is enough
+    fat_structure_directory_entry_t* data = ( fat_structure_directory_entry_t* )
+      malloc( sizeof( *data ) );
+    if ( ! data ) {
+      return result;
+    }
+    entry_size = sizeof( *data );
+    memset( data, 0, entry_size );
+    // copy over name
+    const char* p = name;
+    while ( *p && ( p - name ) < 8 ) {
+      data->name[ ( p - name ) ] = *p;
+      p++;
+    }
+    if ( ! directory && ext ) {
+      p = ext;
+      while ( *p && ( p - name ) < 3 ) {
+        data->extension[ ( p - name ) ] = *p;
+      }
+    }
+    // set directory flag
+    if ( directory ) {
+      data->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
+    }
+    // set first cluster
+    data->first_cluster_lower = ( uint16_t )free_cluster;
+    if ( FAT_FAT32 == fs->type ) {
+      data->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
+    }
+    // set entry data
+    entry_data = data;
+  } else {
+    // calculate amount of long entries necessary
+    size_t long_name_length = name_length / 13;
+    if ( name_length % 13 ) {
+      long_name_length++;
+    }
+    // add final short entry
+    long_name_length++;
+    // allocate
+    fat_structure_directory_entry_long_t* data = ( fat_structure_directory_entry_long_t* )
+      malloc( sizeof( *data ) * long_name_length );
+    if ( ! data ) {
+      return result;
+    }
+    entry_size = sizeof( *data ) * long_name_length;
+    memset( data, 0, entry_size );
+    // loop through long name parts and fill them
+    for ( size_t index = 0; index < long_name_length - 1; index++ ) {
+      data[ index ].order = ( uint8_t )index;
+      uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
+      uint8_t* end = ( uint8_t* )( name + name_length );
+      // populate long entry names
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 10;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ index ].first_five_two_byte[ local_index ] = *base_offsetted;
+      }
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 12;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ index ].next_six_two_byte[ local_index ] = *base_offsetted;
+      }
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 4;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ index ].final_two_byte[ local_index ] = *base_offsetted;
+      }
+    }
+    // build finalizing short name
+    fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
+      ( &data[ long_name_length - 1 ] );
+    // set directory flag
+    if ( directory ) {
+      short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
+    }
+    // set first cluster
+    short_entry->first_cluster_lower = ( uint16_t )free_cluster;
+    if ( FAT_FAT32 == fs->type ) {
+      short_entry->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
+    }
+    strncpy( short_entry->name, name, 7 );
+    short_entry->name[ 7 ] = '~';
+    for ( uint64_t idx = 0; idx < 7; idx++ ) {
+      short_entry->name[ idx ] = ( char )toupper( ( int )short_entry->name[ idx ] );
+    }
+    if ( directory && ext ) {
+      const char* p = ext;
+      while ( *p && ( p - name ) < 3 ) {
+        short_entry->extension[ ( p - name ) ] = *p;
+      }
+    }
+    // set entry data
+    entry_data = data;
+  }
+  // try to mark cluster as used
+  result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
+  if ( EOK != result ) {
+    free( entry_data );
+    return result;
+  }
+  // insert directory
+  result = fat_directory_extend( dir, entry_data, entry_size );
+  if ( EOK != result ) {
+    fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_UNUSED );
+    free( entry_data );
+    return result;
+  }
+  // free up everything
+  free( entry_data );
   return EOK;
 }
