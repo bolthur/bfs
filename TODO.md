@@ -1,4 +1,6 @@
 
+# Things to be done
+
 - [x] Test and fix library, so that it will also compile under linux
 - [ ] Provide necessary fallback stuff, so that library can also be used without c library
 - [x] Finish FAT library read support

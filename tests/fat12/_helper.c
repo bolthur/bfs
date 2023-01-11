@@ -1,0 +1,79 @@
+// Copyright (C) 2022 - 2023 bolthur project.
+//
+// This file is part of bolthur/bfs.
+//
+// bolthur/bfs is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// bolthur/bfs is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <string.h>
+#include <fcntl.h>
+#include <blockdev/tests/blockdev.h>
+#include <common/mountpoint.h>
+#include <common/blockdev.h>
+#include <common/errno.h>
+#include <fat/mountpoint.h>
+#include <fat/structure.h>
+#include <fat/directory.h>
+#include <fat/type.h>
+#include <fat/rootdir.h>
+#include <fat/iterator.h>
+#include <fat/fs.h>
+#include <fat/file.h>
+#include <check.h>
+#include "_helper.h"
+
+/**
+ * @brief Helper to mount test image
+ *
+ * @param read_only
+ */
+void helper_mount_test_image( bool read_only ) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  ck_assert_ptr_nonnull( bdev );
+  // set blockdev filename
+  common_blockdev_set_fname( "../fat12.img" );
+  /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
+  bdev->part_offset = bdev->bdif->block_size;
+  // register block device
+  int result = common_blockdev_register_device( bdev, "fat12" );
+  ck_assert_int_eq( result, EOK );
+  // mount device
+  result = fat_mountpoint_mount( "fat12", "/fat12/", read_only );
+  ck_assert_int_eq( result, EOK );
+  // assert count
+  ck_assert_uint_eq( bdev->bdif->reference_counter, 1 );
+  // get fs
+  fat_fs_t* fs = ( fat_fs_t* )bdev->fs;
+  // assert fs and fs type
+  ck_assert_ptr_nonnull( fs );
+  ck_assert_int_eq( fs->read_only, read_only );
+  ck_assert_int_eq( FAT_FAT12, fs->type );
+}
+
+/**
+ * @brief Helper to unmount test image
+ */
+void helper_unmount_test_image( void ) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  ck_assert_ptr_nonnull( bdev );
+  // unmount
+  int result = fat_mountpoint_umount( "/fat12/" );
+  ck_assert_int_eq( result, EOK );
+  // assert count
+  ck_assert_uint_eq( bdev->bdif->reference_counter, 0U );
+  // unregister device
+  result = common_blockdev_unregister_device( "fat12" );
+  ck_assert_int_eq( result, EOK );
+}

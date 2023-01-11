@@ -1,7 +1,7 @@
 
-find_package(GTest REQUIRED)
-
-enable_compiler_flag_if_supported("-Wno-analyzer-use-of-uninitialized-value")
+find_package(Check REQUIRED)
+include_directories(${CHECK_INCLUDE_DIRS})
+link_directories(${CHECK_LIBRARY_DIRS})
 
 add_subdirectory(blockdevice)
 add_subdirectory(fat12)
