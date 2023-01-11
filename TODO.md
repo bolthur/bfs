@@ -1,5 +1,5 @@
 
-- [ ] Test and fix library, so that it will also compile under linux
+- [x] Test and fix library, so that it will also compile under linux
 - [ ] Provide necessary fallback stuff, so that library can also be used without c library
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
@@ -21,12 +21,13 @@
   - [x] Prepare unit testing with cmake and ctest
   - [x] Prepare a test blockdev driver for unit testing
   - [x] Add unit tests for specific functions
-- [ ] Add support for ext2 (?)
+- [ ] Add support for ext2
+- [ ] Add support for cdfs
 - [ ] Add support for exfat (?)
 - [ ] Add support for ntfs (?)
 - [x] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
-- [ ] Check usages of block size and evaluate whether automatical adjustment is meaningful for fat
-- [ ] Add code coverage collection
+- [x] Check usages of block size and evaluate whether automatical adjustment is meaningful for fat
+- [x] Add code coverage collection
   - [x] Get ctest coverage command to run
-  - [ ] Get html coverage output
+  - [x] Get html coverage output

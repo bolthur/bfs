@@ -3,38 +3,10 @@ find_package(GTest REQUIRED)
 
 enable_compiler_flag_if_supported("-Wno-analyzer-use-of-uninitialized-value")
 
-add_executable(blockdevice blockdevice.cc)
-if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_COMPILER_IS_GNUCXX)
-  target_link_libraries(blockdevice GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
-else()
-  target_link_libraries(blockdevice GTest::gtest_main bfsfat bfsblockdev bfscommon)
-endif()
-
-gtest_discover_tests(blockdevice)
-
-add_executable(fat12 fat12.cc)
-if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_COMPILER_IS_GNUCXX)
-  target_link_libraries(fat12 GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
-else()
-  target_link_libraries(fat12 GTest::gtest_main bfsfat bfsblockdev bfscommon)
-endif()
-gtest_discover_tests(fat12)
-
-add_executable(fat16 fat16.cc)
-if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_COMPILER_IS_GNUCXX)
-  target_link_libraries(fat16 GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
-else()
-  target_link_libraries(fat16 GTest::gtest_main bfsfat bfsblockdev bfscommon)
-endif()
-gtest_discover_tests(fat16)
-
-add_executable(fat32 fat32.cc)
-if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_COMPILER_IS_GNUCXX)
-  target_link_libraries(fat32 GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
-else()
-  target_link_libraries(fat32 GTest::gtest_main bfsfat bfsblockdev bfscommon)
-endif()
-gtest_discover_tests(fat32)
+add_subdirectory(blockdevice)
+add_subdirectory(fat12)
+add_subdirectory(fat16)
+add_subdirectory(fat32)
 
 # custom commands for generation of image files
 add_custom_target(

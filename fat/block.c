@@ -29,7 +29,8 @@
 /**
  * @brief Method to load a fat block by file offset
  *
- * @param file
+ * @param file file to load a block from
+ * @param size size of data to load except for fixed sized root directories
  * @return int
  */
 int fat_block_load( fat_file_t* file, uint64_t size ) {

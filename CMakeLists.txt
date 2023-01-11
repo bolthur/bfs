@@ -69,6 +69,11 @@ if(${TEST_ACTIVE})
   set(BFS_BUILD_SHARED_LIB OFF)
 endif()
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+endif(CCACHE_FOUND)
+
 find_package(Doxygen)
 if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
   # set input and output files

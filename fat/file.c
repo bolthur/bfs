@@ -118,11 +118,10 @@ BFSFAT_EXPORT int fat_file_size( fat_file_t* file, uint64_t* size ) {
 /**
  * @brief Get a file by path
  *
- * @param file
- * @param path
+ * @param file file object to use for open
+ * @param path path to open
+ * @param flags numeric open flags
  * @return int
- *
- * @todo add file creation support
  */
 BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags ) {
   // validate parameter
@@ -257,8 +256,14 @@ BFSFAT_EXPORT int fat_file_open(
   if ( ! file || ! path || ! flags ) {
     return EINVAL;
   }
+  // parse flags
+  int open_flags;
+  int result = fat_file_parse_flags( flags, &open_flags );
+  if ( EOK != result ) {
+    return result;
+  }
   // get file
-  int result = fat_file_get( file, path, O_RDONLY );
+  result = fat_file_get( file, path, open_flags );
   if ( EOK != result ) {
     return result;
   }

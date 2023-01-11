@@ -132,7 +132,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
  * @brief Fill iterator information with bunch of checks
  *
  * @param it
- * @param block_size
+ * @param cluster_size
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_iterator_directory_set(
