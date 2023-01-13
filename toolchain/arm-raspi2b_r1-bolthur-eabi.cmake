@@ -9,7 +9,6 @@ set(CMAKE_EXE_LINKER_FLAGS, "${CMAKE_EXE_LINKER_FLAGS} -march=armv7-a -mtune=cor
 
 # Toolchain settings
 set(CMAKE_C_COMPILER arm-raspi2b_r1-bolthur-eabi-gcc)
-#set(CMAKE_CXX_COMPILER arm-raspi2b_r1-bolthur-eabi-g++)
 set(AS arm-raspi2b_r1-bolthur-eabi-as)
 set(AR arm-raspi2b_r1-bolthur-eabi-ar)
 set(OBJCOPY arm-raspi2b_r1-bolthur-eabi-objcopy)

@@ -88,6 +88,10 @@ BFSFAT_NO_EXPORT int fat_directory_size(
  *
  * @param path
  * @return int
+ *
+ * @todo implement
+ * @todo add test for removal of short named directory
+ * @todo add test for removal of long named directory
  */
 BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // validate parameter
@@ -114,6 +118,8 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
+ *
+ * @todo implement
  */
 BFSFAT_EXPORT int fat_directory_move(
   const char* old_path,
@@ -960,12 +966,14 @@ int fat_directory_update(
     strncpy( short_entry->name, name, 7 );
     short_entry->name[ 7 ] = '~';
     for ( uint64_t idx = 0; idx < 7; idx++ ) {
-      short_entry->name[ idx ] = ( char )toupper( ( int )short_entry->name[ idx ] );
+      short_entry->name[ idx ] = ( int )short_entry->name[ idx ];
     }
-    if ( directory && ext ) {
-      const char* p = ext;
-      while ( *p && ( p - name ) < 3 ) {
-        short_entry->extension[ ( p - name ) ] = *p;
+    if ( ! directory && ext ) {
+      if ( 3 >= extension_length ) {
+        strncpy( short_entry->extension, ext, 3 );
+      } else {
+        strncpy( short_entry->extension, ext, 2 );
+        short_entry->extension[ 2 ] = '~';
       }
     }
     // set entry data

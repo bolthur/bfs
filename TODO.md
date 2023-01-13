@@ -10,11 +10,13 @@
   - [x] Extend test creating a folder to fail on second try
   - [ ] Add test creating a long file name directory
   - [ ] Add file write support
+  - [ ] Add tests for file truncate
   - [ ] Add test for creating a plain file with O_CREAT
   - [ ] Add test to ensure that read only is working correctly
   - [ ] Add test writing a file ( extending )
   - [ ] Add test creating a file with short name
   - [ ] Add test creating a file with long name
+  - [ ] Add test creating a file with short name but long extension, e.g. foo.jpeg
   - [ ] Check written code and simplify it once everything works
 - [ ] Split up tests in single files
 - [ ] Check and add some sort of cache, when writing is to slow on real hardware

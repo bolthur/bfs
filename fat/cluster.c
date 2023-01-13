@@ -331,3 +331,29 @@ int fat_cluster_get_by_num(
   *target = current;
   return EOK;
 }
+
+/**
+ * @brief Method to get cluster chain end value
+ *
+ * @param fs
+ * @param end
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_cluster_get_chain_end_value(
+  fat_fs_t* fs,
+  uint64_t* end
+) {
+  if ( ! fs || ! end ) {
+    return EINVAL;
+  }
+  if ( FAT_FAT12 == fs->type ) {
+    *end = FAT_FAT12_CLUSTER_CHAIN_END;
+  } else if ( FAT_FAT16 == fs->type ) {
+    *end = FAT_FAT16_CLUSTER_CHAIN_END;
+  } else if ( FAT_FAT32 == fs->type ) {
+    *end = FAT_FAT32_CLUSTER_CHAIN_END;
+  } else {
+    return EINVAL;
+  }
+  return EOK;
+}

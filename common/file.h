@@ -15,21 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file fat/block.h */
+/** @file common/file.h */
 
-#include <stdint.h>
-#include <fat/type.h>
-#include <fat/fs.h>
-
-#ifndef _FAT_BLOCK_H
-#define _FAT_BLOCK_H
+#ifndef _COMMON_FILE_H
+#define _COMMON_FILE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int fat_block_load( fat_file_t* file, uint64_t size );
-int fat_block_write( fat_file_t* file );
+int common_file_parse_flags( const char* flags, int *file_flags );
 
 #ifdef __cplusplus
 }

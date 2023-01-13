@@ -9,7 +9,6 @@ set(CMAKE_EXE_LINKER_FLAGS, "${CMAKE_EXE_LINKER_FLAGS} -march=armv6zk -mtune=arm
 
 # Toolchain settings
 set(CMAKE_C_COMPILER arm-raspi0_1-bolthur-eabi-gcc)
-#set(CMAKE_CXX_COMPILER arm-raspi0_1-bolthur-eabi-g++)
 set(AS arm-raspi0_1-bolthur-eabi-as)
 set(AR arm-raspi0_1-bolthur-eabi-ar)
 set(OBJCOPY arm-raspi0_1-bolthur-eabi-objcopy)

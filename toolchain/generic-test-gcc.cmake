@@ -1,7 +1,6 @@
 
 # Toolchain settings
 set(CMAKE_C_COMPILER gcc)
-set(CMAKE_CXX_COMPILER g++)
 set(AS as)
 set(AR ar)
 set(OBJCOPY objcopy)

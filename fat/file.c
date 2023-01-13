@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>
+#include <common/file.h>
 #include <fat/cluster.h>
 #include <fat/file.h>
 #include <fat/type.h>
@@ -136,7 +137,14 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // get fs
   fat_fs_t* fs = mp->fs;
   // handle create flag with read only
-  if ( ( flags & O_CREAT ) && fs->read_only ) {
+  if (
+    (
+      ( flags & O_CREAT )
+      || ( flags & O_WRONLY )
+      || ( flags & O_RDWR )
+      || ( flags & O_TRUNC )
+    ) && fs->read_only
+  ) {
     return EROFS;
   }
   // duplicate path for base and dirname
@@ -158,9 +166,18 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     free( pathdup_dir );
     return ENOTSUP;
   }
+  // allocate directory entry
+  fat_structure_directory_entry_t* dentry = malloc( sizeof( *dentry ) );
+  if ( ! dentry ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  memset( dentry, 0, sizeof( *dentry ) );
   // try to open directory
   fat_directory_t* dir = malloc( sizeof( *dir ) );
   if ( ! dir ) {
+    free( dentry );
     free( pathdup_base );
     free( pathdup_dir );
     return ENOMEM;
@@ -170,6 +187,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // open directory
   int result = fat_directory_open( dir, dirpath );
   if ( EOK != result ) {
+    free( dentry );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -182,6 +200,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     uint64_t cluster;
     result = fat_cluster_get_free( fs, &cluster );
     if ( EOK != result ) {
+      free( dentry );
       free( pathdup_base );
       free( pathdup_dir );
       free( dir );
@@ -190,6 +209,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     // mark cluster as used
     result = fat_cluster_set_cluster( fs, cluster, FAT_CLUSTER_EOF );
     if ( EOK != result ) {
+      free( dentry );
       free( pathdup_base );
       free( pathdup_dir );
       free( dir );
@@ -198,6 +218,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     result = fat_directory_update( dir, base, false );
     if ( EOK != result ) {
       fat_cluster_set_cluster( fs, cluster, FAT_CLUSTER_UNUSED );
+      free( dentry );
       free( pathdup_base );
       free( pathdup_dir );
       free( dir );
@@ -208,6 +229,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   }
   // handle no file
   if ( EOK != result ) {
+    free( dentry );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -220,19 +242,13 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     file->cluster |= ( ( uint32_t )dir->entry->first_cluster_upper << 16 );
   }
   file->fsize = dir->entry->file_size;
-  // close directory
-  result = fat_directory_close( dir );
-  if ( EOK != result ) {
-    fat_directory_close( dir );
-    free( pathdup_base );
-    free( pathdup_dir );
-    free( dir );
-    return result;
-  }
+  file->dir = dir;
+  // copy over directory entry data
+  memcpy( dentry, dir->entry, sizeof( *dentry ) );
+  file->dentry = dentry;
   // free up memory
   free( pathdup_base );
   free( pathdup_dir );
-  free( dir );
   // return success
   return EOK;
 }
@@ -258,7 +274,7 @@ BFSFAT_EXPORT int fat_file_open(
   }
   // parse flags
   int open_flags;
-  int result = fat_file_parse_flags( flags, &open_flags );
+  int result = common_file_parse_flags( flags, &open_flags );
   if ( EOK != result ) {
     return result;
   }
@@ -309,9 +325,21 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
   if ( ! file ) {
     return EINVAL;
   }
+  int result = EOK;
   // free up block
   if ( file->block.data ) {
     free( file->block.data );
+  }
+  if ( file->dir ) {
+    result = fat_directory_close( file->dir );
+    if ( EOK != result ) {
+      return result;
+    }
+    file->dir = NULL;
+  }
+  if ( file->dentry ) {
+    free( file->dentry );
+    file->dentry = NULL;
   }
   // overwrite everything with 0
   memset( file, 0, sizeof( fat_file_t ) );
@@ -392,14 +420,121 @@ int fat_file_read(
 }
 
 /**
- * @brief Truncate file content
+ * @brief Truncate file to size
  *
  * @param file
+ * @param size
  * @return int
+ *
+ * @todo add test for this function
  */
-BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file ) {
-  ( void )file;
-  return ENOSYS;
+BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
+  if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
+    return EINVAL;
+  }
+  // cache mountpoint and fs
+  common_mountpoint_t*mp = file->mp;
+  fat_fs_t* fs = mp->fs;
+  // ensure that fs is valid
+  if ( ! fs ) {
+    return EINVAL;
+  }
+  // get cluster size
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
+  // calculate new count
+  uint64_t new_count = size / cluster_size;
+  if ( 0 == new_count ) {
+    return EINVAL;
+  }
+  // calculate old count
+  uint64_t old_count = file->fsize / cluster_size;
+  // handle no change
+  if ( new_count == old_count ) {
+    return EOK;
+  }
+
+  // get custer chain end value by type
+  uint64_t value;
+  int result = fat_cluster_get_chain_end_value( fs, &value );
+  if ( EOK != result ) {
+    return result;
+  }
+
+  // handle shrink
+  if ( old_count > new_count ) {
+    // allocate space for cluster list
+    uint64_t* cluster_list = malloc( sizeof( uint64_t ) * old_count );
+    if ( ! cluster_list ) {
+      return ENOMEM;
+    }
+    memset( cluster_list, 0, sizeof( uint64_t ) * old_count );
+    // load cluster list
+    for ( uint64_t index = 0; index < old_count; index++ ) {
+      // get cluster
+      uint64_t cluster;
+      result = fat_cluster_get_by_num( fs, file->cluster, index, &cluster );
+      if ( EOK != result ) {
+        free( cluster_list );
+        return result;
+      }
+      // push to array
+      cluster_list[ index ] = cluster;
+    }
+    // set last new cluster as chain end
+    result = fat_cluster_set_cluster(
+      fs, cluster_list[ new_count - 1 ], value
+    );
+    if ( EOK != result ) {
+      free( cluster_list );
+      return result;
+    }
+    // mark other clusters as unused
+    for ( uint64_t index = new_count; index < old_count; index++ ) {
+      result = fat_cluster_set_cluster(
+        fs, cluster_list[ index ], FAT_CLUSTER_UNUSED
+      );
+      if ( EOK != result ) {
+        free( cluster_list );
+        return result;
+      }
+    }
+    // free cluster
+    free( cluster_list );
+  // handle extend
+  } else {
+    uint64_t block_count = new_count - old_count;
+    for ( uint64_t index = 0; index < block_count; index++ ) {
+      // extend
+      result = fat_file_extend_cluster( file, 1 );
+      if ( EOK != result ) {
+        return result;
+      }
+      // get last cluster
+      uint64_t last_cluster;
+      result = fat_cluster_get_by_num(
+        fs, file->cluster, file->fsize / cluster_size, &last_cluster
+      );
+      // load block
+      result = fat_block_load( file, cluster_size );
+      if ( EOK != result ) {
+        return result;
+      }
+      // handle nothing loaded
+      if ( ! file->block.data ) {
+        return EIO;
+      }
+      // clear out
+      memset( file->block.data, 0, cluster_size );
+      // write back
+      result = fat_block_write( file );
+      if ( EOK != result ) {
+        return result;
+      }
+    }
+  }
+  // return success
+  return EOK;
 }
 
 /**
@@ -410,6 +545,8 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file ) {
  * @param size
  * @param write_count
  * @return int
+ *
+ * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_write(
   fat_file_t* file,
@@ -429,6 +566,8 @@ BFSFAT_EXPORT int fat_file_write(
  *
  * @param path
  * @return int
+ *
+ * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_remove( const char* path ) {
   ( void )path;
@@ -441,11 +580,13 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
  * @param path
  * @param link_path
  * @return int
+ *
+ * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_link( const char* path, const char* link_path ) {
   ( void )path;
   ( void )link_path;
-  return ENOSYS;
+  return ENOTSUP;
 }
 
 /**
@@ -454,8 +595,10 @@ BFSFAT_EXPORT int fat_file_link( const char* path, const char* link_path ) {
  * @param old_path
  * @param new_path
  * @return int
+ *
+ * @todo implement function
  */
-BFSFAT_EXPORT int fat_file_rename( const char* old_path, const char* new_path ) {
+BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   ( void )old_path;
   ( void )new_path;
   return ENOSYS;
@@ -529,61 +672,4 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
   }
   // return success
   return EOK;
-}
-
-/**
- * @brief Helper to parse open flags
- *
- * @param flags
- * @param file_flags
- * @return int
- */
-BFSFAT_NO_EXPORT int fat_file_parse_flags( const char* flags, int *file_flags ) {
-  if ( ! flags || ! file_flags ) {
-    return EINVAL;
-  }
-  // handle read
-  if ( ! strcmp( flags, "r" ) || ! strcmp( flags, "rb" ) ) {
-    *file_flags = O_RDONLY;
-    return EOK;
-  }
-  // handle write
-  if ( ! strcmp( flags, "w" ) || ! strcmp( flags, "wb" ) ) {
-    *file_flags = O_WRONLY | O_CREAT | O_TRUNC;
-    return EOK;
-  }
-  // handle append
-  if ( ! strcmp( flags, "a" ) || ! strcmp( flags, "ab" ) ) {
-    *file_flags = O_WRONLY | O_CREAT | O_APPEND;
-    return EOK;
-  }
-  // handle r+
-  if (
-    ! strcmp( flags, "r+" )
-    || ! strcmp( flags, "rb+" )
-    || ! strcmp( flags, "r+b" )
-  ) {
-    *file_flags = O_RDWR;
-    return EOK;
-  }
-  // handle w+
-  if (
-    ! strcmp( flags, "w+" )
-    || ! strcmp( flags, "wb+" )
-    || ! strcmp( flags, "w+b" )
-  ) {
-    *file_flags = O_RDWR | O_CREAT | O_TRUNC;
-    return EOK;
-  }
-  // handle a+
-  if (
-    ! strcmp( flags, "a+" )
-    || ! strcmp( flags, "ab+" )
-    || ! strcmp( flags, "a+b" )
-  ) {
-    *file_flags = O_RDWR | O_CREAT | O_APPEND;
-    return EOK;
-  }
-  // return invalid
-  return EINVAL;
 }

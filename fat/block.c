@@ -99,6 +99,7 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
     if ( EOK != result ) {
       return result;
     }
+    file->block.sector = ( rootdir_offset + current_block );
   } else {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
@@ -137,6 +138,45 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
     if ( EOK != result ) {
       return result;
     }
+    file->block.sector = lba;
+  }
+  // return success
+  return EOK;
+}
+
+/**
+ * @brief Method to load a fat block by file offset
+ *
+ * @param file file to write block data to
+ * @return int
+ */
+int fat_block_write( fat_file_t* file ) {
+  if ( ! file || !file->block.data ) {
+    return EINVAL;
+  }
+  common_mountpoint_t* mp = file->mp;
+  fat_fs_t* fs = mp->fs;
+  // translate to lba
+  uint64_t lba = file->block.sector;
+  uint64_t block_size = fs->bdev->bdif->block_size;
+  if ( 0 != file->cluster ) {
+    int result = fat_cluster_to_lba( fs, file->block.sector, &lba );
+    if ( EOK != result ) {
+      return result;
+    }
+    block_size = fs->superblock.sectors_per_cluster
+      * fs->superblock.bytes_per_sector;
+  }
+  // write cluster
+  int result = common_blockdev_bytes_write(
+    fs->bdev,
+    lba * fs->bdev->bdif->block_size,
+    file->block.data,
+    block_size
+  );
+  // handle error
+  if ( EOK != result ) {
+    return result;
   }
   // return success
   return EOK;

@@ -10,14 +10,12 @@ endif()
 
 # Toolchain settings
 set(CMAKE_C_COMPILER /usr/bin/clang)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 set(AS llvm-as)
 set(AR llvm-ar)
 set(OBJCOPY llvm-objcopy)
 set(OBJDUMP llvm-objdump)
 
 # include what you use
-set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 set(CMAKE_C_INCLUDE_WHAT_YOU_USE "include-what-you-use")
 
 # test active flag

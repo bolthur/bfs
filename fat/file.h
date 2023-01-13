@@ -30,11 +30,11 @@ extern "C" {
 
 int fat_file_remove( const char* path );
 int fat_file_link( const char* path, const char* link_path );
-int fat_file_rename( const char* old_path, const char* new_path );
+int fat_file_move( const char* old_path, const char* new_path );
 int fat_file_open( fat_file_t* file, const char* path, const char* flags );
 int fat_file_open2( fat_file_t* file, const char* path, int flags );
 int fat_file_close( fat_file_t* file );
-int fat_file_truncate( fat_file_t* file );
+int fat_file_truncate( fat_file_t* file, uint64_t size );
 int fat_file_read( fat_file_t* file, void* buffer, uint64_t size, uint64_t* read_count );
 int fat_file_write( fat_file_t* file, void* buffer, uint64_t size, uint64_t* write_count );
 int fat_file_seek( fat_file_t* file, int64_t offset, uint32_t whence );
@@ -43,7 +43,6 @@ int fat_file_size( fat_file_t* file, uint64_t* size );
 
 int fat_file_get( fat_file_t* file, const char* path, int flags );
 int fat_file_extend_cluster( fat_file_t* file, uint64_t num );
-int fat_file_parse_flags( const char* flags, int *file_flags );
 
 #ifdef __cplusplus
 }

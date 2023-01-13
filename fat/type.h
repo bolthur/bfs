@@ -45,6 +45,8 @@ typedef struct {
   uint8_t* data;
 } fat_block_t;
 
+typedef struct fat_directory fat_directory_t;
+
 /** @brief Fat file definition */
 typedef struct fat_file {
   /** @brief Mount point this file is related to */
@@ -59,10 +61,14 @@ typedef struct fat_file {
   uint32_t cluster;
   /** @brief Some data block used for reading */
   fat_block_t block;
+  /** @brief Directory containing the file */
+  fat_directory_t* dir;
+  /** @brief fat directory entry of file */
+  fat_structure_directory_entry_t* dentry;
 } fat_file_t;
 
 /** @brief Fat directory structure */
-typedef struct {
+typedef struct fat_directory {
   /** @brief File instance used for accessing clusters */
   fat_file_t file;
   /** @brief Current fat directory entry */
