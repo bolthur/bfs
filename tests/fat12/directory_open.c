@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_open_sub_directory ) {
   helper_mount_test_image( true );
   // directory variable

@@ -34,36 +34,38 @@
 #include <check.h>
 #include "_helper.h"
 
-START_TEST( test_file_read ) {
+START_TEST( test_file_ftruncate_rofs ) {
   helper_mount_test_image( true );
-  // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
-  // load root dir
-  int result = fat_file_open(
-    &file,
-    "/fat16/foobarlongfolder/foo/bar/hello.txt",
-    "r"
-  );
-  ck_assert_int_eq( result, EOK );
-  ck_assert_uint_ne( file.cluster, 0 );
-  ck_assert_uint_ne( file.fsize, 0 );
-  ck_assert_ptr_nonnull( file.mp );
-  // allocate buffer for content
-  char* buffer = malloc( file.fsize + 1 );
-  ck_assert_ptr_nonnull( buffer );
-  // read from file
-  uint64_t read_count = 0;
-  result = fat_file_read( &file, buffer, file.fsize, &read_count );
-  buffer[ file.fsize ] = '\0';
-  ck_assert_int_eq( result, EOK );
-  ck_assert_uint_eq( read_count, file.fsize );
-  ck_assert_str_eq( buffer, "world\n" );
-  // free again
-  free( buffer );
-  // close file
-  result = fat_file_close( &file );
-  ck_assert_int_eq( result, EOK );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image();
+}
+END_TEST
+
+START_TEST( test_file_ftruncate_rwfs ) {
+  helper_mount_test_image( false );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image();
+}
+END_TEST
+
+START_TEST( test_file_ftruncate_extend_cluster ) {
+  helper_mount_test_image( false );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image();
+}
+END_TEST
+
+START_TEST( test_file_ftruncate_shrink_cluster ) {
+  helper_mount_test_image( false );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
   helper_unmount_test_image();
 }
 END_TEST
@@ -72,9 +74,12 @@ Suite* suite(void)
 {
   Suite*s;
   TCase* tc_core;
-  s = suite_create( "fat16" );
+  s = suite_create( "fat32" );
   tc_core = tcase_create( "Core" );
-  tcase_add_test( tc_core, test_file_read );
+  tcase_add_test( tc_core, test_file_ftruncate_rofs );
+  tcase_add_test( tc_core, test_file_ftruncate_rwfs );
+  tcase_add_test( tc_core, test_file_ftruncate_extend_cluster );
+  tcase_add_test( tc_core, test_file_ftruncate_shrink_cluster );
   suite_add_tcase( s, tc_core );
   return s;
 }

@@ -21,7 +21,6 @@
 #include <common/blockdev.h>
 #include <check.h>
 
-// Demonstrate some basic assertions.
 START_TEST( test_validate_test_driver ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();

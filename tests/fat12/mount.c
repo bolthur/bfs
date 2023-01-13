@@ -34,14 +34,12 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_mount_readonly ) {
   helper_mount_test_image( true );
   helper_unmount_test_image();
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_mount_read_write ) {
   helper_mount_test_image( false );
   helper_unmount_test_image();

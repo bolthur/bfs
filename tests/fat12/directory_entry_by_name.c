@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_util_root_dir_get_existing_by_name ) {
   helper_mount_test_image( true );
   // get mountpoint
@@ -62,7 +61,6 @@ START_TEST( test_directory_util_root_dir_get_existing_by_name ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_util_dir_get_existing_by_name ) {
   helper_mount_test_image( true );
   // directory variable
@@ -86,7 +84,6 @@ START_TEST( test_directory_util_dir_get_existing_by_name ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_util_root_dir_get_non_existing_by_name ) {
   helper_mount_test_image( true );
   // get mountpoint
@@ -112,7 +109,6 @@ START_TEST( test_directory_util_root_dir_get_non_existing_by_name ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_util_dir_get_non_existing_by_name ) {
   helper_mount_test_image( true );
   // directory variable

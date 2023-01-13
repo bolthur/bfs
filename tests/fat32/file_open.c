@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_file_open_non_existant_file ) {
   helper_mount_test_image( true );
   // file variable
@@ -56,7 +55,6 @@ START_TEST( test_file_open_non_existant_file ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_file_open2_non_existant_file ) {
   helper_mount_test_image( true );
   // file variable
@@ -78,7 +76,6 @@ START_TEST( test_file_open2_non_existant_file ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_file_open_existant_file ) {
   helper_mount_test_image( true );
   // file variable
@@ -101,7 +98,6 @@ START_TEST( test_file_open_existant_file ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_file_open2_existant_file ) {
   helper_mount_test_image( true );
   // file variable
@@ -124,6 +120,24 @@ START_TEST( test_file_open2_existant_file ) {
 }
 END_TEST
 
+START_TEST( test_file_open_create_file_rofs ) {
+  helper_mount_test_image( true );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image();
+}
+END_TEST
+
+START_TEST( test_file_open_create_file_rwfs ) {
+  helper_mount_test_image( false );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image();
+}
+END_TEST
+
 Suite* suite(void)
 {
   Suite*s;
@@ -134,6 +148,8 @@ Suite* suite(void)
   tcase_add_test( tc_core, test_file_open2_non_existant_file );
   tcase_add_test( tc_core, test_file_open_existant_file );
   tcase_add_test( tc_core, test_file_open2_existant_file );
+  tcase_add_test( tc_core, test_file_open_create_file_rofs );
+  tcase_add_test( tc_core, test_file_open_create_file_rwfs );
   suite_add_tcase( s, tc_core );
   return s;
 }

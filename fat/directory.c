@@ -839,7 +839,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
  * @param directory
  * @return int
  */
-int fat_directory_update(
+BFSFAT_NO_EXPORT int fat_directory_update(
   fat_directory_t* dir,
   const char* name,
   bool directory
@@ -995,4 +995,24 @@ int fat_directory_update(
   // free up everything
   free( entry_data );
   return EOK;
+}
+
+/**
+ * @brief Method to update specific directory structure entry
+ *
+ * @param dir
+ * @param dentry
+ * @return int
+ *
+ * @todo implement
+ */
+BFSFAT_NO_EXPORT int fat_directory_update_dentry(
+  fat_directory_t* dir,
+  fat_structure_directory_entry_t* dentry
+) {
+  // validate parameter
+  if ( ! dir || ! dentry ) {
+    return EINVAL;
+  }
+  return ENOSYS;
 }

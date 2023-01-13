@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_mount_invalid_block_device ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();

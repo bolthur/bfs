@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_root_directory_read_dir_utils ) {
   helper_mount_test_image( true );
   // get mountpoint
@@ -78,7 +77,6 @@ START_TEST( test_root_directory_read_dir_utils ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_root_directory_read_dir_utils_rewind ) {
   helper_mount_test_image( true );
   // get mountpoint

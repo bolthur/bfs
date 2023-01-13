@@ -34,7 +34,6 @@
 #include <check.h>
 #include "_helper.h"
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_new_root_dir_folder ) {
   helper_mount_test_image( false );
   // get mountpoint
@@ -62,7 +61,6 @@ START_TEST( test_directory_new_root_dir_folder ) {
 }
 END_TEST
 
-// Demonstrate some basic assertions.
 START_TEST( test_directory_new_dir_folder ) {
   helper_mount_test_image( false );
   // get mountpoint
