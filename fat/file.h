@@ -29,7 +29,6 @@ extern "C" {
 #endif
 
 int fat_file_remove( const char* path );
-int fat_file_link( const char* path, const char* link_path );
 int fat_file_move( const char* old_path, const char* new_path );
 int fat_file_open( fat_file_t* file, const char* path, const char* flags );
 int fat_file_open2( fat_file_t* file, const char* path, int flags );

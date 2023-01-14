@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HELPER_HH
-#define _HELPER_HH
+#ifndef _HELPER_H
+#define _HELPER_H
+
+#include <fat/structure.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void helper_mount_test_image( bool read_only );
-void helper_unmount_test_image( void );
+void helper_mount_test_image( bool read_only, const char* fname, const char* device, const char* path, fat_type_t );
+void helper_unmount_test_image( const char* device, const char* path );
 
 #ifdef __cplusplus
 }

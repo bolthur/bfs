@@ -32,10 +32,10 @@
 #include <fat/fs.h>
 #include <fat/file.h>
 #include <check.h>
-#include "_helper.h"
+#include "../_helper.h"
 
 START_TEST( test_directory_iterator_root_dir_read ) {
-  helper_mount_test_image( false );
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
   ck_assert_ptr_nonnull( mp );
@@ -75,28 +75,14 @@ START_TEST( test_directory_iterator_root_dir_read ) {
   result = fat_directory_close( &dir );
   ck_assert_int_eq( result, EOK );
 
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
-Suite* suite(void)
-{
-  Suite*s;
-  TCase* tc_core;
-  s = suite_create( "fat32" );
-  tc_core = tcase_create( "Core" );
+Suite* fat32_suite_directory_iterator(void) {
+  Suite* s = suite_create( "directory_iterator" );
+  TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_directory_iterator_root_dir_read );
   suite_add_tcase( s, tc_core );
   return s;
-}
-
-int main(void)
-{
-  int number_failed;
-  Suite *s = suite();
-  SRunner *sr = srunner_create(s);
-  srunner_run_all(sr, CK_NORMAL);
-  number_failed = srunner_ntests_failed(sr);
-  srunner_free(sr);
-  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

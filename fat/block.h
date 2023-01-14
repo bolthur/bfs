@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 int fat_block_load( fat_file_t* file, uint64_t size );
-int fat_block_write( fat_file_t* file );
+int fat_block_write( fat_file_t* file, uint64_t size );
 
 #ifdef __cplusplus
 }

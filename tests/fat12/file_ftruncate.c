@@ -32,65 +32,61 @@
 #include <fat/fs.h>
 #include <fat/file.h>
 #include <check.h>
-#include "_helper.h"
+#include "../_helper.h"
 
 START_TEST( test_file_ftruncate_rofs ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
 START_TEST( test_file_ftruncate_rwfs ) {
-  helper_mount_test_image( false );
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
 START_TEST( test_file_ftruncate_extend_cluster ) {
-  helper_mount_test_image( false );
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
 START_TEST( test_file_ftruncate_shrink_cluster ) {
-  helper_mount_test_image( false );
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
-Suite* suite(void)
-{
-  Suite*s;
-  TCase* tc_core;
-  s = suite_create( "fat12" );
-  tc_core = tcase_create( "Core" );
+START_TEST( test_file_ftruncate_change_size_only ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // dummy so that not implemented test fails
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
+  ck_assert_ptr_null( mp );
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+END_TEST
+
+Suite* fat12_suite_file_ftruncate(void) {
+  Suite* s = suite_create( "file_ftruncate" );
+  TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_file_ftruncate_rofs );
   tcase_add_test( tc_core, test_file_ftruncate_rwfs );
   tcase_add_test( tc_core, test_file_ftruncate_extend_cluster );
   tcase_add_test( tc_core, test_file_ftruncate_shrink_cluster );
+  tcase_add_test( tc_core, test_file_ftruncate_change_size_only );
   suite_add_tcase( s, tc_core );
   return s;
-}
-
-int main(void)
-{
-  int number_failed;
-  Suite *s = suite();
-  SRunner *sr = srunner_create(s);
-  srunner_run_all(sr, CK_NORMAL);
-  number_failed = srunner_ntests_failed(sr);
-  srunner_free(sr);
-  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

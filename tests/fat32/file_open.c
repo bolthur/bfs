@@ -32,10 +32,10 @@
 #include <fat/fs.h>
 #include <fat/file.h>
 #include <check.h>
-#include "_helper.h"
+#include "../_helper.h"
 
 START_TEST( test_file_open_non_existant_file ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -51,12 +51,12 @@ START_TEST( test_file_open_non_existant_file ) {
   // close file
   result = fat_file_close( &file );
   ck_assert_int_eq( result, EOK );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open2_non_existant_file ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -72,12 +72,12 @@ START_TEST( test_file_open2_non_existant_file ) {
   // close file
   result = fat_file_close( &file );
   ck_assert_int_eq( result, EOK );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open_existant_file ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -94,12 +94,12 @@ START_TEST( test_file_open_existant_file ) {
   // close file
   result = fat_file_close( &file );
   ck_assert_int_eq( result, EOK );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open2_existant_file ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
   fat_file_t file;
   memset( &file, 0, sizeof( file ) );
@@ -116,34 +116,31 @@ START_TEST( test_file_open2_existant_file ) {
   // close file
   result = fat_file_close( &file );
   ck_assert_int_eq( result, EOK );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open_create_file_rofs ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open_create_file_rwfs ) {
-  helper_mount_test_image( false );
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // dummy so that not implemented test fails
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
   ck_assert_ptr_null( mp );
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
-Suite* suite(void)
-{
-  Suite*s;
-  TCase* tc_core;
-  s = suite_create( "fat32" );
-  tc_core = tcase_create( "Core" );
+Suite* fat32_suite_file_open(void) {
+  Suite* s = suite_create( "file_open" );
+  TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_file_open_non_existant_file );
   tcase_add_test( tc_core, test_file_open2_non_existant_file );
   tcase_add_test( tc_core, test_file_open_existant_file );
@@ -152,15 +149,4 @@ Suite* suite(void)
   tcase_add_test( tc_core, test_file_open_create_file_rwfs );
   suite_add_tcase( s, tc_core );
   return s;
-}
-
-int main(void)
-{
-  int number_failed;
-  Suite *s = suite();
-  SRunner *sr = srunner_create(s);
-  srunner_run_all(sr, CK_NORMAL);
-  number_failed = srunner_ntests_failed(sr);
-  srunner_free(sr);
-  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

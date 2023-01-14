@@ -1002,17 +1002,38 @@ BFSFAT_NO_EXPORT int fat_directory_update(
  *
  * @param dir
  * @param dentry
+ * @param pos position in bytes where dentry starts
  * @return int
  *
- * @todo implement
+ * @todo test either directly or indirectly via file tests
  */
 BFSFAT_NO_EXPORT int fat_directory_update_dentry(
   fat_directory_t* dir,
-  fat_structure_directory_entry_t* dentry
+  fat_structure_directory_entry_t* dentry,
+  uint64_t pos
 ) {
   // validate parameter
   if ( ! dir || ! dentry ) {
     return EINVAL;
   }
-  return ENOSYS;
+  // validate pos
+  if ( pos >= dir->file.fsize || pos + sizeof( *dentry ) >= dir->file.fsize ) {
+    return EINVAL;
+  }
+  // get fs and calculate cluster size
+  common_mountpoint_t* mp = dir->file.mp;
+  fat_fs_t* fs = mp->fs;
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
+  // load block data
+  int result = fat_block_load( &dir->file, cluster_size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // calculate offset in block
+  uint64_t offset = dir->file.fpos % cluster_size;
+  // overwrite data
+  memcpy( dir->file.block.data + offset, dentry, cluster_size );
+  // write data again
+  return fat_block_write( &dir->file, cluster_size );
 }

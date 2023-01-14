@@ -65,6 +65,8 @@ typedef struct fat_file {
   fat_directory_t* dir;
   /** @brief fat directory entry of file */
   fat_structure_directory_entry_t* dentry;
+  /** @brief dentry position in bytes */
+  uint64_t dentry_pos;
 } fat_file_t;
 
 /** @brief Fat directory structure */

@@ -36,20 +36,30 @@
  * @brief Helper to mount test image
  *
  * @param read_only
+ * @param bdev_fname
+ * @param path
+ * @param mountpoint
+ * @param type
  */
-void helper_mount_test_image( bool read_only ) {
+void helper_mount_test_image(
+  bool read_only,
+  const char* fname,
+  const char* device,
+  const char* path,
+  fat_type_t type
+) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   ck_assert_ptr_nonnull( bdev );
   // set blockdev filename
-  common_blockdev_set_fname( "../fat16.img" );
+  common_blockdev_set_fname( fname );
   /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
   bdev->part_offset = bdev->bdif->block_size;
   // register block device
-  int result = common_blockdev_register_device( bdev, "fat16" );
+  int result = common_blockdev_register_device( bdev, device );
   ck_assert_int_eq( result, EOK );
   // mount device
-  result = fat_mountpoint_mount( "fat16", "/fat16/", read_only );
+  result = fat_mountpoint_mount( device, path, read_only );
   ck_assert_int_eq( result, EOK );
   // assert count
   ck_assert_uint_eq( bdev->bdif->reference_counter, 1 );
@@ -58,22 +68,22 @@ void helper_mount_test_image( bool read_only ) {
   // assert fs and fs type
   ck_assert_ptr_nonnull( fs );
   ck_assert_int_eq( fs->read_only, read_only );
-  ck_assert_int_eq( FAT_FAT16, fs->type );
+  ck_assert_int_eq( fs->type, type );
 }
 
 /**
  * @brief Helper to unmount test image
  */
-void helper_unmount_test_image( void ) {
+void helper_unmount_test_image( const char* device, const char* path ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   ck_assert_ptr_nonnull( bdev );
   // unmount
-  int result = fat_mountpoint_umount( "/fat16/" );
+  int result = fat_mountpoint_umount( path );
   ck_assert_int_eq( result, EOK );
   // assert count
   ck_assert_uint_eq( bdev->bdif->reference_counter, 0U );
   // unregister device
-  result = common_blockdev_unregister_device( "fat16" );
+  result = common_blockdev_unregister_device( device );
   ck_assert_int_eq( result, EOK );
 }

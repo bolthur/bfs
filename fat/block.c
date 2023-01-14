@@ -148,9 +148,10 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
  * @brief Method to load a fat block by file offset
  *
  * @param file file to write block data to
+ * @param size size to write
  * @return int
  */
-int fat_block_write( fat_file_t* file ) {
+int fat_block_write( fat_file_t* file, uint64_t size ) {
   if ( ! file || !file->block.data ) {
     return EINVAL;
   }
@@ -164,8 +165,7 @@ int fat_block_write( fat_file_t* file ) {
     if ( EOK != result ) {
       return result;
     }
-    block_size = fs->superblock.sectors_per_cluster
-      * fs->superblock.bytes_per_sector;
+    block_size = size;
   }
   // write cluster
   int result = common_blockdev_bytes_write(

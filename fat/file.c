@@ -246,6 +246,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // copy over directory entry data
   memcpy( dentry, dir->entry, sizeof( *dentry ) );
   file->dentry = dentry;
+  file->dentry_pos = dir->file.fpos;
   // free up memory
   free( pathdup_base );
   free( pathdup_dir );
@@ -521,7 +522,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // clear out
       memset( file->block.data, 0, cluster_size );
       // write back
-      result = fat_block_write( file );
+      result = fat_block_write( file, cluster_size );
       if ( EOK != result ) {
         return result;
       }
@@ -530,7 +531,11 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   // adjust file size after truncation
   file->dentry->file_size = ( uint32_t )size;
   // update directory entry
-  result = fat_directory_update_dentry( file->dir, file->dentry );
+  result = fat_directory_update_dentry(
+    file->dir,
+    file->dentry,
+    file->dentry_pos
+  );
   if ( EOK != result ) {
     return result;
   }
@@ -573,21 +578,6 @@ BFSFAT_EXPORT int fat_file_write(
 BFSFAT_EXPORT int fat_file_remove( const char* path ) {
   ( void )path;
   return ENOSYS;
-}
-
-/**
- * @brief Create a file link
- *
- * @param path
- * @param link_path
- * @return int
- *
- * @todo implement function
- */
-BFSFAT_EXPORT int fat_file_link( const char* path, const char* link_path ) {
-  ( void )path;
-  ( void )link_path;
-  return ENOTSUP;
 }
 
 /**

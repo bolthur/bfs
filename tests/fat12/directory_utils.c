@@ -32,10 +32,10 @@
 #include <fat/fs.h>
 #include <fat/file.h>
 #include <check.h>
-#include "_helper.h"
+#include "../_helper.h"
 
 START_TEST( test_root_directory_read_dir_utils ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_nonnull( mp );
@@ -73,12 +73,12 @@ START_TEST( test_root_directory_read_dir_utils ) {
   result = fat_directory_close( &dir );
   ck_assert_int_eq( result, EOK );
 
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
 START_TEST( test_root_directory_read_dir_utils_rewind ) {
-  helper_mount_test_image( true );
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   ck_assert_ptr_nonnull( mp );
@@ -113,29 +113,15 @@ START_TEST( test_root_directory_read_dir_utils_rewind ) {
   result = fat_directory_close( &dir );
   ck_assert_int_eq( result, EOK );
 
-  helper_unmount_test_image();
+  helper_unmount_test_image( "fat12", "/fat12/" );
 }
 END_TEST
 
-Suite* suite(void)
-{
-  Suite*s;
-  TCase* tc_core;
-  s = suite_create( "fat12" );
-  tc_core = tcase_create( "Core" );
+Suite* fat12_suite_directory_utils(void) {
+  Suite* s = suite_create( "directory_utils" );
+  TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils_rewind );
   suite_add_tcase( s, tc_core );
   return s;
-}
-
-int main(void)
-{
-  int number_failed;
-  Suite *s = suite();
-  SRunner *sr = srunner_create(s);
-  srunner_run_all(sr, CK_NORMAL);
-  number_failed = srunner_ntests_failed(sr);
-  srunner_free(sr);
-  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -3,10 +3,27 @@ find_package(Check REQUIRED)
 include_directories(${CHECK_INCLUDE_DIRS})
 link_directories(${CHECK_LIBRARY_DIRS})
 
-add_subdirectory(blockdevice)
-add_subdirectory(fat12)
-add_subdirectory(fat16)
-add_subdirectory(fat32)
+enable_compiler_flag_if_supported("-Wno-missing-prototypes")
+
+file (GLOB blockdev_file "blockdevice/*")
+file (GLOB fat12_file "fat12/*")
+file (GLOB fat16_file "fat16/*")
+file (GLOB fat32_file "fat32/*")
+
+add_executable(bfs_check
+  _main.c
+  _helper.c
+  ${blockdev_file}
+  ${fat12_file}
+  ${fat16_file}
+  ${fat32_file} )
+if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(bfs_check check gcov bfsfat bfsblockdev bfscommon)
+else()
+  target_link_libraries(bfs_check check bfsfat bfsblockdev bfscommon)
+endif()
+add_test(NAME bfs_check COMMAND bfs_check)
+
 
 # custom commands for generation of image files
 add_custom_target(
