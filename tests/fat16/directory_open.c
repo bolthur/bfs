@@ -63,7 +63,7 @@ START_TEST( test_directory_open_sub_directory ) {
 }
 END_TEST
 
-Suite* fat16_suite_directory_open(void) {
+Suite* fat16_suite_directory_open( void ) {
   Suite* s = suite_create( "fat16_directory_open" );
   TCase* tc_core = tcase_create( "fat16" );
   tcase_add_test( tc_core, test_directory_open_sub_directory );

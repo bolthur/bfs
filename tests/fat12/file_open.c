@@ -167,7 +167,7 @@ START_TEST( test_file_open_create_file_rwfs ) {
 }
 END_TEST
 
-Suite* fat12_suite_file_open(void) {
+Suite* fat12_suite_file_open( void ) {
   Suite* s = suite_create( "fat12_file_open" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_file_open_non_existant_file );

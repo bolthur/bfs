@@ -455,6 +455,9 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   }
   // calculate old count
   uint64_t old_count = file->fsize / cluster_size;
+  if ( 0 == old_count ) {
+    old_count = 1;
+  }
   // get custer chain end value by type
   uint64_t value;
   int result = fat_cluster_get_chain_end_value( fs, &value );
@@ -535,6 +538,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   }
   // adjust file size after truncation
   file->dentry->file_size = ( uint32_t )size;
+  file->fsize = size;
   // update directory entry
   result = fat_directory_dentry_update(
     file->dir,
@@ -545,7 +549,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     return result;
   }
   // return success
-  return ENOSYS;
+  return EOK;
 }
 
 /**

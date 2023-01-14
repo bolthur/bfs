@@ -18,9 +18,10 @@
 #include <stdlib.h>
 #include "_main.h"
 
-int main(void)
+int main( void )
 {
   int number_failed;
+  //SRunner* sr = srunner_create (fat12_suite_file_ftruncate());
   SRunner* sr = srunner_create (blockdevice_suite_validate_test_driver());
   srunner_add_suite(sr, fat12_suite_directory_entry_by_name());
   srunner_add_suite(sr, fat12_suite_directory_iterator());

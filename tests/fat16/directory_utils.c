@@ -146,7 +146,7 @@ START_TEST( test_directory_get_by_name ) {
 }
 END_TEST
 
-Suite* fat16_suite_directory_utils(void) {
+Suite* fat16_suite_directory_utils( void ) {
   Suite* s = suite_create( "fat16_directory_utils" );
   TCase* tc_core = tcase_create( "fat16" );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils );

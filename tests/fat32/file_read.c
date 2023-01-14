@@ -128,7 +128,7 @@ START_TEST( test_file_read_rootdir ) {
 }
 END_TEST
 
-Suite* fat32_suite_file_read(void) {
+Suite* fat32_suite_file_read( void ) {
   Suite* s = suite_create( "fat32_file_read" );
   TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_file_read_normal1 );

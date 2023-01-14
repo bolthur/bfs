@@ -65,7 +65,7 @@ START_TEST( test_mount_null_block_device ) {
 }
 END_TEST
 
-Suite* fat16_suite_null_block_device(void) {
+Suite* fat16_suite_null_block_device( void ) {
   Suite* s = suite_create( "fat16_null_block_device" );
   TCase* tc_core = tcase_create( "fat16" );
   tcase_add_test( tc_core, test_mount_null_block_device );

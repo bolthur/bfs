@@ -161,10 +161,6 @@ int fat_block_write( fat_file_t* file, uint64_t size ) {
   uint64_t lba = file->block.sector;
   uint64_t block_size = fs->bdev->bdif->block_size;
   if ( 0 != file->cluster ) {
-    int result = fat_cluster_to_lba( fs, file->block.sector, &lba );
-    if ( EOK != result ) {
-      return result;
-    }
     block_size = size;
   }
   // write cluster

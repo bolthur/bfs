@@ -88,7 +88,7 @@ START_TEST( test_directory_new_dir_folder ) {
 }
 END_TEST
 
-Suite* fat16_suite_directory_new_folder(void) {
+Suite* fat16_suite_directory_new_folder( void ) {
   Suite* s = suite_create( "fat16_directory_new_folder" );
   TCase* tc_core = tcase_create( "fat16" );
   tcase_add_test( tc_core, test_directory_new_root_dir_folder );

@@ -20,42 +20,42 @@
 #ifndef _MAIN_H
 #define _MAIN_H
 
-Suite* blockdevice_suite_validate_test_driver(void);
+Suite* blockdevice_suite_validate_test_driver( void );
 
-Suite* fat12_suite_directory_entry_by_name(void);
-Suite* fat12_suite_directory_iterator(void);
-Suite* fat12_suite_directory_new_folder(void);
-Suite* fat12_suite_directory_open(void);
-Suite* fat12_suite_directory_utils(void);
-Suite* fat12_suite_file_ftruncate(void);
-Suite* fat12_suite_file_open(void);
-Suite* fat12_suite_file_read(void);
-Suite* fat12_suite_invalid_block_device(void);
-Suite* fat12_suite_mount(void);
-Suite* fat12_suite_null_block_device(void);
+Suite* fat12_suite_directory_entry_by_name( void );
+Suite* fat12_suite_directory_iterator( void );
+Suite* fat12_suite_directory_new_folder( void );
+Suite* fat12_suite_directory_open( void );
+Suite* fat12_suite_directory_utils( void );
+Suite* fat12_suite_file_ftruncate( void );
+Suite* fat12_suite_file_open( void );
+Suite* fat12_suite_file_read( void );
+Suite* fat12_suite_invalid_block_device( void );
+Suite* fat12_suite_mount( void );
+Suite* fat12_suite_null_block_device( void );
 
-Suite* fat16_suite_directory_entry_by_name(void);
-Suite* fat16_suite_directory_iterator(void);
-Suite* fat16_suite_directory_new_folder(void);
-Suite* fat16_suite_directory_open(void);
-Suite* fat16_suite_directory_utils(void);
-Suite* fat16_suite_file_ftruncate(void);
-Suite* fat16_suite_file_open(void);
-Suite* fat16_suite_file_read(void);
-Suite* fat16_suite_invalid_block_device(void);
-Suite* fat16_suite_mount(void);
-Suite* fat16_suite_null_block_device(void);
+Suite* fat16_suite_directory_entry_by_name( void );
+Suite* fat16_suite_directory_iterator( void );
+Suite* fat16_suite_directory_new_folder( void );
+Suite* fat16_suite_directory_open( void );
+Suite* fat16_suite_directory_utils( void );
+Suite* fat16_suite_file_ftruncate( void );
+Suite* fat16_suite_file_open( void );
+Suite* fat16_suite_file_read( void );
+Suite* fat16_suite_invalid_block_device( void );
+Suite* fat16_suite_mount( void );
+Suite* fat16_suite_null_block_device( void );
 
-Suite* fat32_suite_directory_entry_by_name(void);
-Suite* fat32_suite_directory_iterator(void);
-Suite* fat32_suite_directory_new_folder(void);
-Suite* fat32_suite_directory_open(void);
-Suite* fat32_suite_directory_utils(void);
-Suite* fat32_suite_file_ftruncate(void);
-Suite* fat32_suite_file_open(void);
-Suite* fat32_suite_file_read(void);
-Suite* fat32_suite_invalid_block_device(void);
-Suite* fat32_suite_mount(void);
-Suite* fat32_suite_null_block_device(void);
+Suite* fat32_suite_directory_entry_by_name( void );
+Suite* fat32_suite_directory_iterator( void );
+Suite* fat32_suite_directory_new_folder( void );
+Suite* fat32_suite_directory_open( void );
+Suite* fat32_suite_directory_utils( void );
+Suite* fat32_suite_file_ftruncate( void );
+Suite* fat32_suite_file_open( void );
+Suite* fat32_suite_file_read( void );
+Suite* fat32_suite_invalid_block_device( void );
+Suite* fat32_suite_mount( void );
+Suite* fat32_suite_null_block_device( void );
 
 #endif

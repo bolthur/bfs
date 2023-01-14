@@ -36,7 +36,7 @@ extern "C" {
   int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size );
 #endif
 
-common_blockdev_t* common_blockdev_get(void);
+common_blockdev_t* common_blockdev_get( void );
 
 #ifdef __cplusplus
 }

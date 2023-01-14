@@ -28,7 +28,7 @@ START_TEST( test_validate_test_driver ) {
 }
 END_TEST
 
-Suite* blockdevice_suite_validate_test_driver(void) {
+Suite* blockdevice_suite_validate_test_driver( void ) {
   Suite*s;
   TCase* tc_core;
   s = suite_create( "blockdevice" );

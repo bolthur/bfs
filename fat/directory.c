@@ -1049,7 +1049,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_update(
   // calculate offset in block
   uint64_t offset = dir->file.fpos % cluster_size;
   // overwrite data
-  memcpy( dir->file.block.data + offset, dentry, cluster_size );
+  memcpy( dir->file.block.data + offset, dentry, sizeof( *dentry ) );
   // write data again
   return fat_block_write( &dir->file, cluster_size );
 }
