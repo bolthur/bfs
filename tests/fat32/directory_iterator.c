@@ -58,6 +58,12 @@ START_TEST( test_directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_next( &it );
   ck_assert_int_eq( result, EOK );
   ck_assert_ptr_nonnull( it.entry );
+  ck_assert_str_eq( "WORLD.TXT", it.data->name );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_ptr_nonnull( it.entry );
   ck_assert_str_eq( "LOREM.TXT", it.data->name );
 
   // get next entry

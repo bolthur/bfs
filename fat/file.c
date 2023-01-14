@@ -166,6 +166,10 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     free( pathdup_dir );
     return ENOTSUP;
   }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
   // allocate directory entry
   fat_structure_directory_entry_t* dentry = malloc( sizeof( *dentry ) );
   if ( ! dentry ) {
@@ -215,7 +219,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
       free( dir );
       return result;
     }
-    result = fat_directory_update( dir, base, false );
+    result = fat_directory_dentry_insert( dir, base, false );
     if ( EOK != result ) {
       fat_cluster_set_cluster( fs, cluster, FAT_CLUSTER_UNUSED );
       free( dentry );
@@ -330,6 +334,7 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
   // free up block
   if ( file->block.data ) {
     free( file->block.data );
+    file->block.data = NULL;
   }
   if ( file->dir ) {
     result = fat_directory_close( file->dir );
@@ -345,7 +350,7 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
   // overwrite everything with 0
   memset( file, 0, sizeof( fat_file_t ) );
   // return success
-  return EOK;
+  return result;
 }
 
 /**
@@ -531,7 +536,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   // adjust file size after truncation
   file->dentry->file_size = ( uint32_t )size;
   // update directory entry
-  result = fat_directory_update_dentry(
+  result = fat_directory_dentry_update(
     file->dir,
     file->dentry,
     file->dentry_pos

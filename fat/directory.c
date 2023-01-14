@@ -205,8 +205,8 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     free( pathdup_dir );
     return EOK != result ? result : EEXIST;
   }
-  // update directory entry
-  result = fat_directory_update( &dir, base, true );
+  // insert directory entry
+  result = fat_directory_dentry_insert( &dir, base, true );
   if ( ENOENT != result ) {
     fat_directory_close( &dir );
     free( pathdup_base );
@@ -299,8 +299,11 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       free( duppath );
       return ENOENT;
     }
-    uint32_t found_start_cluster = ( ( uint32_t )it->entry->first_cluster_upper << 16 )
-      | ( uint32_t )it->entry->first_cluster_lower;
+    fat_fs_t* fs = mp->fs;
+    uint32_t found_start_cluster = ( uint32_t )it->entry->first_cluster_lower;
+    if ( FAT_FAT32 == fs->type ) {
+      found_start_cluster |= ( ( uint32_t )it->entry->first_cluster_upper << 16 );
+    }
     // we found a matching entry, so close current directory
     fat_directory_close( dir );
     // prepare directory file object
@@ -502,7 +505,10 @@ BFSFAT_EXPORT int fat_directory_entry_by_name(
     return EINVAL;
   }
   // space for variable
-  int result;
+  int result = fat_directory_rewind( dir );
+  if ( EOK != result ) {
+    return result;
+  }
   // loop through entries
   while ( EOK == ( result = fat_directory_next_entry( dir ) ) ) {
     // handle nothing in there
@@ -623,7 +629,7 @@ BFSFAT_NO_EXPORT int fat_directory_extract_name_short(
   // copy entry name to temporary
   strncpy( temporary, entry->name, 8 );
   // copy trimmed name to name
-  strncpy( name, util_trim( temporary ), 8 );
+  strcpy( name, util_trim( temporary ) );
   // clear out space
   memset( temporary, 0, 10 * sizeof( char ) );
   // copy extension to temporary
@@ -635,7 +641,7 @@ BFSFAT_NO_EXPORT int fat_directory_extract_name_short(
     // add a dot as separator
     strcat( name, "." );
     // cat trimmed extension
-    strncat( name, trimmed, 3 );
+    strcat( name, trimmed );
   }
   // free up temporary again
   free( temporary );
@@ -839,7 +845,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
  * @param directory
  * @return int
  */
-BFSFAT_NO_EXPORT int fat_directory_update(
+BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
   fat_directory_t* dir,
   const char* name,
   bool directory
@@ -868,8 +874,11 @@ BFSFAT_NO_EXPORT int fat_directory_update(
   void* entry_data = NULL;
   size_t extension_length = 0;
   const char* ext = strchr( name, '.' );
+  const char* dot = ext;
   if ( ! directory && ext ) {
+    ext++;
     extension_length = strlen( name ) - ( size_t )( ext - name );
+    name_length -= ( extension_length + 1 );
   }
   // build directory entry
   if (
@@ -887,13 +896,20 @@ BFSFAT_NO_EXPORT int fat_directory_update(
     // copy over name
     const char* p = name;
     while ( *p && ( p - name ) < 8 ) {
+      // additional anchor for non directories with an extension
+      if ( ! directory && dot && p >= dot ) {
+        break;
+      }
       data->name[ ( p - name ) ] = *p;
       p++;
     }
     if ( ! directory && ext ) {
       p = ext;
-      while ( *p && ( p - name ) < 3 ) {
-        data->extension[ ( p - name ) ] = *p;
+      size_t ext_count = 0;
+      while ( *p && ext_count < 3 ) {
+        data->extension[ ext_count ] = *p;
+        p++;
+        ext_count++;
       }
     }
     // set directory flag
@@ -1007,7 +1023,7 @@ BFSFAT_NO_EXPORT int fat_directory_update(
  *
  * @todo test either directly or indirectly via file tests
  */
-BFSFAT_NO_EXPORT int fat_directory_update_dentry(
+BFSFAT_NO_EXPORT int fat_directory_dentry_update(
   fat_directory_t* dir,
   fat_structure_directory_entry_t* dentry,
   uint64_t pos

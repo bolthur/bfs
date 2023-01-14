@@ -55,6 +55,7 @@ int main(void)
   srunner_add_suite(sr, fat32_suite_invalid_block_device());
   srunner_add_suite(sr, fat32_suite_mount());
   srunner_add_suite(sr, fat32_suite_null_block_device());
+  //srunner_set_fork_status(sr, CK_NOFORK);
   srunner_run_all(sr, CK_NORMAL);
   number_failed = srunner_ntests_failed(sr);
   srunner_free(sr);

@@ -122,18 +122,47 @@ END_TEST
 
 START_TEST( test_file_open_create_file_rofs ) {
   helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
-  // dummy so that not implemented test fails
-  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
-  ck_assert_ptr_null( mp );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asdf.txt", O_RDWR | O_CREAT );
+  ck_assert_int_eq( result, EROFS );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  ck_assert_int_eq( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asdf.txt" );
+  ck_assert_int_eq( result, ENOENT );
+  // close directory again
+  result = fat_directory_close( &dir );
+  ck_assert_int_eq( result, EOK );
+  // umount
   helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST
 
 START_TEST( test_file_open_create_file_rwfs ) {
   helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
-  // dummy so that not implemented test fails
-  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
-  ck_assert_ptr_null( mp );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asdf.txt", O_RDWR | O_CREAT );
+  ck_assert_int_eq( result, EOK );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  ck_assert_int_eq( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asdf.txt" );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_str_eq( dir.data->name, "asdf.txt" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  ck_assert_int_eq( result, EOK );
+  // umount
   helper_unmount_test_image( "fat32", "/fat32/" );
 }
 END_TEST

@@ -4,6 +4,7 @@ include_directories(${CHECK_INCLUDE_DIRS})
 link_directories(${CHECK_LIBRARY_DIRS})
 
 enable_compiler_flag_if_supported("-Wno-missing-prototypes")
+enable_compiler_flag_if_supported("-Wno-unused-variable")
 
 file (GLOB blockdev_file "blockdevice/*")
 file (GLOB fat12_file "fat12/*")

@@ -59,6 +59,13 @@ START_TEST( test_root_directory_read_dir_utils ) {
   ck_assert_int_eq( result, EOK );
   ck_assert_ptr_nonnull( dir.entry );
   ck_assert_ptr_nonnull( dir.data );
+  ck_assert_str_eq( "WORLD.TXT", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_ptr_nonnull( dir.entry );
+  ck_assert_ptr_nonnull( dir.data );
   ck_assert_str_eq( "LOREM.TXT", dir.data->name );
 
   // get next entry
@@ -117,11 +124,34 @@ START_TEST( test_root_directory_read_dir_utils_rewind ) {
 }
 END_TEST
 
+START_TEST( test_directory_get_by_name ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // open file
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open directory
+  int result = fat_directory_open( &dir, "/fat32/hello/" );
+  ck_assert_int_eq( result, EOK );
+  // get entry
+  result = fat_directory_entry_by_name( &dir, "truncate.txt" );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_ptr_nonnull( dir.entry );
+  ck_assert_ptr_nonnull( dir.data );
+  ck_assert_str_eq( "TRUNCATE.TXT", dir.data->name );
+  // close directory
+  result = fat_directory_close( &dir );
+  ck_assert_int_eq( result, EOK );
+  // umount again
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+END_TEST
+
 Suite* fat32_suite_directory_utils(void) {
   Suite* s = suite_create( "fat32_directory_utils" );
   TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils_rewind );
+  tcase_add_test( tc_core, test_directory_get_by_name );
   suite_add_tcase( s, tc_core );
   return s;
 }
