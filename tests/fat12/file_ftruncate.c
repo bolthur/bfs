@@ -80,7 +80,7 @@ START_TEST( test_file_ftruncate_change_size_only ) {
 END_TEST
 
 Suite* fat12_suite_file_ftruncate(void) {
-  Suite* s = suite_create( "file_ftruncate" );
+  Suite* s = suite_create( "fat12_file_ftruncate" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_file_ftruncate_rofs );
   tcase_add_test( tc_core, test_file_ftruncate_rwfs );

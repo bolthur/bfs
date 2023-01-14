@@ -64,7 +64,7 @@ START_TEST( test_directory_open_sub_directory ) {
 END_TEST
 
 Suite* fat32_suite_directory_open(void) {
-  Suite* s = suite_create( "directory_open" );
+  Suite* s = suite_create( "fat32_directory_open" );
   TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_directory_open_sub_directory );
   suite_add_tcase( s, tc_core );

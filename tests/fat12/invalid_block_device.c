@@ -66,7 +66,7 @@ START_TEST( test_mount_invalid_block_device ) {
 END_TEST
 
 Suite* fat12_suite_invalid_block_device(void) {
-  Suite* s = suite_create( "invalid_block_device" );
+  Suite* s = suite_create( "fat12_invalid_block_device" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_mount_invalid_block_device );
   suite_add_tcase( s, tc_core );

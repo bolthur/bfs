@@ -118,7 +118,7 @@ START_TEST( test_root_directory_read_dir_utils_rewind ) {
 END_TEST
 
 Suite* fat12_suite_directory_utils(void) {
-  Suite* s = suite_create( "directory_utils" );
+  Suite* s = suite_create( "fat12_directory_utils" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils );
   tcase_add_test( tc_core, test_root_directory_read_dir_utils_rewind );

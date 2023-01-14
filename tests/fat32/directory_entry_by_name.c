@@ -132,7 +132,7 @@ START_TEST( test_directory_util_dir_get_non_existing_by_name ) {
 END_TEST
 
 Suite* fat32_suite_directory_entry_by_name(void) {
-  Suite* s = suite_create( "directory_entry_by_name" );
+  Suite* s = suite_create( "fat32_directory_entry_by_name" );
   TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_directory_util_root_dir_get_existing_by_name );
   tcase_add_test( tc_core, test_directory_util_dir_get_existing_by_name );

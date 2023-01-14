@@ -80,7 +80,7 @@ START_TEST( test_directory_iterator_root_dir_read ) {
 END_TEST
 
 Suite* fat32_suite_directory_iterator(void) {
-  Suite* s = suite_create( "directory_iterator" );
+  Suite* s = suite_create( "fat32_directory_iterator" );
   TCase* tc_core = tcase_create( "fat32" );
   tcase_add_test( tc_core, test_directory_iterator_root_dir_read );
   suite_add_tcase( s, tc_core );

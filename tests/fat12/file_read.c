@@ -69,7 +69,7 @@ START_TEST( test_file_read ) {
 END_TEST
 
 Suite* fat12_suite_file_read(void) {
-  Suite* s = suite_create( "file_read" );
+  Suite* s = suite_create( "fat12_file_read" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_file_read );
   suite_add_tcase( s, tc_core );

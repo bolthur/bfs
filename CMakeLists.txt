@@ -180,7 +180,6 @@ add_subdirectory(cdfs)
 
 # integrate unit tests only when generic-test toolchain is used
 if (${TEST_ACTIVE})
-  enable_testing()
   add_subdirectory(tests)
 endif()
 

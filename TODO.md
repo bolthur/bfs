@@ -5,6 +5,7 @@
 - [ ] Provide necessary fallback stuff, so that library can also be used without c library
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
+- [ ] Add some sort of transaction
 - [ ] Add FAT library write support
   - [ ] Add test where cluster chain needs to be extended
   - [x] Extend test creating a folder to fail on second try

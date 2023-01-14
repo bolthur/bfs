@@ -47,7 +47,7 @@ START_TEST( test_mount_read_write ) {
 END_TEST
 
 Suite* fat12_suite_mount(void) {
-  Suite* s = suite_create( "mount" );
+  Suite* s = suite_create( "fat12_mount" );
   TCase* tc_core = tcase_create( "fat12" );
   tcase_add_test( tc_core, test_mount_readonly );
   tcase_add_test( tc_core, test_mount_read_write );
