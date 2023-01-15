@@ -766,6 +766,8 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
         free( entry );
         return result;
       }
+      dir->file.fsize += fs->superblock.sectors_per_cluster
+        * fs->superblock.bytes_per_sector;
       // realloc entry space
       void* tmp_entry_extended = realloc( entry, dir->file.fsize );
       // handle error

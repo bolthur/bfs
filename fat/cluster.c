@@ -71,9 +71,10 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
   // bunch of variables
   uint64_t fat_sector;
   uint64_t fat_index;
+  uint64_t fat_bit_offset = 0;
   // determine fat sector and index
   if ( FAT_FAT12 == fs->type ) {
-    uint64_t fat_bit_offset = current * 12;
+    fat_bit_offset = current * 12;
     fat_sector = fat_bit_offset / SECTOR_BITS
       + fs->superblock.reserved_sector_count;
     fat_bit_offset %= SECTOR_BITS;
@@ -109,7 +110,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     // read fat entry
     uint16_t value = *( uint16_t* )&buffer[ fat_index ];
     // adjust value if necessary
-    if ( 0 == ( current & 7 ) ) {
+    if ( 0 == ( fat_bit_offset & 7 ) ) {
       value = value & 0x0FFF;
     } else {
       value >>= 4;
@@ -300,6 +301,11 @@ int fat_cluster_get_by_num(
     *target = cluster;
     return EOK;
   }
+  uint64_t end_value;
+  int result = fat_cluster_get_chain_end_value( fs, &end_value );
+  if ( EOK != result ) {
+    return result;
+  }
   // walk the chain until index
   uint64_t current = 0;
   for ( uint64_t index = 0; index < num; index++ ) {
@@ -311,17 +317,13 @@ int fat_cluster_get_by_num(
     // variable for next
     uint64_t next;
     // fetch next cluster
-    int result = fat_cluster_next( fs, current, &next );
+    result = fat_cluster_next( fs, current, &next );
     // handle error
     if ( EOK != result ) {
       return result;
     }
     // handle chain end reached
-    if (
-      ( FAT_FAT12 == fs->type && next >= FAT_FAT12_CLUSTER_CHAIN_END )
-      || ( FAT_FAT16 == fs->type && next >= FAT_FAT16_CLUSTER_CHAIN_END )
-      || ( FAT_FAT32 == fs->type && next >= FAT_FAT32_CLUSTER_CHAIN_END )
-    ) {
+    if ( next >= end_value ) {
       return ENXIO;
     }
     // overwrite current with next

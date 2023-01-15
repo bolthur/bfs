@@ -455,13 +455,13 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     * fs->superblock.bytes_per_sector;
   // calculate new count
   uint64_t new_count = size / cluster_size;
-  if ( 0 == new_count ) {
-    new_count = 1;
+  if ( size % cluster_size ) {
+    new_count++;
   }
   // calculate old count
   uint64_t old_count = file->fsize / cluster_size;
-  if ( 0 == old_count ) {
-    old_count = 1;
+  if ( file->fsize % cluster_size ) {
+    old_count++;
   }
   // get custer chain end value by type
   uint64_t value;
@@ -490,9 +490,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       cluster_list[ index ] = cluster;
     }
     // set last new cluster as chain end
-    result = fat_cluster_set_cluster(
-      fs, cluster_list[ new_count - 1 ], value
-    );
+    result = fat_cluster_set_cluster( fs, cluster_list[ new_count - 1 ], value );
     if ( EOK != result ) {
       free( cluster_list );
       return result;
@@ -500,7 +498,9 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     // mark other clusters as unused
     for ( uint64_t index = new_count; index < old_count; index++ ) {
       result = fat_cluster_set_cluster(
-        fs, cluster_list[ index ], FAT_CLUSTER_UNUSED
+        fs,
+        cluster_list[ index ],
+        FAT_CLUSTER_UNUSED
       );
       if ( EOK != result ) {
         free( cluster_list );
@@ -518,11 +518,10 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       if ( EOK != result ) {
         return result;
       }
-      // get last cluster
-      uint64_t last_cluster;
-      result = fat_cluster_get_by_num(
-        fs, file->cluster, file->fsize / cluster_size, &last_cluster
-      );
+      file->fsize = ( old_count + index + 1 ) * cluster_size;
+      // adjust position to last cluster
+      uint64_t fpos = file->fpos;
+      file->fpos = ( old_count + index ) * cluster_size;
       // load block
       result = fat_block_load( file, cluster_size );
       if ( EOK != result ) {
@@ -539,6 +538,8 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       if ( EOK != result ) {
         return result;
       }
+      // restore fpos
+      file->fpos = fpos;
     }
   } else if ( size > file->fsize ) {
     // adjust position
@@ -665,8 +666,12 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
       * fs->superblock.sectors_per_cluster;
     // get last cluster
     uint64_t last_cluster;
+    uint64_t chain_index = file->fsize / cluster_size;
+    if ( file->fsize % cluster_size ) {
+      chain_index++;
+    }
     result = fat_cluster_get_by_num(
-      fs, file->cluster, file->fsize / cluster_size, &last_cluster
+      fs, file->cluster, chain_index, &last_cluster
     );
     // handle error
     if ( EOK != result ) {
@@ -674,14 +679,9 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
     }
     // determine cluster chain end value
     uint64_t value;
-    if ( FAT_FAT12 == fs->type ) {
-      value = FAT_FAT12_CLUSTER_CHAIN_END;
-    } else if ( FAT_FAT16 == fs->type ) {
-      value = FAT_FAT16_CLUSTER_CHAIN_END;
-    } else if ( FAT_FAT32 == fs->type ) {
-      value = FAT_FAT32_CLUSTER_CHAIN_END;
-    } else {
-      return EINVAL;
+    result = fat_cluster_get_chain_end_value( fs, &value );
+    if ( EOK != result ) {
+      return result;
     }
     // try to mark new cluster as chain end
     result = fat_cluster_set_cluster( fs, new_cluster, value );
@@ -696,8 +696,6 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
       fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
       return result;
     }
-    // increase directory file size
-    file->fsize += cluster_size;
   }
   // return success
   return EOK;

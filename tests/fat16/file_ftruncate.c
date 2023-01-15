@@ -28,6 +28,7 @@
 #include <fat/directory.h>
 #include <fat/type.h>
 #include <fat/rootdir.h>
+#include <fat/cluster.h>
 #include <fat/iterator.h>
 #include <fat/fs.h>
 #include <fat/file.h>
@@ -63,18 +64,127 @@ END_TEST
 
 START_TEST( test_file_ftruncate_extend_cluster ) {
   helper_mount_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
-  // dummy so that not implemented test fails
-  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
-  ck_assert_ptr_null( mp );
+  // open file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat16/hello/truncate.txt", O_RDWR );
+  ck_assert_int_eq( result, EOK );
+  // save old size
+  fat_fs_t* fs = file.mp->fs;
+  uint64_t cluster_size = fs->superblock.bytes_per_sector
+      * fs->superblock.sectors_per_cluster;
+  uint64_t old_count = file.fsize / cluster_size;
+  if ( file.fsize % cluster_size ) {
+    old_count++;
+  }
+  uint64_t truncate_size = ( old_count + 1 ) * cluster_size - 1;
+  uint64_t new_count = truncate_size / cluster_size;
+  if ( truncate_size % cluster_size ) {
+    new_count++;
+  }
+  // call for truncate
+  result = fat_file_truncate( &file, truncate_size );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_uint_eq( file.fsize, truncate_size );
+  // close file
+  result = fat_file_close( &file );
+  ck_assert_int_eq( result, EOK );
+  // open file again
+  result = fat_file_open2( &file, "/fat16/hello/truncate.txt", O_RDONLY );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_uint_eq( file.fsize, truncate_size );
+  // get last cluster
+  uint64_t val;
+  result = fat_cluster_get_by_num(
+    file.mp->fs,
+    file.cluster,
+    file.fsize / ( fs->superblock.sectors_per_cluster
+      * fs->superblock.bytes_per_sector ),
+    &val
+  );
+
+  // get custer chain end value by type
+  uint64_t end_value;
+  result = fat_cluster_get_chain_end_value( file.mp->fs, &end_value );
+  ck_assert_int_eq( result, EOK );
+  uint64_t cluster_count = 1;
+  uint64_t current_cluster = file.cluster;
+  // check cluster chain
+  while ( true ) {
+    // read cluster
+    uint64_t next_cluster;
+    result = fat_cluster_next( file.mp->fs, current_cluster, &next_cluster );
+    ck_assert_int_eq( result, EOK );
+    // handle end reached
+    if ( next_cluster >= end_value ) {
+      break;
+    }
+    current_cluster = next_cluster;
+    cluster_count++;
+  }
+  ck_assert_uint_eq( cluster_count, new_count );
+  // close file again
+  result = fat_file_close( &file );
+  ck_assert_int_eq( result, EOK );
   helper_unmount_test_image( "fat16", "/fat16/" );
 }
 END_TEST
 
 START_TEST( test_file_ftruncate_shrink_cluster ) {
   helper_mount_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
-  // dummy so that not implemented test fails
-  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat16/" );
-  ck_assert_ptr_null( mp );
+  // open file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat16/hello/truncate.txt", O_RDWR );
+  ck_assert_int_eq( result, EOK );
+  // save old size
+  fat_fs_t* fs = file.mp->fs;
+  uint64_t cluster_size = fs->superblock.bytes_per_sector
+      * fs->superblock.sectors_per_cluster;
+  uint64_t old_count = file.fsize / cluster_size + 1;
+  uint64_t truncate_size = ( old_count + 1 ) * cluster_size - 1;
+  uint64_t new_count = truncate_size / cluster_size;
+  if ( truncate_size % cluster_size ) {
+    new_count++;
+  }
+  // call for truncate
+  result = fat_file_truncate( &file, truncate_size );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_uint_eq( file.fsize, truncate_size );
+  // close file
+  result = fat_file_close( &file );
+  ck_assert_int_eq( result, EOK );
+  // open file again
+  result = fat_file_open2( &file, "/fat16/hello/truncate.txt", O_RDWR );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_uint_eq( file.fsize, truncate_size );
+  // call for truncate
+  result = fat_file_truncate( &file, 50 );
+  ck_assert_int_eq( result, EOK );
+  ck_assert_uint_eq( file.fsize, 50 );
+  // get custer chain end value by type
+  uint64_t end_value;
+  result = fat_cluster_get_chain_end_value( file.mp->fs, &end_value );
+  ck_assert_int_eq( result, EOK );
+  uint64_t cluster_count = 1;
+  uint64_t current_cluster = file.cluster;
+  // check cluster chain
+  while ( true ) {
+    // read cluster
+    uint64_t next_cluster;
+    result = fat_cluster_next( file.mp->fs, current_cluster, &next_cluster );
+    ck_assert_int_eq( result, EOK );
+    // handle end reached
+    if ( next_cluster >= end_value ) {
+      break;
+    }
+    current_cluster = next_cluster;
+    cluster_count++;
+  }
+  ck_assert_uint_eq( cluster_count, new_count );
+  // close file again
+  result = fat_file_close( &file );
+  ck_assert_int_eq( result, EOK );
   helper_unmount_test_image( "fat16", "/fat16/" );
 }
 END_TEST
