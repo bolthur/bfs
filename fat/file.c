@@ -247,6 +247,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   }
   file->fsize = dir->entry->file_size;
   file->dir = dir;
+  file->flags = ( uint32_t )flags;
   // copy over directory entry data
   memcpy( dentry, dir->entry, sizeof( *dentry ) );
   file->dentry = dentry;
@@ -438,6 +439,10 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
     return EINVAL;
   }
+  // handle invalid flags
+  if ( !( file->flags & O_RDWR ) && ! ( file->flags & O_RDWR ) ) {
+    return EINVAL;
+  }
   // cache mountpoint and fs
   common_mountpoint_t*mp = file->mp;
   fat_fs_t* fs = mp->fs;
@@ -535,6 +540,30 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         return result;
       }
     }
+  } else if ( size > file->fsize ) {
+    // adjust position
+    uint64_t fpos = file->fpos;
+    file->fpos = ( new_count - 1 ) * cluster_size;
+    // load cluster
+    result = fat_block_load( file, cluster_size );
+    if ( EOK != result ) {
+      file->fpos = fpos;
+      return result;
+    }
+    // handle nothing loaded
+    if ( ! file->block.data ) {
+      file->fpos = fpos;
+      return EIO;
+    }
+    // set new space to 0
+    memset( file->block.data + file->fsize, 0, size - file->fsize );
+    // write back
+    result = fat_block_write( file, cluster_size );
+    if ( EOK != result ) {
+      return result;
+    }
+    // restore position
+    file->fpos = fpos;
   }
   // adjust file size after truncation
   file->dentry->file_size = ( uint32_t )size;
