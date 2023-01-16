@@ -3,6 +3,9 @@ find_package(Check REQUIRED)
 include_directories(${CHECK_INCLUDE_DIRS})
 link_directories(${CHECK_LIBRARY_DIRS})
 
+find_package(GTest REQUIRED)
+enable_compiler_flag_if_supported("-Wno-analyzer-use-of-uninitialized-value")
+
 enable_compiler_flag_if_supported("-Wno-missing-prototypes")
 enable_compiler_flag_if_supported("-Wno-unused-variable")
 
@@ -12,18 +15,17 @@ file (GLOB fat16_file "fat16/*")
 file (GLOB fat32_file "fat32/*")
 
 add_executable(bfs_check
-  _main.c
-  _helper.c
+  _helper.cc
   ${blockdev_file}
   ${fat12_file}
   ${fat16_file}
   ${fat32_file} )
 if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(bfs_check check gcov bfsfat bfsblockdev bfscommon)
+  target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
 else()
-  target_link_libraries(bfs_check check bfsfat bfsblockdev bfscommon)
+  target_link_libraries(bfs_check GTest::gtest_main bfsfat bfsblockdev bfscommon)
 endif()
-add_test(NAME bfs_check COMMAND bfs_check)
+gtest_discover_tests(bfs_check)
 
 
 # custom commands for generation of image files

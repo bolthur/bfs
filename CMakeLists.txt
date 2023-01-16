@@ -7,14 +7,21 @@ project(
   HOMEPAGE_URL "https://github.com/bolthur/bfs"
   LANGUAGES C)
 
+if(${TEST_ACTIVE})
+  enable_language(CXX)
+endif()
+
 # set standards
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 # cppcheck
+set(CMAKE_CXX_CPPCHECK "cppcheck")
 set(CMAKE_C_CPPCHECK "cppcheck")
 
 # necessary when building with windows
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # necessary stuff for building export header
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 # makefile verbose output
 #set(CMAKE_VERBOSE_MAKEFILE TRUE)
@@ -94,6 +101,7 @@ if(${BFS_BUILD_WITH_COVERAGE})
   if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND LCOV_PATH AND GENHTML_PATH)
     # adjust cflags according to compiler
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
     # set output directory
     set(CMAKE_COVERAGE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/cov)
     # note the option ALL which allows to build the docs together with the application
@@ -119,6 +127,7 @@ endif()
 if(${BFS_BUILD_WITH_PROFILING})
   # adjust cflags according to compiler
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 endif()

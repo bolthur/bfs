@@ -33,6 +33,8 @@ extern "C" {
   #define ENOENT 2
   /** @brief Fallback for EIO, when no errno is available */
   #define EIO 5
+  /** @brief Fallback for ENXIO, when no errno is available */
+  #define ENXIO 6
   /** @brief Fallback for ENOMEM, when no errno is available */
   #define ENOMEM 12
   /** @brief Fallback for EFAULT, when no errno is available */

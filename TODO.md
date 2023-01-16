@@ -5,31 +5,30 @@
 - [ ] Provide necessary fallback stuff, so that library can also be used without c library
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
-- [ ] Add some sort of transaction
 - [ ] Add FAT library write support
   - [ ] Add test where cluster chain needs to be extended
   - [x] Extend test creating a folder to fail on second try
   - [ ] Add test creating a long file name directory
   - [ ] Add file write support
-  - [ ] Add tests for file truncate
-  - [ ] Add test for creating a plain file with O_CREAT
-  - [ ] Add test to ensure that read only is working correctly
-  - [ ] Add test writing a file ( extending )
+  - [x] Add tests for file truncate
+  - [x] Add test for creating a plain file with O_CREAT
+  - [ ] Add test for file truncation with O_TRUNC
+  - [ ] Add test for write append with O_APPEND
+  - [x] Add test to ensure that read only is working correctly
+  - [ ] Add test writing a file
   - [ ] Add test creating a file with short name
   - [ ] Add test creating a file with long name
   - [ ] Add test creating a file with short name but long extension, e.g. foo.jpeg
   - [ ] Check written code and simplify it once everything works
-- [ ] Split up tests in single files
-- [ ] Check and add some sort of cache, when writing is to slow on real hardware
+- [ ] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions
+- [x] Split up tests in single files
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest
   - [x] Prepare a test blockdev driver for unit testing
   - [x] Add unit tests for specific functions
 - [ ] Add support for ext2
 - [ ] Add support for cdfs
-- [ ] Add support for exfat (?)
-- [ ] Add support for ntfs (?)
 - [x] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
 - [x] Check usages of block size and evaluate whether automatical adjustment is meaningful for fat

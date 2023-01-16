@@ -233,6 +233,9 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   }
   // handle no file
   if ( EOK != result ) {
+    if ( ENOENT == result ) {
+      fat_directory_close( dir );
+    }
     free( dentry );
     free( pathdup_base );
     free( pathdup_dir );
@@ -342,6 +345,7 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
     if ( EOK != result ) {
       return result;
     }
+    free( file->dir );
     file->dir = NULL;
   }
   if ( file->dentry ) {
@@ -410,11 +414,9 @@ int fat_file_read(
       break;
     }
     // copy over content
-    memcpy(
-      u8buffer + *read_count,
-      file->block.data,
-      ( size_t )( copy_size + copy_start )
-    );
+    size_t copy_amount = ( size_t )( copy_size + copy_start );
+    uint8_t* u8buffer_start = u8buffer + *read_count;
+    memcpy( u8buffer_start, file->block.data, copy_amount );
     // increment read count
     *read_count += copy_size;
     // decrement size
