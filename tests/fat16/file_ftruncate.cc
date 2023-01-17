@@ -46,7 +46,7 @@ TEST( fat16, file_ftruncate_ro ) {
   uint64_t old_size = file.fsize;
   // call for truncate
   result = fat_file_truncate( &file, old_size * 2 );
-  EXPECT_EQ( result, EINVAL );
+  EXPECT_EQ( result, EPERM );
   EXPECT_EQ( file.fsize, old_size );
   // close file
   result = fat_file_close( &file );

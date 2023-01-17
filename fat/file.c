@@ -242,27 +242,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     free( dir );
     return result;
   }
-  // handle truncate
-  if ( flags & O_TRUNC ) {
-    // try to truncate file to size 0
-    result = fat_file_truncate( file, 0 );
-    if ( EOK != result ) {
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
-    // reload entry
-    result = fat_directory_entry_by_name( dir, base );
-    if ( EOK != result ) {
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
-  }
   // copy over necessary information
   file->mp = dir->file.mp;
   file->cluster = ( uint32_t )dir->entry->first_cluster_lower;
@@ -283,6 +262,15 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // free up memory
   free( pathdup_base );
   free( pathdup_dir );
+  // handle truncate
+  if ( flags & O_TRUNC ) {
+    // try to truncate file to size 0
+    result = fat_file_truncate( file, 0 );
+    if ( EOK != result ) {
+      fat_file_close( file );
+      return result;
+    }
+  }
   // return success
   return EOK;
 }
@@ -406,6 +394,10 @@ int fat_file_read(
   if ( ! file->cluster || ! file->mp ) {
     return EINVAL;
   }
+  // handle invalid mode
+  if ( file->flags & O_WRONLY ) {
+    return EPERM;
+  }
   // cache mountpoint and fs
   common_mountpoint_t*mp = file->mp;
   fat_fs_t* fs = mp->fs;
@@ -467,8 +459,8 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     return EINVAL;
   }
   // handle invalid flags
-  if ( !( file->flags & O_RDWR ) && ! ( file->flags & O_RDWR ) ) {
-    return EINVAL;
+  if ( !( file->flags & O_RDWR ) && ! ( file->flags & O_WRONLY ) ) {
+    return EPERM;
   }
   // cache mountpoint and fs
   common_mountpoint_t*mp = file->mp;
@@ -497,7 +489,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     return result;
   }
   // handle shrink
-  if ( old_count > new_count ) {
+  if ( old_count > new_count && new_count > 0 ) {
     // allocate space for cluster list
     uint64_t* cluster_list = malloc( sizeof( uint64_t ) * old_count );
     if ( ! cluster_list ) {
@@ -677,7 +669,6 @@ BFSFAT_EXPORT int fat_file_write(
       return result;
     }
     // extend size to new size
-    // FIXME: CHECK WHETHER SIZE EXTEND HERE IS NECESSARY
     file->fsize += ( new_size - file->fsize );
   }
 
@@ -716,8 +707,11 @@ BFSFAT_EXPORT int fat_file_write(
     }
     // increase copy count
     copy_count += copy_size;
+    // decrement size
+    size -= copy_size;
+    // increment position
+    file->fpos += copy_size;
   }
-
   // update write count
   *write_count = copy_count;
   // restore file position and update fsize

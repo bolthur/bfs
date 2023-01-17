@@ -13,9 +13,10 @@
   - [x] Add tests for file truncate
   - [x] Add logic to support O_TRUNC on open
   - [x] Add test for creating a plain file with O_CREAT
-  - [ ] Add test for file truncation on open with O_TRUNC
+  - [x] Add test for file truncation on open with O_TRUNC
   - [x] Add test to ensure that read only is working correctly
-  - [ ] Add test for write append with O_APPEND
+  - [x] Add test to read a write only opened file
+  - [x] Add test for write append with O_APPEND
   - [ ] Add test for writing a file
   - [ ] Add test creating a file with short name
   - [ ] Add test creating a file with long name

@@ -39,6 +39,8 @@ extern "C" {
   #define ENXIO 6
   /** @brief Fallback for ENOMEM, when no errno is available */
   #define ENOMEM 12
+  /** @brief Fallback for EACCES, when no errno is available */
+  #define EACCES 13
   /** @brief Fallback for EFAULT, when no errno is available */
   #define EFAULT 14
   /** @brief Fallback for EEXIST, when no errno is available */

@@ -163,3 +163,32 @@ TEST( fat16, file_open_create_file_rwfs ) {
   // umount
   helper_unmount_test_image( "fat16", "/fat16/" );
 }
+
+TEST( fat16, file_open_truncate_file ) {
+  helper_mount_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2(
+    &file,
+    "/fat16/hello/file/open/truncate.txt",
+    O_RDWR
+  );
+  EXPECT_EQ( result, EOK );
+  EXPECT_NE( file.fsize, 0 );
+  // close file again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // open with truncate
+  result = fat_file_open2(
+    &file,
+    "/fat16/hello/file/open/truncate.txt",
+    O_RDWR | O_TRUNC
+  );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, 0 );
+  // close file again
+  result = fat_file_close( &file );
+  // umount
+  helper_unmount_test_image( "fat16", "/fat16/" );
+}

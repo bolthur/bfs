@@ -124,3 +124,32 @@ TEST( fat32, file_read_rootdir ) {
   EXPECT_EQ( result, EOK );
   helper_unmount_test_image( "fat32", "/fat32/" );
 }
+
+TEST( fat32, file_read_write_only ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // file variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // load root dir
+  int result = fat_file_open2( &file, "/fat32/world.txt", O_WRONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_NE( file.cluster, 0 );
+  EXPECT_NE( file.fsize, 0 );
+  EXPECT_TRUE( file.mp );
+  // allocate buffer for content
+  char* buffer = ( char* )malloc( file.fsize + 1 );
+  EXPECT_TRUE( buffer );
+  memset( buffer, 0, file.fsize + 1 );
+  // read from file
+  uint64_t read_count = 0;
+  result = fat_file_read( &file, buffer, file.fsize, &read_count );
+  EXPECT_EQ( result, EPERM );
+  EXPECT_EQ( read_count, 0 );
+  EXPECT_STRNE( buffer, "hello world\n" );
+  // free again
+  free( buffer );
+  // close file
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
