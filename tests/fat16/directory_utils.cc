@@ -31,7 +31,7 @@
 #include <fat/iterator.h>
 #include <fat/fs.h>
 #include <fat/file.h>
-#include "../_helper.h"
+#include "../_helper.hh"
 #include "gtest/gtest.h"
 
 TEST( fat16, root_directory_read_dir_utils ) {

@@ -29,6 +29,8 @@ extern "C" {
 #if CONFIG_HAVE_ERRNO_H
   #include <errno.h>
 #else
+  /** @brief Fallback for EPERM, when no errno is available */
+  #define EPERM 1
   /** @brief Fallback for ENOENT, when no errno is available */
   #define ENOENT 2
   /** @brief Fallback for EIO, when no errno is available */

@@ -197,7 +197,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     free( pathdup_dir );
     return result;
   }
-  // check whether folder doesn't exist
+  // ensure that the folder doesn't exist
   result = fat_directory_entry_by_name( &dir, base );
   if ( ENOENT != result ) {
     fat_directory_close( &dir );
@@ -207,7 +207,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   }
   // insert directory entry
   result = fat_directory_dentry_insert( &dir, base, true );
-  if ( ENOENT != result ) {
+  if ( EOK != result ) {
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -943,9 +943,14 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     memset( data, 0, entry_size );
     // loop through long name parts and fill them
     for ( size_t index = 0; index < long_name_length - 1; index++ ) {
-      data[ index ].order = ( uint8_t )index;
       uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
       uint8_t* end = ( uint8_t* )( name + name_length );
+      // set order information
+      data[ index ].order = ( uint8_t )index + 1;
+      // set long filename attribute
+      if ( directory ) {
+        data[ index ].attribute = FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME;
+      }
       // populate long entry names
       for (
         uint64_t local_index = 0;

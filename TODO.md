@@ -6,16 +6,17 @@
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
 - [ ] Add FAT library write support
-  - [ ] Add test where cluster chain needs to be extended
+  - [x] Add test where cluster chain needs to be extended <= Within truncate tests
   - [x] Extend test creating a folder to fail on second try
-  - [ ] Add test creating a long file name directory
-  - [ ] Add file write support
+  - [x] Add test creating a directory with long name
+  - [x] Add file write support
   - [x] Add tests for file truncate
+  - [x] Add logic to support O_TRUNC on open
   - [x] Add test for creating a plain file with O_CREAT
-  - [ ] Add test for file truncation with O_TRUNC
-  - [ ] Add test for write append with O_APPEND
+  - [ ] Add test for file truncation on open with O_TRUNC
   - [x] Add test to ensure that read only is working correctly
-  - [ ] Add test writing a file
+  - [ ] Add test for write append with O_APPEND
+  - [ ] Add test for writing a file
   - [ ] Add test creating a file with short name
   - [ ] Add test creating a file with long name
   - [ ] Add test creating a file with short name but long extension, e.g. foo.jpeg

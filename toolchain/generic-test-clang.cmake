@@ -10,6 +10,7 @@ endif()
 
 # Toolchain settings
 set(CMAKE_C_COMPILER /usr/bin/clang)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++)
 set(AS llvm-as)
 set(AR llvm-ar)
 set(OBJCOPY llvm-objcopy)

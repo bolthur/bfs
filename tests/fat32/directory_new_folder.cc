@@ -31,7 +31,7 @@
 #include <fat/iterator.h>
 #include <fat/fs.h>
 #include <fat/file.h>
-#include "../_helper.h"
+#include "../_helper.hh"
 #include "gtest/gtest.h"
 
 TEST( fat32, directory_new_root_dir_folder ) {
@@ -82,6 +82,58 @@ TEST( fat32, directory_new_dir_folder ) {
   EXPECT_EQ( result, EOK );
   // create new folder
   result = fat_directory_make( "/fat32/hello/foobar" );
+  EXPECT_EQ( result, EEXIST );
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, directory_new_root_dir_folder_long ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = fat_directory_make( "/fat32/thisisalongname/" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = fat_rootdir_open( mp, &dir );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = fat_directory_entry_by_name( &dir, "thisisalongname" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // create new folder
+  result = fat_directory_make( "/fat32/thisisalongname/" );
+  EXPECT_EQ( result, EEXIST );
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, directory_new_dir_folder_long ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat32/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = fat_directory_make( "/fat32/hello/thisisalongname" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = fat_directory_entry_by_name( &dir, "thisisalongname" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // create new folder
+  result = fat_directory_make( "/fat32/hello/thisisalongname" );
   EXPECT_EQ( result, EEXIST );
   helper_unmount_test_image( "fat32", "/fat32/" );
 }

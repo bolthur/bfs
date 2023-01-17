@@ -31,7 +31,7 @@
 #include <fat/iterator.h>
 #include <fat/fs.h>
 #include <fat/file.h>
-#include "../_helper.h"
+#include "../_helper.hh"
 #include "gtest/gtest.h"
 
 TEST( fat32, directory_util_root_dir_get_existing_by_name ) {

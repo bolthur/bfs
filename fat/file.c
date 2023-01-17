@@ -242,6 +242,27 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     free( dir );
     return result;
   }
+  // handle truncate
+  if ( flags & O_TRUNC ) {
+    // try to truncate file to size 0
+    result = fat_file_truncate( file, 0 );
+    if ( EOK != result ) {
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    // reload entry
+    result = fat_directory_entry_by_name( dir, base );
+    if ( EOK != result ) {
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+  }
   // copy over necessary information
   file->mp = dir->file.mp;
   file->cluster = ( uint32_t )dir->entry->first_cluster_lower;
@@ -255,6 +276,10 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   memcpy( dentry, dir->entry, sizeof( *dentry ) );
   file->dentry = dentry;
   file->dentry_pos = dir->file.fpos;
+  // handle append mode
+  if ( file->flags & O_APPEND ) {
+    file->fpos = file->fsize;
+  }
   // free up memory
   free( pathdup_base );
   free( pathdup_dir );
@@ -601,11 +626,105 @@ BFSFAT_EXPORT int fat_file_write(
   uint64_t size,
   uint64_t* write_count
 ) {
-  ( void )file;
-  ( void )buffer;
-  ( void )size;
-  ( void )write_count;
-  return ENOSYS;
+  // validate parameter
+  if ( ! file || ! file->mp || ! buffer || ! write_count ) {
+    return EINVAL;
+  }
+  common_mountpoint_t* mp = file->mp;
+  fat_fs_t* fs = mp->fs;
+  int result;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // handle invalid mode
+  if ( file->flags & O_RDONLY ) {
+    return EPERM;
+  }
+  // size of 0 means success
+  if ( ! size ) {
+    return EOK;
+  }
+  // backup file position
+  uint64_t fpos = file->fpos;
+  // handle append mode
+  if ( file->flags & O_APPEND ) {
+    file->fpos = file->fsize;
+  }
+  // get cluster size
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
+  uint64_t new_size = file->fpos + size;
+  uint64_t old_size = file->fsize;
+  // extend file if necessary
+  if ( new_size > file->fsize ) {
+    // calculate block count from new size
+    uint64_t new_block_count = new_size / cluster_size;
+    if ( new_size % cluster_size ) {
+      new_block_count++;
+    }
+    // calculate block count from old size
+    uint64_t old_block_count = file->fsize / cluster_size;
+    if ( file->fsize % cluster_size ) {
+      old_block_count++;
+    }
+    // calculate difference
+    uint64_t block_count = new_block_count - old_block_count;
+    // extend file cluster chain
+    result = fat_file_extend_cluster( file, block_count );
+    if ( EOK != result ) {
+      file->fpos = fpos;
+      return result;
+    }
+    // extend size to new size
+    // FIXME: CHECK WHETHER SIZE EXTEND HERE IS NECESSARY
+    file->fsize += ( new_size - file->fsize );
+  }
+
+  uint64_t copy_count = 0;
+  // write cluster per cluster
+  while ( size > 0 ) {
+    // determine copy size
+    uint64_t copy_size = cluster_size;
+    uint64_t copy_offset = 0;
+    // handle somewhere in between
+    if ( file->fpos % cluster_size ) {
+      copy_offset = file->fpos % cluster_size;
+      copy_size -= copy_offset;
+    }
+    // cap size
+    if ( copy_size > size ) {
+      copy_size = size;
+    }
+    // load sector
+    result = fat_block_load( file, cluster_size );
+    if ( EOK != result ) {
+      file->fpos = fpos;
+      return result;
+    }
+    // overwrite block data
+    memcpy(
+      file->block.data + copy_offset,
+      ( uint8_t* )buffer + copy_count,
+      copy_size
+    );
+    // write back block
+    result = fat_block_write( file, cluster_size );
+    if ( EOK != result ) {
+      file->fpos = fpos;
+      return result;
+    }
+    // increase copy count
+    copy_count += copy_size;
+  }
+
+  // update write count
+  *write_count = copy_count;
+  // restore file position and update fsize
+  file->fpos = fpos;
+  file->fsize = old_size + copy_count;
+  // return success
+  return EOK;
 }
 
 /**
@@ -645,8 +764,12 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
  */
 BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
   // validate parameter
-  if ( ! file || ! file->mp->fs || ! num ) {
+  if ( ! file || ! file->mp->fs ) {
     return EINVAL;
+  }
+  // treat 0 as already done
+  if ( ! num ) {
+    return EOK;
   }
   // cache file system
   fat_fs_t* fs = file->mp->fs;
