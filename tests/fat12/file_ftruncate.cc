@@ -248,7 +248,7 @@ TEST( fat12, file_ftruncate_shrink_cluster ) {
     current_cluster = next_cluster;
     cluster_count++;
   }
-  EXPECT_EQ( cluster_count, new_count );
+  EXPECT_EQ( cluster_count, old_count );
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );

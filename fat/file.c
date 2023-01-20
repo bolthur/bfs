@@ -482,7 +482,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     for ( uint64_t index = 0; index < old_count; index++ ) {
       // get cluster
       uint64_t cluster;
-      result = fat_cluster_get_by_num( fs, file->cluster, index, &cluster );
+      result = fat_cluster_get_by_num( fs, file->cluster, index + 1, &cluster );
       if ( EOK != result ) {
         free( cluster_list );
         return result;
