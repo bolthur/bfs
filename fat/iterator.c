@@ -111,10 +111,16 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
     cluster_size = fs->superblock.bytes_per_sector;
   }
-  uint64_t current_cluster = it->reference->file.fpos / cluster_size;
-  uint64_t next_cluster = pos / cluster_size;
-  if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
+  uint64_t next_block = pos / cluster_size;
+  if (
+    ! it->reference->file.block.data
+    || it->reference->file.block.block != next_block
+  ) {
     it->reference->file.fpos = pos;
+    // trick fat block load to load next block correctly
+    if ( 0 < next_block ) {
+      it->reference->file.fpos += next_block * cluster_size;
+    }
     // load block
     int result = fat_block_load( &it->reference->file, cluster_size );
     // validate return
@@ -156,18 +162,24 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     if ( ! it->data ) {
       return ENOMEM;
     }
-    memset( it->data, 0, sizeof( fat_directory_data_t ) );
   }
+  memset( it->data, 0, sizeof( fat_directory_data_t ) );
 
   fat_structure_directory_entry_t* entry = NULL;
   // skip all invalid entries
   while ( true ) {
     // cache block size
-    uint64_t current_cluster = it->reference->file.fpos / cluster_size;
-    uint64_t next_cluster = pos / cluster_size;
+    uint64_t next_block = pos / cluster_size;
     uint64_t offset_within_block = pos % cluster_size;
-    if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
+    if (
+      ! it->reference->file.block.data
+      || it->reference->file.block.block != next_block
+    ) {
       it->reference->file.fpos = pos;
+      // trick fat block load to load next block correctly
+      if ( 0 < next_block ) {
+        it->reference->file.fpos += next_block * cluster_size;
+      }
       // load block
       result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
@@ -220,17 +232,24 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // get correct entry
   while ( true ) {
     // cache block size
-    uint64_t current_cluster = it->reference->file.fsize / cluster_size;
-    uint64_t next_cluster = pos / cluster_size;
+    uint64_t next_block = pos / cluster_size;
     uint64_t offset_within_block = pos % cluster_size;
-    if ( ! it->reference->file.block.data || current_cluster != next_cluster ) {
+    if (
+      ! it->reference->file.block.data
+      || it->reference->file.block.block != next_block
+    ) {
       it->reference->file.fpos = pos;
+      // trick fat block load to load next block correctly
+      if ( 0 < next_block ) {
+        it->reference->file.fpos += next_block * cluster_size;
+      }
       // load block
       result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
       if ( EOK != result ) {
         return result;
       }
+      it->reference->file.fpos = pos;
     }
     // update iterator position
     it->reference->file.fpos = pos;

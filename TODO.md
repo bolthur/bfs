@@ -18,9 +18,9 @@
   - [x] Add test to read a write only opened file
   - [x] Add test for write append with O_APPEND
   - [ ] Add test for writing a file
-  - [ ] Add test creating a file with short name
-  - [ ] Add test creating a file with long name
-  - [ ] Add test creating a file with short name but long extension, e.g. foo.jpeg
+  - [x] Add test creating a file with short name
+  - [x] Add test creating a file with long name
+  - [x] Add test creating a file with short name but long extension, e.g. foo.jpeg
   - [ ] Check written code and simplify it once everything works
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions

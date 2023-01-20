@@ -201,27 +201,9 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   result = fat_directory_entry_by_name( dir, base );
   // handle no directory with creation
   if ( ENOENT == result && ( flags & O_CREAT ) ) {
-    uint64_t cluster;
-    result = fat_cluster_get_free( fs, &cluster );
-    if ( EOK != result ) {
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
-    // mark cluster as used
-    result = fat_cluster_set_cluster( fs, cluster, FAT_CLUSTER_EOF );
-    if ( EOK != result ) {
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
+    // try to extend directory
     result = fat_directory_dentry_insert( dir, base, false );
     if ( EOK != result ) {
-      fat_cluster_set_cluster( fs, cluster, FAT_CLUSTER_UNUSED );
       free( dentry );
       free( pathdup_base );
       free( pathdup_dir );

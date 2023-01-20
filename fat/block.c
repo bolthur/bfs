@@ -25,6 +25,30 @@
 #include <fat/block.h>
 #include <fat/cluster.h>
 #include <fat/rootdir.h>
+#include <fat/bfsfat_export.h>
+
+/**
+ * @brief Helper to unload block cache of file
+ *
+ * @param file
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_block_unload( fat_file_t* file ) {
+  // validate
+  if ( ! file ) {
+    return EINVAL;
+  }
+  // clear out
+  if ( file->block.data ) {
+    free( file->block.data );
+    // reset sector to 0 and data
+    file->block.data = NULL;
+    file->block.sector = 0;
+    file->block.cluster = 0;
+    file->block.block = 0;
+  }
+  return EOK;
+}
 
 /**
  * @brief Method to load a fat block by file offset
@@ -33,33 +57,23 @@
  * @param size size of data to load except for fixed sized root directories
  * @return int
  */
-int fat_block_load( fat_file_t* file, uint64_t size ) {
+BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   if ( ! file ) {
     return EINVAL;
   }
+  int result;
   // extract fs pointer
   fat_fs_t* fs = file->mp->fs;
   // extract block device
   common_blockdev_t* bdev = fs->bdev;
-  // check whether end is reached
-  if ( file->fpos >= file->fsize ) {
-    // clear block data if set
-    if ( file->block.data ) {
-      free( file->block.data );
-      // reset sector to 0 and data
-      file->block.data = NULL;
-      file->block.sector = 0;
-    }
-    // success
-    return EOK;
+  // clear block data if set
+  result = fat_block_unload( file );
+  if ( EOK != result ) {
+    return result;
   }
-  // free up set block
-  if ( file->block.data ) {
-    // free up block data
-    free( file->block.data );
-    // reset sector to 0 and data
-    file->block.data = NULL;
-    file->block.sector = 0;
+  // check whether end is reached and return success
+  if ( file->fpos > file->fsize ) {
+    return EOK;
   }
   // calculate current block
   uint64_t block_size = fs->bdev->bdif->block_size;
@@ -74,7 +88,7 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
     dir.file.cluster = file->cluster;
     dir.file.mp = file->mp;
     // get offset and size of root directory
-    int result = fat_rootdir_offset_size( &dir, &rootdir_offset, &rootdir_size );
+    result = fat_rootdir_offset_size( &dir, &rootdir_offset, &rootdir_size );
     if ( EOK != result ) {
       return result;
     }
@@ -100,6 +114,8 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
       return result;
     }
     file->block.sector = ( rootdir_offset + current_block );
+    file->block.cluster = 0;
+    file->block.block = current_block;
   } else {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
@@ -115,7 +131,7 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
     current_block = file->fpos / size;
     // get cluster by number
     uint64_t cluster;
-    int result = fat_cluster_get_by_num(
+    result = fat_cluster_get_by_num(
       fs, file->cluster, current_block, &cluster
     );
     if ( EOK != result ) {
@@ -139,6 +155,8 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
       return result;
     }
     file->block.sector = lba;
+    file->block.cluster = cluster;
+    file->block.block = current_block;
   }
   // return success
   return EOK;
@@ -151,7 +169,7 @@ int fat_block_load( fat_file_t* file, uint64_t size ) {
  * @param size size to write
  * @return int
  */
-int fat_block_write( fat_file_t* file, uint64_t size ) {
+BFSFAT_NO_EXPORT int fat_block_write( fat_file_t* file, uint64_t size ) {
   if ( ! file || !file->block.data ) {
     return EINVAL;
   }

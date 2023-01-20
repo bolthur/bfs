@@ -430,6 +430,10 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     free( dir->data );
     dir->data = NULL;
   }
+  // clear data
+  if ( dir->data && it->data ) {
+    memset( dir->data, 0, sizeof( fat_directory_data_t ) );
+  }
   // allocate entry
   if ( ! dir->entry && it->entry ) {
     dir->entry = malloc( sizeof( fat_structure_directory_entry_t ) );
@@ -484,6 +488,11 @@ BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* dir ) {
   if ( dir->entry ) {
     free( dir->entry );
     dir->entry = NULL;
+  }
+  // unload cached block
+  int result = fat_block_unload( &dir->file );
+  if ( EOK != result ) {
+    return result;
   }
   // return success
   return EOK;
@@ -693,16 +702,12 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   memset( entry, 0, dir->file.fsize );
   // load whole directory
   dir->file.fpos = 0;
-  if ( dir->file.fpos >= dir->file.fsize ) {
-    free( entry );
-    return EINVAL;
-  }
+  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+    * fs->superblock.bytes_per_sector;
+  /// FIXME: EXTEND DIRECTORY IF NECESSARY
   while ( dir->file.fpos < dir->file.fsize ) {
     // load fat block
-    result = fat_block_load(
-      &dir->file,
-      fs->superblock.sectors_per_cluster * fs->superblock.bytes_per_sector
-    );
+    result = fat_block_load( &dir->file, cluster_size );
     if ( EOK != result ) {
       free( entry );
       return result;
@@ -715,11 +720,9 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     memcpy(
       ( uint8_t* )entry + dir->file.fpos,
       dir->file.block.data,
-      fs->superblock.sectors_per_cluster * fs->superblock.bytes_per_sector
+      cluster_size
     );
-    dir->file.fpos += (
-      fs->superblock.sectors_per_cluster * fs->superblock.bytes_per_sector
-    );
+    dir->file.fpos += cluster_size;
   }
   // loop through root directory and try to find a entry
   fat_structure_directory_entry_t* current = entry;
@@ -766,8 +769,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
         free( entry );
         return result;
       }
-      dir->file.fsize += fs->superblock.sectors_per_cluster
-        * fs->superblock.bytes_per_sector;
+      dir->file.fsize += cluster_size;
       // realloc entry space
       void* tmp_entry_extended = realloc( entry, dir->file.fsize );
       // handle error
@@ -775,14 +777,15 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
         free( entry );
         return result;
       }
+      // clear out additional space
+      memset( ( uint8_t* )tmp_entry_extended + old_size, 0, cluster_size );
       // increase found count by newly added entries
       found_size += ( dir->file.fsize - old_size )
         / sizeof( fat_structure_directory_entry_t );
       // overwrite entry pointer
       entry = tmp_entry_extended;
-      start = ( fat_structure_directory_entry_t* )(
-        ( uint8_t* )entry + start_offset
-      );
+      // reset start
+      start = entry + start_offset;
     }
   }
   // handle not enough space
@@ -793,8 +796,6 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   // copy over changes
   memcpy( start, buffer, size );
   // write block by block
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
-    * fs->superblock.bytes_per_sector;
   uint64_t block_count = dir->file.fsize / cluster_size;
   uint64_t block_current = 0;
   for ( uint64_t block_index = 0; block_index < block_count; block_index++ ) {
@@ -926,6 +927,9 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     // set entry data
     entry_data = data;
   } else {
+    if ( ! directory && ext ) {
+      name_length += ( extension_length + 1 );
+    }
     // calculate amount of long entries necessary
     size_t long_name_length = name_length / 13;
     if ( name_length % 13 ) {
@@ -947,10 +951,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       uint8_t* end = ( uint8_t* )( name + name_length );
       // set order information
       data[ index ].order = ( uint8_t )index + 1;
-      // set long filename attribute
-      if ( directory ) {
-        data[ index ].attribute = FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME;
-      }
+      data[ index ].attribute = FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME;
       // populate long entry names
       for (
         uint64_t local_index = 0;
@@ -978,9 +979,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
       ( &data[ long_name_length - 1 ] );
     // set directory flag
-    if ( directory ) {
-      short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
-    }
+    short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
     // set first cluster
     short_entry->first_cluster_lower = ( uint16_t )free_cluster;
     if ( FAT_FAT32 == fs->type ) {
@@ -988,9 +987,6 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     }
     strncpy( short_entry->name, name, 7 );
     short_entry->name[ 7 ] = '~';
-    for ( uint64_t idx = 0; idx < 7; idx++ ) {
-      short_entry->name[ idx ] = ( int )short_entry->name[ idx ];
-    }
     if ( ! directory && ext ) {
       if ( 3 >= extension_length ) {
         strncpy( short_entry->extension, ext, 3 );

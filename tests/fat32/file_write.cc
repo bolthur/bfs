@@ -70,6 +70,11 @@ TEST( fat32, file_write_append ) {
   result = fat_file_write( &file, buffer, strlen( buffer ), &write_count );
   EXPECT_EQ( result, EOK );
   EXPECT_EQ( write_count, strlen( buffer ) );
+  // allocate buffer for content
+  free( buffer );
+  buffer = ( char* )malloc( file.fsize + 1 );
+  EXPECT_TRUE( buffer );
+  memset( buffer, 0, file.fsize + 1 );
   // set to beginning
   result = fat_file_seek( &file, 0, SEEK_SET );
   EXPECT_EQ( result, EOK );

@@ -41,6 +41,10 @@ typedef struct {
 typedef struct {
   /** @brief Sector where data is from */
   uint64_t sector;
+  /** @brief Cluster where data is from */
+  uint64_t cluster;
+  /** @brief Block in cluster chain where data is from */
+  uint64_t block;
   /** @brief Data from sector */
   uint8_t* data;
 } fat_block_t;

@@ -133,7 +133,7 @@ BFSCOMMON_EXPORT int common_mountpoint_remove( const char* mountpoint ) {
     return ENOENT;
   }
   // remove from list
-  LIST_REMOVE(entry, list);
+  LIST_REMOVE( entry, list );
   // free entry
   free( entry );
   // return success

@@ -192,3 +192,107 @@ TEST( fat32, file_open_truncate_file ) {
   // umount
   helper_unmount_test_image( "fat32", "/fat32/" );
 }
+
+TEST( fat32, file_open_create_file_short_short_ext ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asd1.txt", O_RDWR | O_CREAT );
+  EXPECT_EQ( result, EOK );
+  // close file again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asd1.txt" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_STREQ( dir.data->name, "asd1.txt" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // umount
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_open_create_file_short_long_ext ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asd2.jpeg", O_RDWR | O_CREAT );
+  EXPECT_EQ( result, EOK );
+  // close file again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asd2.jpeg" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_STREQ( dir.data->name, "asd2.jpeg" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // umount
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_open_create_file_long_short_ext ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asdftolongname.txt", O_RDWR | O_CREAT );
+  EXPECT_EQ( result, EOK );
+  // close file again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asdftolongname.txt" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_STREQ( dir.data->name, "asdftolongname.txt" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // umount
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_open_create_file_long_long_ext ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to create file
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, "/fat32/hello/asdftolongname2.jpeg", O_RDWR | O_CREAT );
+  EXPECT_EQ( result, EOK );
+  // close file again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // open /hello and check for asdf
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = fat_directory_open( &dir, "/fat32/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find asdf
+  result = fat_directory_entry_by_name( &dir, "asdftolongname2.jpeg" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_STREQ( dir.data->name, "asdftolongname2.jpeg" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // umount
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
