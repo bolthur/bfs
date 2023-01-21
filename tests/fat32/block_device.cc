@@ -34,7 +34,7 @@
 #include "../_helper.hh"
 #include "gtest/gtest.h"
 
-TEST( fat16, mount_null_block_device ) {
+TEST( fat32, mount_null_block_device ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );
@@ -43,10 +43,10 @@ TEST( fat16, mount_null_block_device ) {
   /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
   bdev->part_offset = bdev->bdif->block_size;
   // register block device
-  int result = common_blockdev_register_device( bdev, "fat16" );
+  int result = common_blockdev_register_device( bdev, "fat32" );
   EXPECT_EQ( result, EOK );
   // mount device
-  result = fat_mountpoint_mount( "fat16", "/fat16/", true );
+  result = fat_mountpoint_mount( "fat32", "/fat32/", true );
   EXPECT_EQ( result, ENODATA );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
@@ -55,11 +55,41 @@ TEST( fat16, mount_null_block_device ) {
   // assert fs and fs type
   EXPECT_FALSE( fs );
   // unmount
-  result = fat_mountpoint_umount( "/fat16/" );
+  result = fat_mountpoint_umount( "/fat32/" );
   EXPECT_EQ( result, ENODEV );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
   // unregister device
-  result = common_blockdev_unregister_device( "fat16" );
+  result = common_blockdev_unregister_device( "fat32" );
+  EXPECT_EQ( result, EOK );
+}
+
+TEST( fat32, mount_invalid_block_device ) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  EXPECT_TRUE( bdev );
+  // set blockdev filename
+  common_blockdev_set_fname( "fat.img" );
+  /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
+  bdev->part_offset = bdev->bdif->block_size;
+  // register block device
+  int result = common_blockdev_register_device( bdev, "fat32" );
+  EXPECT_EQ( result, EOK );
+  // mount device
+  result = fat_mountpoint_mount( "fat32", "/fat32/", true );
+  EXPECT_EQ( result, EIO );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 0 );
+  // get fs
+  fat_fs_t* fs = ( fat_fs_t* )bdev->fs;
+  // assert fs and fs type
+  EXPECT_FALSE( fs );
+  // unmount
+  result = fat_mountpoint_umount( "/fat32/" );
+  EXPECT_EQ( result, ENODEV );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 0 );
+  // unregister device
+  result = common_blockdev_unregister_device( "fat32" );
   EXPECT_EQ( result, EOK );
 }

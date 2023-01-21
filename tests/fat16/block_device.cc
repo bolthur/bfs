@@ -16,8 +16,8 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 // IWYU pragma: no_include <errno.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 #include <blockdev/tests/blockdev.h>
 #include <common/mountpoint.h>
@@ -34,7 +34,37 @@
 #include "../_helper.hh"
 #include "gtest/gtest.h"
 
-TEST( fat32, mount_invalid_block_device ) {
+TEST( fat16, mount_null_block_device ) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  EXPECT_TRUE( bdev );
+  // set blockdev filename
+  common_blockdev_set_fname( NULL );
+  /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
+  bdev->part_offset = bdev->bdif->block_size;
+  // register block device
+  int result = common_blockdev_register_device( bdev, "fat16" );
+  EXPECT_EQ( result, EOK );
+  // mount device
+  result = fat_mountpoint_mount( "fat16", "/fat16/", true );
+  EXPECT_EQ( result, ENODATA );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 0U );
+  // get fs
+  fat_fs_t* fs = ( fat_fs_t* )bdev->fs;
+  // assert fs and fs type
+  EXPECT_FALSE( fs );
+  // unmount
+  result = fat_mountpoint_umount( "/fat16/" );
+  EXPECT_EQ( result, ENODEV );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 0U );
+  // unregister device
+  result = common_blockdev_unregister_device( "fat16" );
+  EXPECT_EQ( result, EOK );
+}
+
+TEST( fat16, mount_invalid_block_device ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );
@@ -43,10 +73,10 @@ TEST( fat32, mount_invalid_block_device ) {
   /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
   bdev->part_offset = bdev->bdif->block_size;
   // register block device
-  int result = common_blockdev_register_device( bdev, "fat32" );
+  int result = common_blockdev_register_device( bdev, "fat16" );
   EXPECT_EQ( result, EOK );
   // mount device
-  result = fat_mountpoint_mount( "fat32", "/fat32/", true );
+  result = fat_mountpoint_mount( "fat16", "/fat16/", true );
   EXPECT_EQ( result, EIO );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0 );
@@ -55,11 +85,11 @@ TEST( fat32, mount_invalid_block_device ) {
   // assert fs and fs type
   EXPECT_FALSE( fs );
   // unmount
-  result = fat_mountpoint_umount( "/fat32/" );
+  result = fat_mountpoint_umount( "/fat16/" );
   EXPECT_EQ( result, ENODEV );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0 );
   // unregister device
-  result = common_blockdev_unregister_device( "fat32" );
+  result = common_blockdev_unregister_device( "fat16" );
   EXPECT_EQ( result, EOK );
 }

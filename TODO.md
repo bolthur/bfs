@@ -5,7 +5,7 @@
 - [ ] Provide necessary fallback stuff, so that library can also be used without c library
 - [x] Finish FAT library read support
   - [x] Finish implementation of `fat_file_read`
-- [ ] Add FAT library write support
+- [x] Add FAT library write support
   - [x] Add test where cluster chain needs to be extended <= Within truncate tests
   - [x] Extend test creating a folder to fail on second try
   - [x] Add test creating a directory with long name
@@ -17,11 +17,15 @@
   - [x] Add test to ensure that read only is working correctly
   - [x] Add test to read a write only opened file
   - [x] Add test for write append with O_APPEND
-  - [ ] Add test for writing a file
+  - [x] Add test for writing a file
   - [x] Add test creating a file with short name
   - [x] Add test creating a file with long name
   - [x] Add test creating a file with short name but long extension, e.g. foo.jpeg
-  - [ ] Check written code and simplify it once everything works
+- [ ] Implement fat_file_move
+- [ ] Implement fat_file_remove
+- [ ] Implement fat_directory_remove
+- [ ] Implement fat_directory_move
+- [ ] Check written code and simplify it once everything works
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions
 - [x] Split up tests in single files
