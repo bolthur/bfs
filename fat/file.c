@@ -215,9 +215,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   }
   // handle no file
   if ( EOK != result ) {
-    if ( ENOENT == result ) {
-      fat_directory_close( dir );
-    }
+    fat_directory_close( dir );
     free( dentry );
     free( pathdup_base );
     free( pathdup_dir );
@@ -236,7 +234,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // copy over directory entry data
   memcpy( dentry, dir->entry, sizeof( *dentry ) );
   file->dentry = dentry;
-  file->dentry_pos = dir->file.fpos;
+  file->dentry_pos = dir->entry_pos;
   // handle append mode
   if ( file->flags & O_APPEND ) {
     file->fpos = file->fsize;

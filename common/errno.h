@@ -51,6 +51,8 @@ extern "C" {
   #define EINVAL 22
   /** @brief Fallback for EROFS, when no errno is available */
   #define EROFS 30
+  /** @brief Fallback for ENOTEMPTY, when no errno is available */
+  #define ENOTEMPTY 39
   /** @brief Fallback for ENODATA, when no errno is available */
   #define ENODATA 61
   /** @brief Fallback for ENOSYS, when no errno is available */

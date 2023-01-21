@@ -89,7 +89,6 @@ BFSFAT_NO_EXPORT int fat_directory_size(
  * @param path
  * @return int
  *
- * @todo implement
  * @todo add test for removal of short named directory
  * @todo add test for removal of long named directory
  */
@@ -109,7 +108,102 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   if ( fs->read_only ) {
     return EROFS;
   }
-  return ENOSYS;
+  // duplicate path for base and dirname
+  char* pathdup_base = strdup( path );
+  if ( ! pathdup_base ) {
+    return ENOMEM;
+  }
+  char* pathdup_dir = strdup( path );
+  if ( ! pathdup_dir ) {
+    free( pathdup_base );
+    return ENOMEM;
+  }
+  // extract base and dirname
+  char* base = basename( pathdup_base );
+  char* dirpath  = dirname( pathdup_dir );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // try to open directory
+  fat_directory_t* dir = malloc( sizeof( *dir ) );
+  if ( ! dir ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOMEM;
+  }
+  // clear out
+  memset( dir, 0, sizeof( *dir ) );
+  // first open complete path
+  int result = fat_directory_open( dir, path );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // ensure it's empty
+  if ( 0 != dir->file.fsize ) {
+    fat_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return ENOTEMPTY;
+  }
+  // close directory again
+  result = fat_directory_close( dir );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // open parent directory directory
+  result = fat_directory_open( dir, dirpath );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // get entry by name
+  result = fat_directory_entry_by_name( dir, base );
+  if ( EOK != result ) {
+    fat_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // try to remove it
+  result = fat_directory_dentry_remove( dir, dir->entry, dir->entry_pos );
+  if ( EOK != result ) {
+    fat_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // close directory
+  result = fat_directory_close( dir );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // free everything up
+  free( pathdup_base );
+  free( pathdup_dir );
+  free( dir );
+  // return success
+  return EOK;
 }
 
 /**
@@ -455,6 +549,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // copy over entry
   if ( it->entry ) {
     memcpy( dir->entry, it->entry, sizeof( fat_structure_directory_entry_t ) );
+    dir->entry_pos = it->reference->file.fpos;
   }
   // copy over data
   if ( it->data ) {
@@ -1055,4 +1150,23 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_update(
   memcpy( dir->file.block.data + offset, dentry, sizeof( *dentry ) );
   // write data again
   return fat_block_write( &dir->file, cluster_size );
+}
+
+/**
+ * @brief Method to remove a directory entry
+ *
+ * @param dir
+ * @param dentry
+ * @param pos
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
+  fat_directory_t* dir,
+  fat_structure_directory_entry_t* dentry,
+  uint64_t pos
+) {
+  ( void )dir;
+  ( void )dentry;
+  ( void )pos;
+  return ENOSYS;
 }

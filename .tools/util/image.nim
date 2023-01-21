@@ -92,6 +92,8 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
         cmdResult = execCmdEx( "mmd -i " & partitionImage & " ::" & localfolder )
       else:
         var splitted = splitPath( file )
+        if splitted.tail == ".gitkeep":
+          continue
         var localfolder = splitted.head.replace( filesToCopy )
         cmdResult = execCmdEx( "mcopy -i " & partitionImage & " " & file & " ::" & localfolder )
       if 0 != cmdResult.exitCode:

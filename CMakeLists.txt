@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.25.1)
 project(
   bfs
   VERSION 0.1.0
-  DESCRIPTION "lightweight fat library implementation"
+  DESCRIPTION "bolthur filesystem library project"
   HOMEPAGE_URL "https://github.com/bolthur/bfs"
   LANGUAGES C)
 
@@ -193,8 +193,10 @@ if (${TEST_ACTIVE})
 endif()
 
 # distribution stuff
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_VENDOR "bolthur")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "bolthur filesystem library project")
+set(CPACK_SOURCE_GENERATOR "TGZ;ZIP")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}")
 set(CPACK_SOURCE_IGNORE_FILES "/build" ".git")
 include(CPack)
 
