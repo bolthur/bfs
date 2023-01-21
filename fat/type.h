@@ -81,6 +81,8 @@ typedef struct fat_directory {
   fat_structure_directory_entry_t* entry;
   /** @brief Current fat directory entry offset */
   uint64_t entry_pos;
+  /** @brief directory content size */
+  uint64_t entry_size;
   /** @brief Current fat directory data */
   fat_directory_data_t* data;
 } fat_directory_t;

@@ -79,6 +79,14 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "REMOVE", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "HELLO", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -94,7 +102,23 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "removefail", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "LOREM.TXT", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "removelongname", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // get next entry
   result = fat_directory_next_entry( &dir );
@@ -128,7 +152,7 @@ TEST( fat32, root_directory_read_dir_utils_rewind ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "HELLO", dir.data->name );
+  EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // rewind
@@ -140,7 +164,7 @@ TEST( fat32, root_directory_read_dir_utils_rewind ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "HELLO", dir.data->name );
+  EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // close directory
@@ -188,6 +212,13 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "REMOVE", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "HELLO", it.data->name );
   EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -201,7 +232,21 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_next( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "removefail", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "LOREM.TXT", it.data->name );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "removelongname", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // get next entry
   result = fat_iterator_directory_next( &it );

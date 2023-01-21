@@ -132,7 +132,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     // get cluster by number
     uint64_t cluster;
     result = fat_cluster_get_by_num(
-      fs, file->cluster, current_block, &cluster
+      fs, file->cluster, current_block + 1, &cluster
     );
     if ( EOK != result ) {
       return result;

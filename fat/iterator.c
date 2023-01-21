@@ -117,18 +117,12 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
     || it->reference->file.block.block != next_block
   ) {
     it->reference->file.fpos = pos;
-    // trick fat block load to load next block correctly
-    if ( 0 < next_block ) {
-      it->reference->file.fpos += cluster_size;
-    }
     // load block
     int result = fat_block_load( &it->reference->file, cluster_size );
     // validate return
     if ( EOK != result ) {
       return result;
     }
-    // reset fpos
-    it->reference->file.fpos = pos;
   }
   // update iterator position
   it->reference->file.fpos = pos;
@@ -178,18 +172,12 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
       || it->reference->file.block.block != next_block
     ) {
       it->reference->file.fpos = pos;
-      // trick fat block load to load next block correctly
-      if ( 0 < next_block ) {
-        it->reference->file.fpos += cluster_size;
-      }
       // load block
       result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
       if ( EOK != result ) {
         return result;
       }
-      // reset fpos
-      it->reference->file.fpos = pos;
     }
     // update iterator position
     it->reference->file.fpos = pos;
@@ -243,18 +231,12 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
       || it->reference->file.block.block != next_block
     ) {
       it->reference->file.fpos = pos;
-      // trick fat block load to load next block correctly
-      if ( 0 < next_block ) {
-        it->reference->file.fpos += cluster_size;
-      }
       // load block
       result = fat_block_load( &it->reference->file, cluster_size );
       // validate return
       if ( EOK != result ) {
         return result;
       }
-      // reset fpos
-      it->reference->file.fpos = pos;
     }
     // update iterator position
     it->reference->file.fpos = pos;

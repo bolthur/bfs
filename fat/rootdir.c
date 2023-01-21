@@ -159,7 +159,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
  * @param size
  * @return int
  */
-int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size ) {
+BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size ) {
   // validate
   if ( ! dir || ! dir->file.mp->fs || ! buffer || ! size ) {
     return EINVAL;
@@ -260,4 +260,110 @@ int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size ) {
   } else {
     return EINVAL;
   }
+}
+
+/**
+ * @brief Remove dir entry from root director
+ *
+ * @param dir
+ * @param dentry
+ * @param pos
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_rootdir_remove(
+  fat_directory_t* dir,
+  fat_structure_directory_entry_t* dentry,
+  uint64_t pos
+) {
+  // validate
+  if ( ! dir || ! dir->file.mp->fs || ! dentry ) {
+    return EINVAL;
+  }
+  // bunch of necessary variables
+  fat_fs_t* fs = dir->file.mp->fs;
+  // check for readonly
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // fat32 root directory is treated as normal directory
+  if ( FAT_FAT32 == fs->type ) {
+    dir->file.cluster = fs->superblock.extended.fat32.root_cluster;
+    return fat_directory_dentry_remove( dir, dentry, pos );
+  }
+  // handle unsupported
+  if ( FAT_FAT12 != fs->type && FAT_FAT16 != fs->type ) {
+    return EINVAL;
+  }
+  uint64_t block_size = fs->bdev->bdif->block_size;
+  uint64_t rootdir_offset = ( uint64_t )( fs->superblock.reserved_sector_count + (
+    fs->superblock.table_count * fs->superblock.table_size_16
+  ) );
+  // calculate root dir size with round up
+  uint64_t rootdir_size = (
+    fs->superblock.root_entry_count
+      * sizeof( fat_structure_directory_entry_t )
+      + ( block_size - 1 )
+  ) / block_size;
+  // validate pos
+  if ( pos > rootdir_size * block_size ) {
+    return EINVAL;
+  }
+  // allocate space
+  fat_structure_directory_entry_t* entry = malloc( rootdir_size * block_size );
+  if ( ! entry ) {
+    return ENOMEM;
+  }
+  // load whole root directory
+  int result = common_blockdev_bytes_read(
+    fs->bdev,
+    rootdir_offset * block_size,
+    entry,
+    rootdir_size * block_size
+  );
+  if ( EOK != result ) {
+    free( entry );
+    return result;
+  }
+  fat_structure_directory_entry_t* start = entry;
+  fat_structure_directory_entry_t* current = ( fat_structure_directory_entry_t* )(
+    ( uint8_t* )entry + pos
+  );
+  uint64_t count = 0;
+  // loop backwards until first possible long name
+  while( true ) {
+    // decrement current
+    current--;
+    // handle beginning reached
+    if (
+      start == current
+      || current->attributes != FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME
+    ) {
+      break;
+    }
+    // increment count
+    count++;
+  }
+  // update position
+  pos -= count * sizeof( fat_structure_directory_entry_t );
+  // increment due to short entry
+  count++;
+  // clear out
+  memset(
+    ( uint8_t* )start + pos,
+    0,
+    count * sizeof( fat_structure_directory_entry_t )
+  );
+  // write back whole root directory
+  result = common_blockdev_bytes_write(
+    fs->bdev,
+    rootdir_offset * block_size,
+    entry,
+    rootdir_size * block_size
+  );
+  if ( EOK != result ) {
+    free( entry );
+    return result;
+  }
+  free( entry );
+  return EOK;
 }

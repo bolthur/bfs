@@ -21,6 +21,7 @@
   - [x] Add test creating a file with short name
   - [x] Add test creating a file with long name
   - [x] Add test creating a file with short name but long extension, e.g. foo.jpeg
+- [x] Fix read out of directory via fat directory next when switching to new cluster
 - [ ] Implement fat_file_move
 - [ ] Implement fat_file_remove
 - [ ] Implement fat_directory_remove
