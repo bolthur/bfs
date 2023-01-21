@@ -335,7 +335,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     current--;
     // handle beginning reached
     if (
-      start == current
+      start >= current
       || current->attributes != FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME
     ) {
       break;
