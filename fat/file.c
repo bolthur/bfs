@@ -873,6 +873,29 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
  * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
+  if ( ! old_path || ! new_path ) {
+    return EINVAL;
+  }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( old_path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  common_mountpoint_t* mp_new = common_mountpoint_find( new_path );
+  if ( ! mp_new ) {
+    return ENOMEM;
+  }
+  // treat different mount points as error
+  if ( mp != mp_new ) {
+    return EINVAL;
+  }
+  // get fs
+  fat_fs_t* fs = mp->fs;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  /// FIXME: ADD FURTHER LOGIC
   ( void )old_path;
   ( void )new_path;
   return ENOSYS;
