@@ -95,6 +95,9 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
       free( it->data );
       it->data = NULL;
     }
+    if ( it->entry ) {
+      it->entry = NULL;
+    }
     // set fpos to position
     it->reference->file.fpos = pos;
     // return no entry

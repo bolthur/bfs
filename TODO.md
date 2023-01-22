@@ -24,7 +24,7 @@
 - [x] Fix read out of directory via fat directory next when switching to new cluster
 - [ ] Implement fat_file_move
 - [ ] Implement fat_file_remove
-- [ ] Implement fat_directory_remove
+- [x] Implement fat_directory_remove
 - [ ] Implement fat_directory_move
 - [ ] Check written code and simplify it once everything works
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
