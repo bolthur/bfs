@@ -433,6 +433,7 @@ int fat_file_read(
  * @return int
  *
  * @todo add test for this function
+ * @todo truncate of file to 0 means free all clusters and set to 0
  */
 BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
@@ -710,8 +711,156 @@ BFSFAT_EXPORT int fat_file_write(
  * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_remove( const char* path ) {
-  ( void )path;
-  return ENOSYS;
+  // validate parameter
+  if ( ! path ) {
+    return EINVAL;
+  }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  // get fs
+  fat_fs_t* fs = mp->fs;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // duplicate path for base and dirname
+  char* pathdup_base = strdup( path );
+  if ( ! pathdup_base ) {
+    return ENOMEM;
+  }
+  char* pathdup_dir = strdup( path );
+  if ( ! pathdup_dir ) {
+    free( pathdup_base );
+    return ENOMEM;
+  }
+  // extract base and dirname
+  char* base = basename( pathdup_base );
+  char* dirpath  = dirname( pathdup_dir );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // try to open directory
+  fat_directory_t* dir = malloc( sizeof( *dir ) );
+  if ( ! dir ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOMEM;
+  }
+  // clear out
+  memset( dir, 0, sizeof( *dir ) );
+  // open directory
+  int result = fat_directory_open( dir, dirpath );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // get entry
+  result = fat_directory_entry_by_name( dir, base );
+  if ( EOK != result ) {
+    fat_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // try to remove it from directory
+  result = fat_directory_dentry_remove( dir, dir->entry, dir->entry_pos );
+  if ( EOK != result ) {
+    fat_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // cache start cluster
+  uint32_t start_cluster = ( uint32_t )dir->entry->first_cluster_lower;
+  if ( FAT_FAT32 == fs->type ) {
+    start_cluster |= ( ( uint32_t )dir->entry->first_cluster_upper << 16 );
+  }
+  // close directory and free memory
+  result = fat_directory_close( dir );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  free( dir );
+  if ( 0 < start_cluster ) {
+    // allocate space for cluster list
+    uint64_t* cluster_list = NULL;
+    // load complete cluster list
+    uint64_t max_index = 0;
+    while ( true ) {
+      // get cluster
+      uint64_t cluster;
+      result = fat_cluster_get_by_num( fs, start_cluster, max_index + 1, &cluster );
+      // handle end reached
+      if ( ENXIO == result ) {
+        break;
+      }
+      // handle error
+      if ( EOK != result ) {
+        free( cluster_list );
+        free( pathdup_base );
+        free( pathdup_dir );
+        return result;
+      }
+      uint64_t* new_list = NULL;
+      // allocate list
+      if ( ! cluster_list ) {
+        new_list = malloc( ( max_index + 1 ) * sizeof( uint64_t ) );
+      // reallocate list
+      } else {
+        new_list = realloc( cluster_list, ( max_index + 1 ) * sizeof( uint64_t ) );
+      }
+      // handle error
+      if ( ! new_list ) {
+        free( cluster_list );
+        free( pathdup_base );
+        free( pathdup_dir );
+        return ENOMEM;
+      }
+      // overwrite old list
+      cluster_list = new_list;
+      // push back item and increment index
+      cluster_list[ max_index++ ] = cluster;
+    }
+    // free cluster list entries
+    for ( uint64_t index = 0; index < max_index; index++ ) {
+      // try to free cluster
+      result = fat_cluster_set_cluster(
+        fs, cluster_list[ index ], FAT_CLUSTER_UNUSED
+      );
+      // handle error
+      if ( EOK != result ) {
+        free( cluster_list );
+        free( pathdup_base );
+        free( pathdup_dir );
+        return result;
+      }
+    }
+    if ( cluster_list ) {
+      free( cluster_list );
+    }
+  }
+  // free memory
+  free( pathdup_base );
+  free( pathdup_dir );
+  // return success
+  return EOK;
 }
 
 /**
@@ -760,7 +909,7 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
     if ( EOK != result ) {
       return result;
     }
-    // allocate cluster size
+    // calculate cluster size
     uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     // get last cluster

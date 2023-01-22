@@ -749,3 +749,101 @@ TEST( fat12, file_ftruncate_shrink_size_only ) {
   EXPECT_EQ( result, EOK );
   helper_unmount_test_image( "fat12", "/fat12/" );
 }
+
+TEST( fat12, file_remove_rootdir_ro_fail ) {
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/fremove.txt" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/fremove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, file_remove_rootdir_rw_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/fremove.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/fremove.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, file_remove_rootdir_rw_longname ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/fremovelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/fremovelongname.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, file_remove_dir_ro_fail ) {
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/hello/file/remove.txt" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/hello/file/remove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, file_remove_dir_rw_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/hello/file/remove.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/hello/file/remove.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, file_remove_dir_rw_longname ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_file_remove( "/fat12/hello/file/removelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat12/hello/file/removelongname.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}

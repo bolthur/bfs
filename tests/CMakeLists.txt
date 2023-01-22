@@ -14,20 +14,6 @@ file (GLOB fat12_file "fat12/*")
 file (GLOB fat16_file "fat16/*")
 file (GLOB fat32_file "fat32/*")
 
-add_executable(bfs_check
-  _helper.cc
-  ${blockdev_file}
-  ${fat12_file}
-  ${fat16_file}
-  ${fat32_file} )
-if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
-else()
-  target_link_libraries(bfs_check GTest::gtest_main bfsfat bfsblockdev bfscommon)
-endif()
-gtest_discover_tests(bfs_check)
-
-
 # custom commands for generation of image files
 add_custom_target(
   dummy_target ALL
@@ -59,3 +45,17 @@ add_custom_command(
   COMMENT "Generating FAT32 test image"
   DEPENDS always_rebuild
 )
+
+add_executable(bfs_check
+  _helper.cc
+  ${blockdev_file}
+  ${fat12_file}
+  ${fat16_file}
+  ${fat32_file} )
+if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
+else()
+  target_link_libraries(bfs_check GTest::gtest_main bfsfat bfsblockdev bfscommon)
+endif()
+gtest_discover_tests(bfs_check)
+add_dependencies(bfs_check dummy_target)
