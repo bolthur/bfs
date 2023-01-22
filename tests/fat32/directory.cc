@@ -79,6 +79,14 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "movelongname", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -102,6 +110,22 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "MOVEFAIL", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "MOVE", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "WORLD.TXT", dir.data->name );
 
   // get next entry
@@ -118,6 +142,13 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "LOREM.TXT", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "FMOVE.TXT", dir.data->name );
 
   // get next entry
   result = fat_directory_next_entry( &dir );
@@ -166,6 +197,14 @@ TEST( fat32, root_directory_read_dir_utils_rewind ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "movelongname", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -178,7 +217,7 @@ TEST( fat32, root_directory_read_dir_utils_rewind ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "REMOVE", dir.data->name );
+  EXPECT_STREQ( "movelongname", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // close directory
@@ -226,6 +265,13 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "movelongname", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "REMOVE", it.data->name );
   EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -246,6 +292,20 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_next( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "MOVEFAIL", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "MOVE", it.data->name );
+  EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "WORLD.TXT", it.data->name );
 
   // get next entry
@@ -260,6 +320,12 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "LOREM.TXT", it.data->name );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "FMOVE.TXT", it.data->name );
 
   // get next entry
   result = fat_iterator_directory_next( &it );

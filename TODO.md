@@ -27,6 +27,7 @@
 - [x] Implement fat_directory_remove
 - [ ] Implement fat_directory_move
 - [ ] Check and add proper handling for empty files, which means start cluster is 0
+- [ ] Remove root dir test seems to break the image for mdir
 - [ ] Check written code and simplify it once everything works
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions

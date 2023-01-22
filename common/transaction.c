@@ -78,6 +78,7 @@ BFSCOMMON_EXPORT int common_transaction_rollback( void ) {
  *
  * @param data
  * @param size
+ * @param index
  * @return int
  */
 BFSCOMMON_EXPORT int common_transaction_push(
