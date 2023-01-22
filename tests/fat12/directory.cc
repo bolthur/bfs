@@ -95,6 +95,13 @@ TEST( fat12, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "fremovelongname.txt", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "WORLD.TXT", dir.data->name );
 
   // get next entry
@@ -119,6 +126,13 @@ TEST( fat12, root_directory_read_dir_utils ) {
   EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "removelongname", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "FREMOVE.TXT", dir.data->name );
 
   // get next entry
   result = fat_directory_next_entry( &dir );
@@ -226,6 +240,12 @@ TEST( fat12, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_next( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "fremovelongname.txt", it.data->name );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "WORLD.TXT", it.data->name );
 
   // get next entry
@@ -247,6 +267,12 @@ TEST( fat12, directory_iterator_root_dir_read ) {
   EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "removelongname", it.data->name );
   EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "FREMOVE.TXT", it.data->name );
 
   // get next entry
   result = fat_iterator_directory_next( &it );
