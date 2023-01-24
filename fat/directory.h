@@ -39,15 +39,17 @@ int fat_directory_next_entry( fat_directory_t* dir );
 int fat_directory_rewind( fat_directory_t* dir );
 int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
 
-int fat_directory_size( fat_directory_t* dir, uint64_t* size );
-int fat_directory_entry_is_valid( fat_structure_directory_entry_t* entry, bool* is_valid );
-int fat_directory_entry_is_free( fat_structure_directory_entry_t* entry, bool* is_free );
-int fat_directory_entry_is_dot( fat_structure_directory_entry_t* entry, bool* is_dot );
-int fat_directory_extract_name_short( fat_structure_directory_entry_t* entry, char* name );
-int fat_directory_extend( fat_directory_t* dir, void* buffer, uint64_t size );
-int fat_directory_dentry_insert( fat_directory_t* dir, const char* name, bool directory );
-int fat_directory_dentry_update( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
-int fat_directory_dentry_remove( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
+#if defined( _BFS_COMPILING )
+  int fat_directory_size( fat_directory_t* dir, uint64_t* size );
+  int fat_directory_entry_is_valid( fat_structure_directory_entry_t* entry, bool* is_valid );
+  int fat_directory_entry_is_free( fat_structure_directory_entry_t* entry, bool* is_free );
+  int fat_directory_entry_is_dot( fat_structure_directory_entry_t* entry, bool* is_dot );
+  int fat_directory_extract_name_short( fat_structure_directory_entry_t* entry, char* name );
+  int fat_directory_extend( fat_directory_t* dir, void* buffer, uint64_t size );
+  int fat_directory_dentry_insert( fat_directory_t* dir, const char* name, uint64_t cluster, bool directory );
+  int fat_directory_dentry_update( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
+  int fat_directory_dentry_remove( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
+#endif
 
 #ifdef __cplusplus
 }

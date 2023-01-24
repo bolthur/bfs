@@ -41,7 +41,11 @@
  * @param whence
  * @return int
  */
-BFSFAT_EXPORT int fat_file_seek( fat_file_t* file, int64_t offset, uint32_t whence ) {
+BFSFAT_EXPORT int fat_file_seek(
+  fat_file_t* file,
+  int64_t offset,
+  uint32_t whence
+) {
   // validate parameter
   if ( ! file ) {
     return EINVAL;
@@ -202,7 +206,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   // handle no directory with creation
   if ( ENOENT == result && ( flags & O_CREAT ) ) {
     // try to extend directory
-    result = fat_directory_dentry_insert( dir, base, false );
+    result = fat_directory_dentry_insert( dir, base, 0, false );
     if ( EOK != result ) {
       free( dentry );
       free( pathdup_base );
@@ -333,6 +337,10 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
     free( file->block.data );
     file->block.data = NULL;
   }
+  if ( file->dentry ) {
+    free( file->dentry );
+    file->dentry = NULL;
+  }
   if ( file->dir ) {
     result = fat_directory_close( file->dir );
     if ( EOK != result ) {
@@ -340,10 +348,6 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
     }
     free( file->dir );
     file->dir = NULL;
-  }
-  if ( file->dentry ) {
-    free( file->dentry );
-    file->dentry = NULL;
   }
   // overwrite everything with 0
   memset( file, 0, sizeof( fat_file_t ) );
@@ -894,6 +898,24 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   // handle read only
   if ( fs->read_only ) {
     return EROFS;
+  }
+  // open destination to check whether it exists
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  int result = fat_file_open2( &file, new_path, O_RDONLY );
+  if ( ENOENT != result ) {
+    fat_file_close( &file );
+    return EOK == result ? EEXIST : result;
+  }
+  // open source to check whether it exists
+  result = fat_file_open2( &file, old_path, O_RDONLY );
+  if ( EOK != result ) {
+    fat_file_close( &file );
+    return EOK == result ? ENOENT : result;
+  }
+  result = fat_file_close( &file );
+  if ( EOK != result ) {
+    return result;
   }
   /// FIXME: ADD FURTHER LOGIC
   ( void )old_path;
