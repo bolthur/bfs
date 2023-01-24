@@ -1399,6 +1399,10 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   while( true ) {
     // decrement current
     current--;
+    // increment count if long name
+    if ( current->attributes == FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME ) {
+      count++;
+    }
     // handle beginning reached
     if (
       start >= current
@@ -1406,8 +1410,6 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
     ) {
       break;
     }
-    // increment count
-    count++;
   }
   // update position
   pos -= count * sizeof( fat_structure_directory_entry_t );

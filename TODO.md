@@ -25,7 +25,7 @@
 - [ ] Implement fat_file_move
 - [x] Implement fat_file_remove
 - [x] Implement fat_directory_remove
-- [ ] Implement fat_directory_move
+- [x] Implement fat_directory_move
 - [ ] Check and add proper handling for empty files, which means start cluster is 0
 - [ ] Remove root dir test seems to break the image for mdir
 - [ ] Check written code and simplify it once everything works

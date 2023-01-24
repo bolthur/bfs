@@ -719,3 +719,333 @@ TEST( fat12, directory_remove_dir_rw_longname ) {
   // unmount test image
   helper_unmount_test_image( "fat12", "/fat12/" );
 }
+
+TEST( fat12, directory_move_rootdir_ro_fail ) {
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/move", "/fat12/move2" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_rootdir_rw_notempty ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/movefail", "/fat12/move2" );
+  EXPECT_EQ( result, ENOTEMPTY );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_rootdir_rw_exist ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/move", "/fat12/movefail" );
+  EXPECT_EQ( result, EEXIST );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_rootdir_source_not_exist_fail ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/moveasdf", "/fat12/moveasdf2" );
+  EXPECT_EQ( result, ENOENT );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_rootdir_rw_short_name_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/move", "/fat12/move2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/move2", "/fat12/MOVE" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_rootdir_rw_long_name_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/movelongname", "/fat12/movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/movelongname2", "/fat12/movelongname" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_ro_fail ) {
+  helper_mount_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/move", "/fat12/hello/folder/move2" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_rw_notempty ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/movefail", "/fat12/hello/folder/move2" );
+  EXPECT_EQ( result, ENOTEMPTY );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_rw_exist ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/move", "/fat12/hello/folder/movefail" );
+  EXPECT_EQ( result, EEXIST );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_source_not_exist_fail ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/moveasdf", "/fat12/hello/folder/moveasdf2" );
+  EXPECT_EQ( result, ENOENT );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_rw_short_name_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/move", "/fat12/hello/folder/move2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/hello/folder/move2", "/fat12/hello/folder/MOVE" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_rw_long_name_success ) {
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // try to remove directory
+  int result = fat_directory_move( "/fat12/hello/folder/movelongname", "/fat12/hello/folder/movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/hello/folder/movelongname2", "/fat12/hello/folder/movelongname" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
