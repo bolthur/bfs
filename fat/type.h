@@ -62,7 +62,7 @@ typedef struct fat_file {
   /** @brief Current position in file */
   uint64_t fpos;
   /** @brief File start cluster */
-  uint32_t cluster;
+  uint64_t cluster;
   /** @brief Some data block used for reading */
   fat_block_t block;
   /** @brief Directory containing the file */

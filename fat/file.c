@@ -390,7 +390,9 @@ int fat_file_read(
     return EINVAL;
   }
   // cap read size to maximum if exceeding
-  if ( file->fpos + size > file->fsize ) {
+  if ( 0 == file->fsize ) {
+    size = 0;
+  } else if ( file->fpos + size > file->fsize ) {
     size -= ( file->fpos + size - file->fsize );
   }
   // calculate sector to start with
@@ -474,7 +476,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     return result;
   }
   // handle shrink
-  if ( old_count > new_count && new_count > 0 ) {
+  if ( old_count > new_count ) {
     // allocate space for cluster list
     uint64_t* cluster_list = malloc( sizeof( uint64_t ) * old_count );
     if ( ! cluster_list ) {
@@ -493,11 +495,13 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // push to array
       cluster_list[ index ] = cluster;
     }
-    // set last new cluster as chain end
-    result = fat_cluster_set_cluster( fs, cluster_list[ new_count - 1 ], value );
-    if ( EOK != result ) {
-      free( cluster_list );
-      return result;
+    // set last new cluster as chain end if new count is not equal to zero
+    if ( 0 != new_count ) {
+      result = fat_cluster_set_cluster( fs, cluster_list[ new_count - 1 ], value );
+      if ( EOK != result ) {
+        free( cluster_list );
+        return result;
+      }
     }
     // mark other clusters as unused
     for ( uint64_t index = new_count; index < old_count; index++ ) {
@@ -510,6 +514,14 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         free( cluster_list );
         return result;
       }
+    }
+    // reset first cluster if new count is 0
+    if ( 0 == new_count ) {
+      file->dentry->first_cluster_lower = 0;
+      if ( FAT_FAT32 == fs->type ) {
+        file->dentry->first_cluster_upper = 0;
+      }
+      file->cluster = 0;
     }
     // free cluster
     free( cluster_list );
@@ -1083,11 +1095,21 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
   if ( fs->read_only ) {
     return EROFS;
   }
+  // cache start cluster
+  bool update_dentry = false;
+  uint64_t start_cluster = file->cluster;
+  // determine cluster chain end value
+  uint64_t chain_end_value;
+  int result = fat_cluster_get_chain_end_value( fs, &chain_end_value );
+  if ( EOK != result ) {
+    return result;
+  }
+  uint64_t fsize = file->fsize;
   // loop and add clusters
   for ( uint64_t index = 0; index < num; index++ ) {
     // find a free cluster
     uint64_t new_cluster;
-    int result = fat_cluster_get_free( fs, &new_cluster );
+    result = fat_cluster_get_free( fs, &new_cluster );
     // handle error
     if ( EOK != result ) {
       return result;
@@ -1096,35 +1118,57 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
     uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     // get last cluster
-    uint64_t last_cluster;
-    uint64_t chain_index = file->fsize / cluster_size;
-    if ( file->fsize % cluster_size ) {
-      chain_index++;
-    }
-    result = fat_cluster_get_by_num(
-      fs, file->cluster, chain_index, &last_cluster
-    );
-    // handle error
-    if ( EOK != result ) {
-      return result;
-    }
-    // determine cluster chain end value
-    uint64_t value;
-    result = fat_cluster_get_chain_end_value( fs, &value );
-    if ( EOK != result ) {
-      return result;
+    uint64_t last_cluster = 0;
+    if ( start_cluster ) {
+      uint64_t chain_index = file->fsize / cluster_size;
+      if ( file->fsize % cluster_size ) {
+        chain_index++;
+      }
+      result = fat_cluster_get_by_num(
+        fs, file->cluster, chain_index, &last_cluster
+      );
+      // handle error
+      if ( EOK != result ) {
+        return result;
+      }
     }
     // try to mark new cluster as chain end
-    result = fat_cluster_set_cluster( fs, new_cluster, value );
+    result = fat_cluster_set_cluster( fs, new_cluster, chain_end_value );
     // handle error
     if ( EOK != result ) {
       return result;
     }
-    // set new cluster within block current
-    result = fat_cluster_set_cluster( fs, last_cluster, new_cluster );
-    // handle error
+    if ( start_cluster ) {
+      // set new cluster within block current
+      result = fat_cluster_set_cluster( fs, last_cluster, new_cluster );
+      // handle error
+      if ( EOK != result ) {
+        fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
+        return result;
+      }
+    } else {
+      // set first cluster
+      file->dentry->first_cluster_lower = ( uint16_t )new_cluster;
+      if ( FAT_FAT32 == fs->type ) {
+        file->dentry->first_cluster_upper = ( uint16_t )(
+          ( uint32_t )new_cluster >> 16
+        );
+      }
+      start_cluster = new_cluster;
+      file->cluster = new_cluster;
+      update_dentry = true;
+    }
+    file->fsize += cluster_size;
+  }
+  file->fsize = fsize;
+  // perform directory entry update
+  if ( update_dentry ) {
+    result = fat_directory_dentry_update(
+      file->dir,
+      file->dentry,
+      file->dentry_pos
+    );
     if ( EOK != result ) {
-      fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
       return result;
     }
   }
