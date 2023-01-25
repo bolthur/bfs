@@ -847,3 +847,283 @@ TEST( fat32, file_remove_dir_rw_longname ) {
   // unmount test image
   helper_unmount_test_image( "fat32", "/fat32/" );
 }
+
+TEST( fat32, file_move_rootdir_ro_fail ) {
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/fmove.txt", "/fat32/fmove2.txt" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/fmove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/fmove2.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_rootdir_target_exist_fail ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/fmove.txt", "/fat32/world.txt" );
+  EXPECT_EQ( result, EEXIST );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/fmove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/world.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_rootdir_source_not_exist_fail ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/fmoveinvalid.txt", "/fat32/world2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/world.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_rootdir_rw_short_name_success ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/fmove.txt", "/fat32/fmove2.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove2.txt" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_file_move( "/fat32/fmove2.txt", "/fat32/fmove.txt" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove.txt" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_rootdir_rw_long_name_success ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/fmovelongname.txt", "/fat32/fmovelongname2.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname2.txt" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_file_move( "/fat32/fmovelongname2.txt", "/fat32/fmovelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_dir_ro_fail ) {
+  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/file/fmove2.txt" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/hello/file/fmove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/hello/file/fmove2.txt", O_RDONLY );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_dir_target_exist_fail ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/world.txt" );
+  EXPECT_EQ( result, EEXIST );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/hello/file/fmove.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/hello/world.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_dir_source_not_exist_fail ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/hello/file/fmoveinvalid.txt", "/fat32/world2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // directory variable
+  fat_file_t file;
+  memset( &file, 0, sizeof( file ) );
+  // open base directory
+  result = fat_file_open2( &file, "/fat32/world.txt", O_RDONLY );
+  EXPECT_EQ( result, EOK );
+  // close directory again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_dir_rw_short_name_success ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/file/fmove2.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/hello/file/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove2.txt" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_file_move( "/fat32/hello/file/fmove2.txt", "/fat32/hello/file/fmove.txt" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/hello/file/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove.txt" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmove2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}
+
+TEST( fat32, file_move_dir_rw_long_name_success ) {
+  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  // try to remove directory
+  int result = fat_file_move( "/fat32/hello/file/fmovelongname.txt", "/fat32/hello/file/fmovelongname2.txt" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/hello/file/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname2.txt" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = fat_file_move( "/fat32/hello/file/fmovelongname2.txt", "/fat32/hello/file/fmovelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat32/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname.txt" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "fmovelongname2.txt" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat32", "/fat32/" );
+}

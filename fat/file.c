@@ -901,6 +901,9 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   }
   // open destination to check whether it exists
   fat_file_t file;
+  fat_directory_t source, target;
+  memset( &source, 0, sizeof( source ) );
+  memset( &target, 0, sizeof( target ) );
   memset( &file, 0, sizeof( file ) );
   int result = fat_file_open2( &file, new_path, O_RDONLY );
   if ( ENOENT != result ) {
@@ -917,10 +920,145 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   if ( EOK != result ) {
     return result;
   }
-  /// FIXME: ADD FURTHER LOGIC
-  ( void )old_path;
-  ( void )new_path;
-  return ENOSYS;
+  // duplicate strings
+  char* dir_dup_old_path = strdup( old_path );
+  if ( ! dir_dup_old_path ) {
+    return ENOMEM;
+  }
+  char* base_dup_old_path = strdup( old_path );
+  if ( ! base_dup_old_path ) {
+    free( dir_dup_old_path );
+    return ENOMEM;
+  }
+  char* dir_dup_new_path = strdup( new_path );
+  if ( ! dir_dup_new_path ) {
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return ENOMEM;
+  }
+  char* base_dup_new_path = strdup( new_path );
+  if ( ! base_dup_new_path ) {
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return ENOMEM;
+  }
+  // get base name of both
+  char* dir_old_path = dirname( dir_dup_old_path );
+  char* base_old_path = basename( base_dup_old_path );
+  // check for unsupported
+  if ( '.' == *dir_old_path ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dir_old_path[ strlen( dir_old_path ) - 1 ] ) {
+    strcat( dir_old_path, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  char* dir_new_path = dirname( dir_dup_new_path );
+  char* base_new_path = basename( base_dup_new_path );
+  // check for unsupported
+  if ( '.' == *dir_old_path ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dir_new_path[ strlen( dir_new_path ) - 1 ] ) {
+    strcat( dir_new_path, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // clear out source and target
+  memset( &source, 0, sizeof( source ) );
+  memset( &target, 0, sizeof( target ) );
+  // open source directory
+  result = fat_directory_open( &source, dir_old_path );
+  if ( EOK != result ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // open target directory
+  result = fat_directory_open( &target, dir_new_path );
+  if ( EOK != result ) {
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // get entry by base name
+  result = fat_directory_entry_by_name( &source, base_old_path );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // remove old entry
+  result = fat_directory_dentry_remove( &source, source.entry, source.entry_pos );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  uint64_t cluster = source.entry->first_cluster_lower;
+  if ( FAT_FAT32 == fs->type ) {
+    cluster |= ( ( uint64_t )source.entry->first_cluster_upper << 16 );
+  }
+  // insert new entry
+  result = fat_directory_dentry_insert( &target, base_new_path, cluster, false );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // close source directory
+  result = fat_directory_close( &source );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // close target directory
+  result = fat_directory_close( &target );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // free duplicates
+  free( base_dup_new_path );
+  free( dir_dup_new_path );
+  free( base_dup_old_path );
+  free( dir_dup_old_path );
+  // return success
+  return EOK;
 }
 
 /**

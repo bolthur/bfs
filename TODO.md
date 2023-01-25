@@ -22,14 +22,16 @@
   - [x] Add test creating a file with long name
   - [x] Add test creating a file with short name but long extension, e.g. foo.jpeg
 - [x] Fix read out of directory via fat directory next when switching to new cluster
-- [ ] Implement fat_file_move
+- [x] Implement fat_file_move
 - [x] Implement fat_file_remove
 - [x] Implement fat_directory_remove
 - [x] Implement fat_directory_move
 - [ ] Check and add proper handling for empty files, which means start cluster is 0
-- [ ] Remove root dir test seems to break the image for mdir
-- [ ] Check written code and simplify it once everything works
+  - [ ] Truncate with size 0 should free cluster chain
+  - [ ] Write needs to be adjusted so that it requests a cluster on demand
+- [ ] Remove root dir test seems to break the image for mdir ( mtools )
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
+- [ ] Check written code and simplify it once everything works
 - [ ] Add proper locking to library functions
 - [x] Split up tests in single files
 - [x] Create unit tests

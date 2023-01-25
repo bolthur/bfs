@@ -87,6 +87,13 @@ TEST( fat32, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "fmovelongname.txt", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -205,6 +212,13 @@ TEST( fat32, root_directory_read_dir_utils_rewind ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
+  EXPECT_STREQ( "fmovelongname.txt", dir.data->name );
+
+  // get next entry
+  result = fat_directory_next_entry( &dir );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( dir.entry );
+  EXPECT_TRUE( dir.data );
   EXPECT_STREQ( "REMOVE", dir.data->name );
   EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
@@ -267,6 +281,12 @@ TEST( fat32, directory_iterator_root_dir_read ) {
   EXPECT_TRUE( it.entry );
   EXPECT_STREQ( "movelongname", it.data->name );
   EXPECT_EQ( it.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+
+  // get next entry
+  result = fat_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_STREQ( "fmovelongname.txt", it.data->name );
 
   // get next entry
   result = fat_iterator_directory_next( &it );
