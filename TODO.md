@@ -29,7 +29,9 @@
 - [x] Check and add proper handling for empty files, which means start cluster is 0
   - [x] Truncate with size 0 should free cluster chain
   - [x] Write needs to be adjusted so that it requests a cluster on demand
-- [ ] Remove root dir test seems to break the image for mdir ( mtools )
+- [x] Fix directory deletion to set deletion value instead of 0 overwrite
+- [ ] Copy file entry information on move like creation date
+- [ ] Something in the implementation destroys the fat image
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Check written code and simplify it once everything works
 - [ ] Add proper locking to library functions

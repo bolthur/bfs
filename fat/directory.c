@@ -1415,12 +1415,15 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   pos -= count * sizeof( fat_structure_directory_entry_t );
   // increment due to short entry
   count++;
-  // clear out
-  memset(
-    ( uint8_t* )start + pos,
-    0,
-    count * sizeof( fat_structure_directory_entry_t )
-  );
+  for ( uint64_t index = 0; index < count; index++ ) {
+    // get entry to delete
+    fat_structure_directory_entry_long_t* current2 =
+      ( fat_structure_directory_entry_long_t* )start;
+    current2 += ( pos / sizeof( fat_structure_directory_entry_long_t ) );
+    current2 += index;
+    // mark as deleted
+    current2->order = FAT_DIRECTORY_ENTRY_ERASED_AVAILABLE;
+  }
   // reset file position
   dir->file.fpos = 0;
   // load whole directory
