@@ -21,6 +21,7 @@
 #include <common/errno.h>
 #include <common/transaction.h>
 #include <common/bfscommon_export.h>
+#include <bfsconfig.h>
 
 #define __unused __attribute__((unused))
 #define __inline inline
@@ -89,6 +90,10 @@ BFSCOMMON_NO_EXPORT int common_transaction_compare(
  * @return int
  */
 BFSCOMMON_NO_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
   // handle invalid
   if ( ! bdev ) {
     return EINVAL;
@@ -125,6 +130,10 @@ BFSCOMMON_NO_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
  * @return int
  */
 BFSCOMMON_NO_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
   // handle invalid
   if ( ! bdev ) {
     return EINVAL;
@@ -143,7 +152,24 @@ BFSCOMMON_NO_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
     if ( EOK != result ) {
       return result;
     }
-    /// FIXME: CLEANUP
+  }
+  // cleanup entries
+  while ( LIST_FIRST( &t->list ) ) {
+    // get element
+    common_transaction_entry_t* remove = LIST_FIRST( &t->list );
+    // remove element
+    LIST_REMOVE( remove, list );
+    // free data
+    if ( remove->data ) {
+      free( remove->data );
+    }
+    free( remove );
+  }
+  // remove transaction from tree
+  t = common_transaction_tree_remove( &management_tree, t );
+  // free transaction
+  if ( t ) {
+    free( t );
   }
   // return success
   return EOK;
@@ -156,6 +182,10 @@ BFSCOMMON_NO_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
  * @return int
  */
 BFSCOMMON_NO_EXPORT int common_transaction_rollback( common_blockdev_t* bdev ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
   // handle invalid
   if ( ! bdev ) {
     return EINVAL;
@@ -165,26 +195,26 @@ BFSCOMMON_NO_EXPORT int common_transaction_rollback( common_blockdev_t* bdev ) {
   if ( ! t ) {
     return EINVAL;
   }
-  /*common_transaction_entry_t* current_entry = current->list.lh_first;
-  // loop as long there is something in the list
-  while( current_entry ) {
-    common_transaction_entry_t* entry = current_entry;
-    // remove from list
-    LIST_REMOVE( entry, list );
+  // cleanup entries
+  while ( LIST_FIRST( &t->list ) ) {
+    // get element
+    common_transaction_entry_t* remove = LIST_FIRST( &t->list );
+    // remove element
+    LIST_REMOVE( remove, list );
     // free data
-    if ( entry && entry->data ) {
-      free( entry->data );
+    if ( remove->data ) {
+      free( remove->data );
     }
-    // free entry
-    if ( entry ) {
-      free( entry );
-    }
-    // set again to lh first
-    current_entry = current->list.lh_first;
+    free( remove );
+  }
+  // remove transaction from tree
+  t = common_transaction_tree_remove( &management_tree, t );
+  // free transaction
+  if ( t ) {
+    free( t );
   }
   // return success
-  return EOK;*/
-  return ENOSYS;
+  return EOK;
 }
 
 /**
@@ -204,6 +234,11 @@ BFSCOMMON_NO_EXPORT int common_transaction_push(
   uint64_t size,
   uint64_t block_count
 ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
+  // validate
   if ( ! data || ! size || ! bdev ) {
     return EINVAL;
   }
@@ -252,6 +287,11 @@ BFSCOMMON_NO_EXPORT int common_transaction_update(
   uint64_t size,
   uint64_t block_count
 ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
+  // validate
   if ( ! data || ! size || ! bdev ) {
     return EINVAL;
   }
@@ -293,6 +333,11 @@ BFSCOMMON_NO_EXPORT int common_transaction_get(
   common_blockdev_t* bdev,
   common_transaction_entry_t** entry
 ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    *entry = NULL;
+    return EOK;
+  #endif
   // validate parameter
   if ( ! entry || ! bdev ) {
     return EINVAL;
@@ -327,6 +372,10 @@ BFSCOMMON_NO_EXPORT int common_transaction_get(
 BFSCOMMON_NO_EXPORT int common_transaction_write(
   common_transaction_entry_t* entry
 ) {
+  // disable transaction
+  #if 1 != CONFIG_USE_TRANSACTION
+    return EOK;
+  #endif
   common_blockdev_if_lock( entry->bdev );
   int result = entry->bdev->bdif->write(
     entry->bdev,

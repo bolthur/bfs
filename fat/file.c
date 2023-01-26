@@ -25,6 +25,7 @@
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>
 #include <common/file.h>
+#include <common/transaction.h>
 #include <fat/cluster.h>
 #include <fat/file.h>
 #include <fat/type.h>
@@ -205,10 +206,21 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   result = fat_directory_entry_by_name( dir, base );
   // handle no directory with creation
   if ( ENOENT == result && ( flags & O_CREAT ) ) {
+    // start transaction
+    result = common_transaction_begin( fs->bdev );
+    if ( EOK != result ) {
+      fat_directory_close( dir );
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
     // allocate new cluster
     uint64_t free_cluster;
     result = fat_cluster_get_free( fs, &free_cluster );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       fat_directory_close( dir );
       free( dentry );
       free( pathdup_base );
@@ -218,6 +230,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     }
     result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       fat_directory_close( dir );
       free( dentry );
       free( pathdup_base );
@@ -228,6 +241,17 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     // try to extend directory
     result = fat_directory_dentry_insert( dir, base, free_cluster, false );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
+      fat_directory_close( dir );
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    result = common_transaction_commit( fs->bdev );
+    if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       fat_directory_close( dir );
       free( dentry );
       free( pathdup_base );

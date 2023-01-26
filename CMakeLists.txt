@@ -53,6 +53,7 @@ option(BFS_BUILD_SHARED_LIB "Build shared library" OFF)
 option(BFS_BUILD_DOC "Build library documentation" OFF)
 option(BFS_BUILD_WITH_COVERAGE "Build with coverage data" OFF)
 option(BFS_MALLOC_FALLBACK_SIZE "Malloc fallback size" 0)
+option(BFS_USE_TRANSACTION "Use transaction for file operations" 1)
 
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
@@ -143,23 +144,76 @@ check_include_file("stdbool.h" HAVE_STDBOOL_H)
 check_include_file("libgen.h" HAVE_LIBGEN_H)
 check_include_file("stdio.h" HAVE_STDIO_H)
 check_include_file("sys/queue.h" HAVE_SYS_QUEUE_H)
+check_include_file("sys/tree.h" HAVE_SYS_TREE_H)
 # set compile flags
 compile_set_flags()
 
 # configurations for source code
 add_definitions(
   -DCONFIG_PATH_SEPARATOR_CHAR='/'
-  -DCONFIG_PATH_SEPARATOR_STRING="/"
-  -DCONFIG_HAVE_ERRNO_H=${HAVE_ERRNO_H}
-  -DCONFIG_HAVE_STDIO_H=${HAVE_STDIO_H}
-  -DCONFIG_HAVE_SYS_QUEUE_H=${HAVE_SYS_QUEUE_H}
-  -DCONFIG_HAVE_STDLIB_H=${HAVE_STDLIB_H}
-  -DCONFIG_HAVE_STRING_H=${HAVE_STRING_H}
-  -DCONFIG_HAVE_STDDEF_H=${HAVE_STDDEF_H}
-  -DCONFIG_HAVE_STDINT_H=${HAVE_STDINT_H}
-  -DCONFIG_HAVE_LIMITS_H=${HAVE_LIMITS_H}
-  -DCONFIG_HAVE_STDBOOL_H=${HAVE_STDBOOL_H}
-  -DCONFIG_HAVE_LIBGEN_H=${HAVE_LIBGEN_H})
+  -DCONFIG_PATH_SEPARATOR_STRING="/")
+
+if (${HAVE_ERRNO_H})
+  add_definitions(-DCONFIG_HAVE_ERRNO_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_ERRNO_H=0)
+endif()
+if (${HAVE_STDIO_H})
+  add_definitions(-DCONFIG_HAVE_STDIO_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STDIO_H=0)
+endif()
+if (${HAVE_SYS_QUEUE_H})
+  add_definitions(-DCONFIG_HAVE_SYS_QUEUE_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_SYS_QUEUE_H=0)
+endif()
+if (${HAVE_SYS_TREE_H})
+  add_definitions(-DCONFIG_HAVE_SYS_TREE_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_SYS_TREE_H=0)
+endif()
+if (${HAVE_STDLIB_H})
+  add_definitions(-DCONFIG_HAVE_STDLIB_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STDLIB_H=0)
+endif()
+if (${HAVE_STRING_H})
+  add_definitions(-DCONFIG_HAVE_STRING_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STRING_H=0)
+endif()
+if (${HAVE_STDDEF_H})
+  add_definitions(-DCONFIG_HAVE_STDDEF_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STDDEF_H=0)
+endif()
+if (${HAVE_STDINT_H})
+  add_definitions(-DCONFIG_HAVE_STDINT_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STDINT_H=0)
+endif()
+if (${HAVE_LIMITS_H})
+  add_definitions(-DCONFIG_HAVE_LIMITS_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_LIMITS_H=0)
+endif()
+if (${HAVE_STDBOOL_H})
+  add_definitions(-DCONFIG_HAVE_STDBOOL_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_STDBOOL_H=0)
+endif()
+if (${HAVE_LIBGEN_H})
+  add_definitions(-DCONFIG_HAVE_LIBGEN_H=1)
+else()
+  add_definitions(-DCONFIG_HAVE_LIBGEN_H=0)
+endif()
+
+if(${BFS_USE_TRANSACTION})
+  add_definitions(-DCONFIG_USE_TRANSACTION=1)
+else()
+  add_definitions(-DCONFIG_USE_TRANSACTION=0)
+endif()
 
 if (NOT ${HAVE_STDLIB_H} AND ${BFS_MALLOC_FALLBACK_SIZE})
   add_definitions(-DCONFIG_MALLOC_FALLBACK_AREA=${BFS_MALLOC_FALLBACK_SIZE})

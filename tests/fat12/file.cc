@@ -914,6 +914,9 @@ TEST( fat12, file_move_rootdir_target_exist_fail ) {
   result = fat_file_open2( &file, "/fat12/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
   EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // close again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
   // open base directory
   result = fat_file_open2( &file, "/fat12/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1032,12 +1035,12 @@ TEST( fat12, file_move_dir_ro_fail ) {
   result = fat_file_open2( &file, "/fat12/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
   EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // close again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
   // open base directory
   result = fat_file_open2( &file, "/fat12/hello/file/fmove2.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
-  // close directory again
-  result = fat_file_close( &file );
-  EXPECT_EQ( result, EOK );
   // unmount test image
   helper_unmount_test_image( "fat12", "/fat12/" );
 }
@@ -1054,10 +1057,13 @@ TEST( fat12, file_move_dir_target_exist_fail ) {
   result = fat_file_open2( &file, "/fat12/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
   EXPECT_EQ( file.fsize, strlen("hello world\n") );
+  // close again
+  result = fat_file_close( &file );
+  EXPECT_EQ( result, EOK );
   // open base directory
   result = fat_file_open2( &file, "/fat12/hello/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
-  // close directory again
+  // close again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
   // unmount test image
