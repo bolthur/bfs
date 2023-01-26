@@ -48,7 +48,7 @@ TEST( fat12, directory_open_sub_directory ) {
   result = fat_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
-  EXPECT_STREQ( "HELLO.TXT", it.data->name );
+  EXPECT_STREQ( ".", it.data->name );
 
   // finish
   result = fat_iterator_directory_fini( &it );
@@ -586,7 +586,7 @@ TEST( fat12, directory_remove_rootdir_ro_fail ) {
   // open base directory
   result = fat_directory_open( &dir, "/fat12/remove/" );
   EXPECT_EQ( result, EOK );
-  EXPECT_EQ( dir.entry_size, 0 );
+  EXPECT_EQ( dir.entry_size, 2 );
   // close directory again
   result = fat_directory_close( &dir );
   EXPECT_EQ( result, EOK );
@@ -669,7 +669,7 @@ TEST( fat12, directory_remove_dir_ro_fail ) {
   // open base directory
   result = fat_directory_open( &dir, "/fat12/hello/folder/remove/" );
   EXPECT_EQ( result, EOK );
-  EXPECT_EQ( dir.entry_size, 0 );
+  EXPECT_EQ( dir.entry_size, 2 );
   // close directory again
   result = fat_directory_close( &dir );
   EXPECT_EQ( result, EOK );
@@ -1066,6 +1066,184 @@ TEST( fat12, directory_move_dir_rw_long_name_success ) {
   // close directory
   result = fat_directory_close( &dir );
   EXPECT_EQ( result, EOK );
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_dir_rw_short_name_cluster_check ) {
+  // mount test image
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+
+  // open base directory
+  int result = fat_directory_open( &dir, "/fat12/move/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, 0 );
+  EXPECT_EQ( dir.entry->first_cluster_upper, 0 );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open target directory
+  result = fat_directory_open( &dir, "/fat12/hello/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "folder" );
+  EXPECT_EQ( result, EOK );
+  // save cluster
+  uint16_t cluster_lower = dir.entry->first_cluster_lower;
+  uint16_t cluster_upper = dir.entry->first_cluster_upper;
+  EXPECT_NE( cluster_lower, 0 );
+  EXPECT_EQ( cluster_upper, 0 );
+  // close
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( EOK, result );
+
+  // try to move directory
+  result = fat_directory_move( "/fat12/move", "/fat12/hello/folder/move2" );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/move2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, cluster_lower );
+  EXPECT_EQ( dir.entry->first_cluster_upper, cluster_upper );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/hello/folder/move2", "/fat12/MOVE" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/move/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, 0 );
+  EXPECT_EQ( dir.entry->first_cluster_upper, 0 );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // unmount test image
+  helper_unmount_test_image( "fat12", "/fat12/" );
+}
+
+TEST( fat12, directory_move_to_dir_rw_long_name_cluster_check ) {
+  // mount test image
+  helper_mount_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
+  // directory variable
+  fat_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+
+  // open base directory
+  int result = fat_directory_open( &dir, "/fat12/movelongname/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, 0 );
+  EXPECT_EQ( dir.entry->first_cluster_upper, 0 );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open target directory
+  result = fat_directory_open( &dir, "/fat12/hello/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "folder" );
+  EXPECT_EQ( result, EOK );
+  // save cluster
+  uint16_t cluster_lower = dir.entry->first_cluster_lower;
+  uint16_t cluster_upper = dir.entry->first_cluster_upper;
+  EXPECT_NE( cluster_lower, 0 );
+  EXPECT_EQ( cluster_upper, 0 );
+  // close
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( EOK, result );
+
+  // try to move directory
+  result = fat_directory_move( "/fat12/movelongname", "/fat12/hello/folder/movelongname2" );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/movelongname2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, cluster_lower );
+  EXPECT_EQ( dir.entry->first_cluster_upper, cluster_upper );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // try to revert directory move
+  result = fat_directory_move( "/fat12/hello/folder/movelongname2", "/fat12/movelongname" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
+  // open base directory
+  result = fat_directory_open( &dir, "/fat12/movelongname/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = fat_directory_entry_by_name( &dir, ".." );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry->first_cluster_lower, 0 );
+  EXPECT_EQ( dir.entry->first_cluster_upper, 0 );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
   // unmount test image
   helper_unmount_test_image( "fat12", "/fat12/" );
 }

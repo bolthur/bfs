@@ -88,9 +88,6 @@ BFSFAT_NO_EXPORT int fat_directory_size(
  *
  * @param path
  * @return int
- *
- * @todo add test for removal of short named directory
- * @todo add test for removal of long named directory
  */
 BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // validate parameter
@@ -131,6 +128,12 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
     strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
   }
+  // handle invalid
+  if ( '.' == *base ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
   // try to open directory
   fat_directory_t* dir = malloc( sizeof( *dir ) );
   if ( ! dir ) {
@@ -149,7 +152,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
     return result;
   }
   // ensure it's empty
-  if ( 0 != dir->entry_size ) {
+  if ( 2 != dir->entry_size ) {
     fat_directory_close( dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -212,8 +215,6 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
- *
- * @todo implement
  */
 BFSFAT_EXPORT int fat_directory_move(
   const char* old_path,
@@ -251,8 +252,8 @@ BFSFAT_EXPORT int fat_directory_move(
   if ( EOK != result ) {
     return result;
   }
-  // check if empty
-  if ( 0 < source.entry_size ) {
+  // check if empty ( 2 entries . and .. are allowed )
+  if ( 2 != source.entry_size ) {
     return ENOTEMPTY;
   }
   // close directory again
@@ -320,6 +321,14 @@ BFSFAT_EXPORT int fat_directory_move(
   if ( CONFIG_PATH_SEPARATOR_CHAR != dir_new_path[ strlen( dir_new_path ) - 1 ] ) {
     strcat( dir_new_path, CONFIG_PATH_SEPARATOR_STRING );
   }
+  // handle invalid
+  if ( '.' == *base_old_path || '.' == *base_new_path ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return ENOTSUP;
+  }
   // clear out source and target
   memset( &source, 0, sizeof( source ) );
   memset( &target, 0, sizeof( target ) );
@@ -353,9 +362,22 @@ BFSFAT_EXPORT int fat_directory_move(
     free( dir_dup_old_path );
     return result;
   }
+  // backup dentry
+  fat_structure_directory_entry_t* dentry = malloc( sizeof( *dentry ) );
+  if ( ! dentry ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  memcpy( dentry, source.entry, sizeof( *dentry ) );
   // remove old entry
   result = fat_directory_dentry_remove( &source, source.entry, source.entry_pos );
   if ( EOK != result ) {
+    free( dentry );
     fat_directory_close( &target );
     fat_directory_close( &source );
     free( base_dup_new_path );
@@ -371,6 +393,7 @@ BFSFAT_EXPORT int fat_directory_move(
   // insert new entry
   result = fat_directory_dentry_insert( &target, base_new_path, cluster, true );
   if ( EOK != result ) {
+    free( dentry );
     fat_directory_close( &target );
     fat_directory_close( &source );
     free( base_dup_new_path );
@@ -379,6 +402,42 @@ BFSFAT_EXPORT int fat_directory_move(
     free( dir_dup_old_path );
     return result;
   }
+  uint64_t target_cluster = target.file.cluster;
+  // get entry by file
+  result = fat_directory_entry_by_name( &target, base_new_path );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // copy over stuff
+  target.entry->creation_date = dentry->creation_date;
+  target.entry->creation_time = dentry->creation_time;
+  target.entry->creation_time_tenths = dentry->creation_time_tenths;
+  target.entry->file_size = dentry->file_size;
+  target.entry->last_accessed_date = dentry->last_accessed_date;
+  target.entry->last_modification_date = dentry->last_modification_date;
+  target.entry->last_modification_time = dentry->last_modification_time;
+  target.entry->attributes = dentry->attributes;
+  // update again
+  result = fat_directory_dentry_update( &target, target.entry, target.entry_pos );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // free backup again
+  free( dentry );
   // close source directory
   result = fat_directory_close( &source );
   if ( EOK != result ) {
@@ -390,21 +449,47 @@ BFSFAT_EXPORT int fat_directory_move(
     free( dir_dup_old_path );
     return result;
   }
-  // close target directory
-  result = fat_directory_close( &target );
-  if ( EOK != result ) {
-    fat_directory_close( &target );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
   // free duplicates
   free( base_dup_new_path );
   free( dir_dup_new_path );
   free( base_dup_old_path );
   free( dir_dup_old_path );
+  // close target directory
+  result = fat_directory_close( &target );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    return result;
+  }
+  // open copied folder
+  result = fat_directory_open( &target, new_path );
+  if ( EOK != result ) {
+    return result;
+  }
+  // get .. of target
+  result = fat_directory_entry_by_name( &target, ".." );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    return result;
+  }
+  // set cluster of .. entry
+  target.entry->first_cluster_lower = ( uint16_t )target_cluster;
+  if ( FAT_FAT32 == fs->type ) {
+    target.entry->first_cluster_upper = ( uint16_t )(
+      ( uint32_t )target_cluster >> 16
+    );
+  }
+  // write entry
+  result = fat_directory_dentry_update( &target, target.entry, target.entry_pos );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    return result;
+  }
+  // close target directory
+  result = fat_directory_close( &target );
+  if ( EOK != result ) {
+    fat_directory_close( &target );
+    return result;
+  }
   // return success
   return EOK;
 }
@@ -471,18 +556,59 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     free( pathdup_dir );
     return EOK != result ? result : EEXIST;
   }
-  // insert directory entry
-  result = fat_directory_dentry_insert( &dir, base, 0, true );
+  // allocate new cluster
+  uint64_t free_cluster;
+  result = fat_cluster_get_free( fs, &free_cluster );
   if ( EOK != result ) {
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
     return result;
   }
-  // return success
-  fat_directory_close( &dir );
+  result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
+  if ( EOK != result ) {
+    fat_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // insert directory entry
+  result = fat_directory_dentry_insert( &dir, base, free_cluster, true );
+  if ( EOK != result ) {
+    fat_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  uint64_t parent_cluster = dir.file.cluster;
+  // close directory
+  result = fat_directory_close( &dir );
+  if ( EOK != result ) {
+    return result;
+  }
+  // free up stuff
   free( pathdup_base );
   free( pathdup_dir );
+  // open new directory
+  result = fat_directory_open( &dir, path );
+  if ( EOK != result ) {
+    return result;
+  }
+  // create dot entries
+  result = fat_directory_dentry_insert( &dir, ".", dir.file.cluster, true );
+  if ( EOK != result ) {
+    return result;
+  }
+  result = fat_directory_dentry_insert( &dir, "..", parent_cluster, true );
+  if ( EOK != result ) {
+    return result;
+  }
+  // close new directory
+  result = fat_directory_close( &dir );
+  if ( EOK != result ) {
+    return result;
+  }
+  // return success
   return EOK;
 }
 
@@ -824,23 +950,19 @@ BFSFAT_NO_EXPORT int fat_directory_entry_is_valid(
     return EINVAL;
   }
   bool is_free;
-  bool is_dot;
   // invalid if free
   int result = fat_directory_entry_is_free( entry, &is_free );
-  if ( EOK != result ) {
-    return result;
-  }
-  // invalid if dot
-  result = fat_directory_entry_is_dot( entry, &is_dot );
   if ( EOK != result ) {
     return result;
   }
   // found a valid entry
   *is_valid = (
       ! is_free
-      && ! is_dot
       && ! ( entry->attributes & FAT_DIRECTORY_FILE_ATTRIBUTE_VOLUME_ID )
-    ) || FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME == entry->attributes;
+    ) || (
+      FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME == entry->attributes
+      && ! is_free
+    );
   // return success
   return EOK;
 }
@@ -1092,6 +1214,31 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
 }
 
 /**
+ * @brief Calculate checksum out of name
+ *
+ * @param name
+ * @param checksum
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_directory_dentry_checksum(
+  uint8_t* name,
+  uint8_t* checksum
+) {
+  // validate parameter
+  if ( ! name || ! checksum ) {
+    return EINVAL;
+  }
+  *checksum = 0;
+  // loop through short name
+  for ( uint64_t idx = 11; idx != 0; idx-- ) {
+    *checksum = ( uint8_t )( ( ( *checksum & 1 ) ? 0x80 : 0 )
+      + ( *checksum >> 1 ) + *name++ );
+  }
+  // return success
+  return EOK;
+}
+
+/**
  * @brief Extend update directory by adding path
  *
  * @param dir
@@ -1114,17 +1261,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
   if ( fs->read_only ) {
     return EROFS;
   }
-  // get a free cluster
-  uint64_t free_cluster;
   int result;
-  if ( cluster ) {
-    free_cluster = cluster;
-  } else {
-    result = fat_cluster_get_free( fs, &free_cluster );
-    if ( EOK != result ) {
-      return result;
-    }
-  }
   // save length
   size_t name_length = strlen( name );
   // handle invalid name length
@@ -1176,11 +1313,12 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     // set directory flag
     if ( directory ) {
       data->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
+      data->file_size = 0;
     }
     // set first cluster
-    data->first_cluster_lower = ( uint16_t )free_cluster;
+    data->first_cluster_lower = ( uint16_t )cluster;
     if ( FAT_FAT32 == fs->type ) {
-      data->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
+      data->first_cluster_upper = ( uint16_t )( ( uint32_t )cluster >> 16 );
     }
     // set entry data
     entry_data = data;
@@ -1203,45 +1341,18 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     }
     entry_size = sizeof( *data ) * long_name_length;
     memset( data, 0, entry_size );
-    // loop through long name parts and fill them
-    for ( size_t index = 0; index < long_name_length - 1; index++ ) {
-      uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
-      uint8_t* end = ( uint8_t* )( name + name_length );
-      // set order information
-      data[ index ].order = ( uint8_t )index + 1;
-      data[ index ].attribute = FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME;
-      // populate long entry names
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 10;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].first_five_two_byte[ local_index ] = *base_offsetted;
-      }
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 12;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].next_six_two_byte[ local_index ] = *base_offsetted;
-      }
-      for (
-        uint64_t local_index = 0;
-        base_offsetted < end && local_index < 4;
-        local_index += 2, base_offsetted++
-      ) {
-        data[ index ].final_two_byte[ local_index ] = *base_offsetted;
-      }
-    }
-    // build finalizing short name
+    // build short name
     fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
       ( &data[ long_name_length - 1 ] );
     // set directory flag
-    short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
+    if ( directory ) {
+      short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;
+      short_entry->file_size = 0;
+    }
     // set first cluster
-    short_entry->first_cluster_lower = ( uint16_t )free_cluster;
+    short_entry->first_cluster_lower = ( uint16_t )cluster;
     if ( FAT_FAT32 == fs->type ) {
-      short_entry->first_cluster_upper = ( uint16_t )( ( uint32_t )free_cluster >> 16 );
+      short_entry->first_cluster_upper = ( uint16_t )( ( uint32_t )cluster >> 16 );
     }
     strncpy( short_entry->name, name, 7 );
     short_entry->name[ 7 ] = '~';
@@ -1253,21 +1364,59 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
         short_entry->extension[ 2 ] = '~';
       }
     }
-    // set entry data
-    entry_data = data;
-  }
-  // try to mark cluster as used
-  if ( ! cluster ) {
-    result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
+    // calculate checksum
+    uint8_t checksum;
+    result = fat_directory_dentry_checksum(
+      ( uint8_t* )short_entry->name,
+      &checksum
+    );
     if ( EOK != result ) {
-      free( entry_data );
+      free( data );
       return result;
     }
+    // loop through long name parts and fill them
+    for ( size_t index = 0; index < long_name_length - 1; index++ ) {
+      uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
+      uint8_t* end = ( uint8_t* )( name + name_length );
+      // order index
+      size_t order_index = long_name_length - 2 - index;
+      // set order information
+      data[ order_index ].order = ( uint8_t )index + 1;
+      // last entry is orred with 0x40
+      if ( data[ order_index ].order == long_name_length - 1 ) {
+        data[ order_index ].order |= 0x40;
+      }
+      data[ order_index ].attribute = FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME;
+      data[ order_index ].checksum = checksum;
+      // populate long entry names
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 10;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ order_index ].first_five_two_byte[ local_index ] = *base_offsetted;
+      }
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 12;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ order_index ].next_six_two_byte[ local_index ] = *base_offsetted;
+      }
+      for (
+        uint64_t local_index = 0;
+        base_offsetted < end && local_index < 4;
+        local_index += 2, base_offsetted++
+      ) {
+        data[ order_index ].final_two_byte[ local_index ] = *base_offsetted;
+      }
+    }
+    // set entry data
+    entry_data = data;
   }
   // insert directory
   result = fat_directory_extend( dir, entry_data, entry_size );
   if ( EOK != result ) {
-    fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_UNUSED );
     free( entry_data );
     return result;
   }
@@ -1283,8 +1432,6 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
  * @param dentry
  * @param pos position in bytes where dentry starts
  * @return int
- *
- * @todo test either directly or indirectly via file tests
  */
 BFSFAT_NO_EXPORT int fat_directory_dentry_update(
   fat_directory_t* dir,

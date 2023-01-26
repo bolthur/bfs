@@ -30,11 +30,15 @@
   - [x] Truncate with size 0 should free cluster chain
   - [x] Write needs to be adjusted so that it requests a cluster on demand
 - [x] Fix directory deletion to set deletion value instead of 0 overwrite
-- [ ] Copy file entry information on move like creation date
-- [ ] Something in the implementation destroys the fat image
+- [x] Copy file entry information on move like creation date
+- [x] Adjust cluster of directory entry `..` on folder move
+- [x] Add test to ensure `..` is changed correctly
+- [x] Something in the implementation destroys the fat image
 - [ ] Add write transaction instead of direct writing with some sort of cache accessed
-- [ ] Check written code and simplify it once everything works
 - [ ] Add proper locking to library functions
+- [ ] Cleanup
+  - [ ] Check written code and simplify it once everything works
+  - [ ] Check code and deduplicate similar code like file move or folder move
 - [x] Split up tests in single files
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest

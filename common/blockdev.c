@@ -24,6 +24,7 @@
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <common/bfscommon_export.h>
+#include <common/transaction.h>
 
 static LIST_HEAD( common_blockdev_list, common_blockdev_entry ) device_list;
 
@@ -432,6 +433,8 @@ BFSCOMMON_NO_EXPORT void common_blockdev_if_unlock( common_blockdev_t* bdev ) {
  * @param block_id
  * @param block_count
  * @return int
+ *
+ * @todo check for transaction is running and read from memory if existing
  */
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
   common_blockdev_t* bdev,
@@ -439,10 +442,52 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
   uint64_t block_id,
   uint64_t block_count
 ) {
+  // get info whether transaction is running
+  bool running;
+  int result = common_transaction_running( bdev, &running );
+  if ( EOK != result ) {
+    return result;
+  }
+  // handle running transaction
+  if ( running ) {
+    // try to get entry
+    common_transaction_entry_t* entry;
+    result = common_transaction_get( block_id, bdev, &entry );
+    if ( EOK != result ) {
+      return result;
+    }
+    // handle entry existing
+    if ( entry ) {
+      // handle different sizes
+      if ( entry->block_count != block_count ) {
+        return EINVAL;
+      }
+      // copy over data
+      memcpy( buf, entry->data, entry->size );
+      // return success
+      return EOK;
+    }
+  }
+  // read data
   common_blockdev_if_lock( bdev );
-  int result = bdev->bdif->read( bdev, buf, block_id, block_count );
+  result = bdev->bdif->read( bdev, buf, block_id, block_count );
   bdev->bdif->read_counter++;
   common_blockdev_if_unlock( bdev );
+  // handle error
+  if ( EOK != result ) {
+    return result;
+  }
+  // handle transaction
+  if ( running ) {
+    return common_transaction_update(
+      bdev,
+      buf,
+      block_id,
+      bdev->bdif->block_size * block_count,
+      block_count
+    );
+  }
+  // just return result if not running
   return result;
 }
 
@@ -454,6 +499,8 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
  * @param block_id
  * @param block_count
  * @return int
+ *
+ * @todo check if transaction is running and write to memory
  */
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   common_blockdev_t* bdev,
@@ -461,8 +508,24 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   uint64_t block_id,
   uint64_t block_count
 ) {
+  bool running;
+  int result = common_transaction_running( bdev, &running );
+  if ( EOK != result ) {
+    return result;
+  }
+  // push to transaction
+  if ( running ) {
+    return common_transaction_update(
+      bdev,
+      buf,
+      block_id,
+      bdev->bdif->block_size * block_count,
+      block_count
+    );
+  }
+  // just write it
   common_blockdev_if_lock( bdev );
-  int result = bdev->bdif->write( bdev, buf, block_id, block_count );
+  result = bdev->bdif->write( bdev, buf, block_id, block_count );
   bdev->bdif->read_counter++;
   common_blockdev_if_unlock( bdev );
   return result;

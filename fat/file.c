@@ -205,9 +205,30 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
   result = fat_directory_entry_by_name( dir, base );
   // handle no directory with creation
   if ( ENOENT == result && ( flags & O_CREAT ) ) {
-    // try to extend directory
-    result = fat_directory_dentry_insert( dir, base, 0, false );
+    // allocate new cluster
+    uint64_t free_cluster;
+    result = fat_cluster_get_free( fs, &free_cluster );
     if ( EOK != result ) {
+      fat_directory_close( dir );
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
+    if ( EOK != result ) {
+      fat_directory_close( dir );
+      free( dentry );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    // try to extend directory
+    result = fat_directory_dentry_insert( dir, base, free_cluster, false );
+    if ( EOK != result ) {
+      fat_directory_close( dir );
       free( dentry );
       free( pathdup_base );
       free( pathdup_dir );
@@ -266,8 +287,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
  * @param path
  * @param flags
  * @return int
- *
- * @todo evaluate flags
  */
 BFSFAT_EXPORT int fat_file_open(
   fat_file_t* file,
@@ -300,8 +319,6 @@ BFSFAT_EXPORT int fat_file_open(
  * @param path
  * @param flags
  * @return int
- *
- * @todo add support for unused flags
  */
 BFSFAT_EXPORT int fat_file_open2(
   fat_file_t* file,
@@ -437,9 +454,6 @@ int fat_file_read(
  * @param file
  * @param size
  * @return int
- *
- * @todo add test for this function
- * @todo truncate of file to 0 means free all clusters and set to 0
  */
 BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
@@ -606,8 +620,6 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
  * @param size
  * @param write_count
  * @return int
- *
- * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_write(
   fat_file_t* file,
@@ -723,8 +735,6 @@ BFSFAT_EXPORT int fat_file_write(
  *
  * @param path
  * @return int
- *
- * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_remove( const char* path ) {
   // validate parameter
@@ -885,8 +895,6 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
- *
- * @todo implement function
  */
 BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   if ( ! old_path || ! new_path ) {
@@ -1017,9 +1025,22 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
     free( dir_dup_old_path );
     return result;
   }
+  // backup dentry
+  fat_structure_directory_entry_t* dentry = malloc( sizeof( *dentry ) );
+  if ( ! dentry ) {
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  memcpy( dentry, source.entry, sizeof( *dentry ) );
   // remove old entry
   result = fat_directory_dentry_remove( &source, source.entry, source.entry_pos );
   if ( EOK != result ) {
+    free( dentry );
     fat_directory_close( &target );
     fat_directory_close( &source );
     free( base_dup_new_path );
@@ -1035,6 +1056,7 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   // insert new entry
   result = fat_directory_dentry_insert( &target, base_new_path, cluster, false );
   if ( EOK != result ) {
+    free( dentry );
     fat_directory_close( &target );
     fat_directory_close( &source );
     free( base_dup_new_path );
@@ -1043,6 +1065,41 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
     free( dir_dup_old_path );
     return result;
   }
+  // get entry by file
+  result = fat_directory_entry_by_name( &target, base_new_path );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // copy over stuff
+  target.entry->creation_date = dentry->creation_date;
+  target.entry->creation_time = dentry->creation_time;
+  target.entry->creation_time_tenths = dentry->creation_time_tenths;
+  target.entry->file_size = dentry->file_size;
+  target.entry->last_accessed_date = dentry->last_accessed_date;
+  target.entry->last_modification_date = dentry->last_modification_date;
+  target.entry->last_modification_time = dentry->last_modification_time;
+  target.entry->attributes = dentry->attributes;
+  // update again
+  result = fat_directory_dentry_update( &target, target.entry, target.entry_pos );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  // free backup again
+  free( dentry );
   // close source directory
   result = fat_directory_close( &source );
   if ( EOK != result ) {

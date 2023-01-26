@@ -329,6 +329,11 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_fini( fat_iterator_directory_t* it )
     free( it->data );
     it->data = NULL;
   }
+  // unload fat block
+  int result = fat_block_unload( &it->reference->file );
+  if ( EOK != result ) {
+    return result;
+  }
   // return success
   return EOK;
 }

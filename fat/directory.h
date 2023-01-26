@@ -49,6 +49,7 @@ int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
   int fat_directory_dentry_insert( fat_directory_t* dir, const char* name, uint64_t cluster, bool directory );
   int fat_directory_dentry_update( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
   int fat_directory_dentry_remove( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
+  int fat_directory_dentry_checksum( uint8_t* name, uint8_t* checksum );
 #endif
 
 #ifdef __cplusplus
