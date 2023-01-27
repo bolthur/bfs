@@ -22,8 +22,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <stddef.h>
-
-#include <common/sys/queue.h>
+#include <thirdparty/queue.h>
 
 #ifndef _COMMON_BLOCKDEV_H
 #define _COMMON_BLOCKDEV_H
@@ -32,7 +31,6 @@
 extern "C" {
 #endif
 
-struct common_blockdev_iface;
 typedef struct common_blockdev_iface common_blockdev_iface_t;
 
 /** @brief Common block device structure */
@@ -149,8 +147,7 @@ typedef struct common_blockdev_iface {
     LIST_ENTRY( common_blockdev_entry ) list;
   } common_blockdev_entry_t;
 
-  void common_blockdev_constructor( void ) __attribute__((constructor));
-  void common_blockdev_destructor( void ) __attribute__((destructor));
+  void common_blockdev_destructor( void );
   common_blockdev_t* common_blockdev_get_by_device_name( const char* device_name );
 
   void common_blockdev_if_lock( common_blockdev_t* bdev );

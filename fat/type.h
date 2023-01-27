@@ -17,9 +17,8 @@
 
 /** @file fat/type.h */
 
-// IWYU pragma: no_include <stdio.h>
 #include <stdint.h>
-#include <common/stdio.h>
+#include <limits.h>
 #include <common/mountpoint.h>
 #include <fat/structure.h>
 #include <fat/fs.h>

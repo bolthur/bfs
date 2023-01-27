@@ -19,28 +19,27 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <common/sys/queue.h>
+#include <thirdparty/queue.h>
 #include <common/errno.h>
 #include <common/mountpoint.h>
 #include <common/lock.h>
+#include <common/constant.h>
 #include <common/bfscommon_export.h>
 
 static LIST_HEAD( common_mountpoint_list, common_mountpoint ) mountpoint_list;
 
 /**
  * @brief mountpoint management constructor
- * @todo replace __attribute__ by some cross platform define
  */
-BFSCOMMON_NO_EXPORT __attribute__((constructor)) void common_mountpoint_constructor( void ) {
+INITIALIZER( common_mountpoint_constructor ) {
   LIST_INIT( &mountpoint_list );
+  atexit( common_mountpoint_destructor );
 }
 
 /**
  * @brief mountpoint management destructor
- * @todo replace __attribute__ by some cross platform define
  */
-BFSCOMMON_NO_EXPORT __attribute__((destructor)) void common_mountpoint_destructor( void ) {
+BFSCOMMON_NO_EXPORT void common_mountpoint_destructor( void ) {
 }
 
 /**

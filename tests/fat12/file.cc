@@ -653,10 +653,6 @@ TEST( fat12, file_ftruncate_shrink_cluster ) {
       * fs->superblock.sectors_per_cluster;
   uint64_t old_count = file.fsize / cluster_size + 1;
   uint64_t truncate_size = ( old_count + 1 ) * cluster_size - 1;
-  uint64_t new_count = truncate_size / cluster_size;
-  if ( truncate_size % cluster_size ) {
-    new_count++;
-  }
   // call for truncate
   result = fat_file_truncate( &file, truncate_size );
   EXPECT_EQ( result, EOK );

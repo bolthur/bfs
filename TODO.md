@@ -34,18 +34,18 @@
 - [x] Adjust cluster of directory entry `..` on folder move
 - [x] Add test to ensure `..` is changed correctly
 - [x] Something in the implementation destroys the fat image
-- [ ] Add write transaction instead of direct writing with some sort of cache accessed
+- [x] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions
 - [ ] Cleanup
   - [ ] Check written code and simplify it once everything works
   - [ ] Check code and deduplicate similar code like file move or folder move
+  - [ ] Extend functions by transactions where it might be necessary
 - [x] Split up tests in single files
 - [x] Create unit tests
   - [x] Prepare unit testing with cmake and ctest
   - [x] Prepare a test blockdev driver for unit testing
   - [x] Add unit tests for specific functions
 - [ ] Add support for ext2
-- [ ] Add support for cdfs
 - [x] Fix and complete documentation
 - [x] Add custom commands to test folder to create necessary images for tests
 - [x] Check usages of block size and evaluate whether automatical adjustment is meaningful for fat

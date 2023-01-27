@@ -22,8 +22,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <common/blockdev.h>
-#include <common/sys/queue.h>
-#include <common/sys/tree.h>
+#include <thirdparty/queue.h>
+#include <thirdparty/tree.h>
 
 #ifndef _COMMON_TRANSACTION_H
 #define _COMMON_TRANSACTION_H

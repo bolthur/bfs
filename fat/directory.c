@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <strings.h>
-#include <ctype.h>
+#include <common/blockdev.h>
 #include <common/mountpoint.h>
 #include <common/errno.h>
 #include <common/util.h>

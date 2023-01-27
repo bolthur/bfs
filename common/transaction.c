@@ -19,12 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <common/errno.h>
+#include <common/blockdev.h>
 #include <common/transaction.h>
 #include <common/bfscommon_export.h>
+#include <common/constant.h>
+#include <thirdparty/queue.h>
 #include <bfsconfig.h>
-
-#define __unused __attribute__((unused))
-#define __inline inline
 
 // define tree
 PARTITION_TREE_DEFINE(

@@ -20,27 +20,28 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#include <common/sys/queue.h>
+#include <stdbool.h>
+#include <thirdparty/queue.h>
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <common/bfscommon_export.h>
+#include <common/constant.h>
 #include <common/transaction.h>
 
 static LIST_HEAD( common_blockdev_list, common_blockdev_entry ) device_list;
 
 /**
  * @brief blockdev management constructor
- * @todo replace __attribute__ by some cross platform define
  */
-BFSCOMMON_NO_EXPORT __attribute__((constructor)) void common_blockdev_constructor( void ) {
+INITIALIZER( common_blockdev_constructor ) {
   LIST_INIT( &device_list );
+  atexit( common_blockdev_destructor );
 }
 
 /**
  * @brief blockdev management destructor
- * @todo replace __attribute__ by some cross platform define
  */
-BFSCOMMON_NO_EXPORT __attribute__((destructor)) void common_blockdev_destructor( void ) {
+BFSCOMMON_NO_EXPORT void common_blockdev_destructor( void ) {
   common_blockdev_unregister_all();
 }
 

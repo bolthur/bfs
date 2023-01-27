@@ -22,14 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <common/errno.h>
-#include <common/blockdev.h>
 #include <common/mountpoint.h>
 #include <fat/type.h>
 #include <fat/iterator.h>
-#include <fat/cluster.h>
 #include <fat/directory.h>
 #include <fat/fs.h>
-#include <fat/rootdir.h>
 #include <fat/structure.h>
 #include <fat/block.h>
 #include <fat/bfsfat_export.h>

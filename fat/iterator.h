@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 #include <fat/structure.h>
-#include <fat/directory.h>
 #include <fat/type.h>
 
 #ifndef _FAT_ITERATOR_H

@@ -17,7 +17,6 @@
 
 /** @file fat/file.h */
 
-#include <stddef.h>
 #include <stdint.h>
 #include <fat/type.h>
 

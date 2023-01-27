@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 #include <fat/type.h>
-#include <fat/fs.h>
 
 #ifndef _FAT_BLOCK_H
 #define _FAT_BLOCK_H

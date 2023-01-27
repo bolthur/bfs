@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 #include <limits.h>
-#include <common/sys/queue.h>
+#include <thirdparty/queue.h>
 #include <common/lock.h>
 
 #ifndef _COMMON_MOUNTPOINT_H
@@ -56,8 +56,7 @@ typedef struct common_mountpoint {
 } common_mountpoint_t;
 
 #if defined( _BFS_COMPILING )
-  void common_mountpoint_constructor( void ) __attribute__((constructor));
-  void common_mountpoint_destructor( void ) __attribute__((destructor));
+  void common_mountpoint_destructor( void );
 #endif
 
 int common_mountpoint_setup_lock( const char* mountpoint, common_lock_t* lock );

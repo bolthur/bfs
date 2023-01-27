@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <common/blockdev.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <common/mountpoint.h>

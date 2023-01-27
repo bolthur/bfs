@@ -20,6 +20,7 @@
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <fat/fs.h>
+#include <fat/structure.h>
 #include <fat/superblock.h>
 #include <fat/type.h>
 #include <fat/bfsfat_export.h>

@@ -20,19 +20,23 @@
 #include <libgen.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>
 #include <common/file.h>
+#include <common/mountpoint.h>
 #include <common/transaction.h>
+#include <fat/fs.h>
+#include <fat/structure.h>
 #include <fat/cluster.h>
 #include <fat/file.h>
 #include <fat/type.h>
-#include <fat/iterator.h>
 #include <fat/block.h>
 #include <fat/directory.h>
 #include <fat/bfsfat_export.h>
+#include <bfsconfig.h>
 
 /**
  * @brief Fat file seek

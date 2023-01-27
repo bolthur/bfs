@@ -17,6 +17,7 @@
 
 // IWYU pragma: no_include <errno.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <blockdev/bfsblockdev_export.h>

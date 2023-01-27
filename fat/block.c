@@ -20,6 +20,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <common/errno.h>
+#include <common/blockdev.h>
+#include <common/mountpoint.h>
 #include <fat/type.h>
 #include <fat/fs.h>
 #include <fat/block.h>

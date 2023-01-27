@@ -18,7 +18,6 @@
 /** @file fat/directory.h */
 
 #include <stdint.h>
-#include <limits.h>
 #include <stdbool.h>
 #include <fat/type.h>
 #include <fat/structure.h>

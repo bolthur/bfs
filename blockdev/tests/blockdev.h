@@ -18,7 +18,6 @@
 /** @file blockdev/tests/blockdev.h */
 
 #include <common/blockdev.h>
-#include <stddef.h>
 #include <stdint.h>
 
 #ifndef _BLOCKDEV_H

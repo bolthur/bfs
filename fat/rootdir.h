@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <common/mountpoint.h>
+#include <fat/structure.h>
 #include <fat/type.h>
 
 #ifndef _FAT_ROOTDIR_H
