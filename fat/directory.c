@@ -233,10 +233,6 @@ BFSFAT_EXPORT int fat_directory_move(
   if ( ! mp_new ) {
     return ENOMEM;
   }
-  // treat different mount points as error
-  if ( mp != mp_new ) {
-    return EINVAL;
-  }
   // get fs
   fat_fs_t* fs = mp->fs;
   // handle create flag with read only

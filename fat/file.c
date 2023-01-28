@@ -937,10 +937,6 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   if ( ! mp_new ) {
     return ENOMEM;
   }
-  // treat different mount points as error
-  if ( mp != mp_new ) {
-    return EINVAL;
-  }
   // get fs
   fat_fs_t* fs = mp->fs;
   // handle read only
