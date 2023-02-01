@@ -482,6 +482,8 @@ int fat_file_read(
  * @param file
  * @param size
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
@@ -648,6 +650,8 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
  * @param size
  * @param write_count
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_file_write(
   fat_file_t* file,
@@ -810,14 +814,23 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
     free( pathdup_dir );
     return ENOMEM;
   }
-  // clear out
-  memset( dir, 0, sizeof( *dir ) );
-  // open directory
-  int result = fat_directory_open( dir, dirpath );
+  // start transaction
+  int result = common_transaction_begin( fs->bdev );
   if ( EOK != result ) {
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
+    return result;
+  }
+  // clear out
+  memset( dir, 0, sizeof( *dir ) );
+  // open directory
+  result = fat_directory_open( dir, dirpath );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // get entry
@@ -827,6 +840,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // try to remove it from directory
@@ -836,6 +850,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // cache start cluster
@@ -849,6 +864,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   free( dir );
@@ -870,6 +886,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
         free( cluster_list );
         free( pathdup_base );
         free( pathdup_dir );
+        common_transaction_rollback( fs->bdev );
         return result;
       }
       uint64_t* new_list = NULL;
@@ -885,6 +902,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
         free( cluster_list );
         free( pathdup_base );
         free( pathdup_dir );
+        common_transaction_rollback( fs->bdev );
         return ENOMEM;
       }
       // overwrite old list
@@ -903,6 +921,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
         free( cluster_list );
         free( pathdup_base );
         free( pathdup_dir );
+        common_transaction_rollback( fs->bdev );
         return result;
       }
     }
@@ -913,6 +932,11 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
   // free memory
   free( pathdup_base );
   free( pathdup_dir );
+  // commit transaction
+  result = common_transaction_commit( fs->bdev );
+  if ( EOK != result ) {
+    return EOK;
+  }
   // return success
   return EOK;
 }
@@ -923,6 +947,8 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   if ( ! old_path || ! new_path ) {

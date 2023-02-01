@@ -24,8 +24,6 @@ function(compile_set_flags)
   enable_compiler_flag_if_supported("-Wmissing-prototypes")
   enable_compiler_flag_if_supported("-Wconversion")
   enable_compiler_flag_if_supported("-fanalyzer")
-  # clang/gcc linker flags
-  enable_linker_flag_if_supported("-lc")
 
   # clang/gcc relase and debug options
   enable_compiler_flag_debug_if_supported("-g")

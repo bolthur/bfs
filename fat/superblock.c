@@ -31,7 +31,7 @@
  * @param superblock
  * @return int
  */
-BFSFAT_EXPORT int fat_superblock_read(
+BFSFAT_NO_EXPORT int fat_superblock_read(
   common_blockdev_t* bdev,
   fat_structure_superblock_t* superblock
 ) {
@@ -49,7 +49,7 @@ BFSFAT_EXPORT int fat_superblock_read(
  * @param fs
  * @return int
  */
-BFSFAT_EXPORT int fat_superblock_check( fat_fs_t* fs ) {
+BFSFAT_NO_EXPORT int fat_superblock_check( fat_fs_t* fs ) {
   // validate parameter
   if ( ! fs ) {
     return EINVAL;

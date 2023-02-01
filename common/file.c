@@ -29,7 +29,7 @@
  * @param file_flags
  * @return int
  */
-BFSCOMMON_NO_EXPORT int common_file_parse_flags( const char* flags, int *file_flags ) {
+BFSCOMMON_EXPORT int common_file_parse_flags( const char* flags, int *file_flags ) {
   if ( ! flags || ! file_flags ) {
     return EINVAL;
   }

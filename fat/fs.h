@@ -55,8 +55,11 @@ typedef struct {
   uint32_t total_clusters;
 } fat_fs_t;
 
-int fat_fs_init( fat_fs_t* fs, common_blockdev_t* bdev, bool read_only );
-int fat_fs_fini( fat_fs_t* fs );
+
+#if defined( _BFS_COMPILING )
+  int fat_fs_init( fat_fs_t* fs, common_blockdev_t* bdev, bool read_only );
+  int fat_fs_fini( fat_fs_t* fs );
+#endif
 
 #ifdef __cplusplus
 }

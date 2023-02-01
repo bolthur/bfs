@@ -188,7 +188,7 @@ BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
  * @param value
  * @return int
  */
-BFSFAT_EXPORT int fat_cluster_set_cluster(
+BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
   fat_fs_t* fs,
   uint64_t cluster,
   uint64_t value
@@ -286,7 +286,7 @@ BFSFAT_EXPORT int fat_cluster_set_cluster(
  * @param target
  * @return int
  */
-int fat_cluster_get_by_num(
+BFSFAT_NO_EXPORT int fat_cluster_get_by_num(
   fat_fs_t* fs,
   uint64_t cluster,
   uint64_t num,

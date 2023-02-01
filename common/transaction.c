@@ -89,7 +89,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_compare(
  * @param bdev
  * @return int
  */
-BFSCOMMON_NO_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
+BFSCOMMON_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
     return EOK;
@@ -129,7 +129,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
  * @param bdev
  * @return int
  */
-BFSCOMMON_NO_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
+BFSCOMMON_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
     return EOK;
@@ -181,7 +181,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
  * @param bdev
  * @return int
  */
-BFSCOMMON_NO_EXPORT int common_transaction_rollback( common_blockdev_t* bdev ) {
+BFSCOMMON_EXPORT int common_transaction_rollback( common_blockdev_t* bdev ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
     return EOK;
@@ -306,12 +306,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_update(
     return common_transaction_push( bdev, data, index, size, block_count );
   }
   // validate data
-  if (
-    entry->bdev != bdev
-    || entry->index != index
-    || entry->size != size
-    || entry->block_count != block_count
-  ) {
+  if ( entry->bdev != bdev || entry->index != index ) {
     return EINVAL;
   }
   // overwrite data
@@ -405,5 +400,45 @@ BFSCOMMON_NO_EXPORT int common_transaction_running(
   // get transaction
   common_transaction_t* t = transaction_get( bdev );
   *running = t;
+  return EOK;
+}
+
+/**
+ * @brief Method to extend transaction block
+ *
+ * @param bdev
+ * @param data
+ * @param entry
+ * @param size
+ * @param block_count
+ * @return int
+ */
+BFSCOMMON_NO_EXPORT int common_transaction_extend(
+  common_blockdev_t* bdev,
+  void* data,
+  common_transaction_entry_t* entry,
+  uint64_t size,
+  uint64_t block_count
+) {
+  // validate parameter
+  if (
+    ! data
+    || ! bdev
+    || ! size
+    || ! block_count
+    || entry->bdev != bdev
+    || entry->size > size
+  ) {
+    return EINVAL;
+  }
+  // copy over existing data
+  memcpy( data, entry->data, entry->size );
+  // free old data
+  free( entry->data );
+  // overwrite old buffer
+  entry->data = data;
+  entry->block_count = block_count;
+  entry->size = block_count * bdev->bdif->block_size;
+  // return success
   return EOK;
 }

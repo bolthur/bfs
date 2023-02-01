@@ -67,6 +67,10 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
       command = "mkfs.vfat -F32 " & partitionImage & " --mbr=yes"
       partitionType = "0c"
       partitionSubtract = blockSizeImage
+    of "ext2":
+      useMtools = false
+      imageMegaSize = 32
+      command = "mke2fs -t ext2 -d " & joinPath( contentFolder, "test" ) & " -r 1 -N 0 -m 5 " & partitionImage & " " & intToStr( imageMegaSize.toInt ) & "M"
     else:
       echo "Unsupported image type passed"
       quit( 1 )

@@ -29,11 +29,13 @@
 extern "C" {
 #endif
 
-int fat_rootdir_open( common_mountpoint_t *mp, fat_directory_t* dir );
-int fat_rootdir_close( fat_directory_t* dir );
-int fat_rootdir_offset_size( fat_directory_t* dir, uint64_t* offset, uint64_t* size );
-int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size );
-int fat_rootdir_remove( fat_directory_t* dir,  fat_structure_directory_entry_t* dentry, uint64_t pos );
+#if defined( _BFS_COMPILING )
+  int fat_rootdir_open( common_mountpoint_t *mp, fat_directory_t* dir );
+  int fat_rootdir_close( fat_directory_t* dir );
+  int fat_rootdir_offset_size( fat_directory_t* dir, uint64_t* offset, uint64_t* size );
+  int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uint64_t size );
+  int fat_rootdir_remove( fat_directory_t* dir,  fat_structure_directory_entry_t* dentry, uint64_t pos );
+#endif
 
 #ifdef __cplusplus
 }

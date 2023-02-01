@@ -28,21 +28,23 @@
 extern "C" {
 #endif
 
-/** @brief Directory iterator information */
-typedef struct fat_directory_iterator {
-  /** @brief Directory being iterated */
-  fat_directory_t* reference;
-  /** @brief Current directory entry */
-  fat_structure_directory_entry_t* entry;
-  /** @brief Current directory data */
-  fat_directory_data_t* data;
-} fat_iterator_directory_t;
+#if defined( _BFS_COMPILING )
+  /** @brief Directory iterator information */
+  typedef struct fat_directory_iterator {
+    /** @brief Directory being iterated */
+    fat_directory_t* reference;
+    /** @brief Current directory entry */
+    fat_structure_directory_entry_t* entry;
+    /** @brief Current directory data */
+    fat_directory_data_t* data;
+  } fat_iterator_directory_t;
 
-int fat_iterator_directory_init( fat_iterator_directory_t* it, fat_directory_t* dir, uint64_t pos );
-int fat_iterator_directory_next( fat_iterator_directory_t* it );
-int fat_iterator_directory_seek( fat_iterator_directory_t* it, uint64_t pos );
-int fat_iterator_directory_set( fat_iterator_directory_t* it, uint64_t block_size );
-int fat_iterator_directory_fini( fat_iterator_directory_t* it );
+  int fat_iterator_directory_init( fat_iterator_directory_t* it, fat_directory_t* dir, uint64_t pos );
+  int fat_iterator_directory_next( fat_iterator_directory_t* it );
+  int fat_iterator_directory_seek( fat_iterator_directory_t* it, uint64_t pos );
+  int fat_iterator_directory_set( fat_iterator_directory_t* it, uint64_t block_size );
+  int fat_iterator_directory_fini( fat_iterator_directory_t* it );
+#endif
 
 #ifdef __cplusplus
 }

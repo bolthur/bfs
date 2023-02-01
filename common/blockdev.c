@@ -459,9 +459,44 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
     }
     // handle entry existing
     if ( entry ) {
-      // handle different sizes
-      if ( entry->block_count != block_count ) {
-        return EINVAL;
+      // handle smaller
+      if ( entry->block_count > block_count ) {
+        // perform partial copy
+        memcpy(
+          buf,
+          entry->data,
+          block_count * ( entry->size / entry->block_count )
+        );
+        // return success
+        return EOK;
+      } else if ( entry->block_count < block_count ) {
+        // reallocate
+        uint8_t* new_buffer = malloc( bdev->bdif->block_size * block_count );
+        // handle error
+        if ( ! new_buffer ) {
+          return ENOMEM;
+        }
+        // read everything to new buffer except existing
+        common_blockdev_if_lock( bdev );
+        result = bdev->bdif->read( bdev, new_buffer, block_id, block_count );
+        if ( EOK != result ) {
+          free( new_buffer );
+          return result;
+        }
+        bdev->bdif->read_counter++;
+        common_blockdev_if_unlock( bdev );
+        // extend block
+        result = common_transaction_extend(
+          bdev,
+          new_buffer,
+          entry,
+          bdev->bdif->block_size * block_count,
+          block_count
+        );
+        if ( EOK != result ) {
+          free( new_buffer );
+          return result;
+        }
       }
       // copy over data
       memcpy( buf, entry->data, entry->size );

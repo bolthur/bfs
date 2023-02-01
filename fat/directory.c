@@ -88,6 +88,8 @@ BFSFAT_NO_EXPORT int fat_directory_size(
  *
  * @param path
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // validate parameter
@@ -215,6 +217,8 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_directory_move(
   const char* old_path,
@@ -495,6 +499,8 @@ BFSFAT_EXPORT int fat_directory_move(
  *
  * @param path
  * @return int
+ *
+ * @todo add transaction
  */
 BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // validate parameter

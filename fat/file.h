@@ -39,8 +39,10 @@ int fat_file_seek( fat_file_t* file, int64_t offset, uint32_t whence );
 int fat_file_tell( fat_file_t* file, uint64_t* offset );
 int fat_file_size( fat_file_t* file, uint64_t* size );
 
-int fat_file_get( fat_file_t* file, const char* path, int flags );
-int fat_file_extend_cluster( fat_file_t* file, uint64_t num );
+#if defined( _BFS_COMPILING )
+  int fat_file_get( fat_file_t* file, const char* path, int flags );
+  int fat_file_extend_cluster( fat_file_t* file, uint64_t num );
+#endif
 
 #ifdef __cplusplus
 }

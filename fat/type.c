@@ -28,7 +28,7 @@
  * @param fs
  * @return int
  */
-BFSFAT_EXPORT int fat_type_validate( fat_fs_t* fs ) {
+BFSFAT_NO_EXPORT int fat_type_validate( fat_fs_t* fs ) {
   // exfat
   if ( 0 == fs->superblock.bytes_per_sector ) {
     return ENOTSUP;

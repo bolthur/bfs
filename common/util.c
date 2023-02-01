@@ -26,7 +26,7 @@
  * @param str
  * @return char*
  */
-BFSCOMMON_NO_EXPORT char* util_trim( char* str ) {
+BFSCOMMON_EXPORT char* util_trim( char* str ) {
   char* end;
   // trim leading space
   while( isspace( ( int )*str ) ) {

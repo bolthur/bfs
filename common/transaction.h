@@ -116,14 +116,15 @@
 
   common_transaction_t* transaction_get( common_blockdev_t* bdev );
   int common_transaction_compare( common_transaction_t* t1, common_transaction_t* t2 );
-  int common_transaction_begin( common_blockdev_t* bdev );
-  int common_transaction_commit( common_blockdev_t* bdev );
-  int common_transaction_rollback( common_blockdev_t* bdev );
   int common_transaction_push( common_blockdev_t* bdev, void* data, uint64_t index, uint64_t size, uint64_t block_count );
   int common_transaction_update( common_blockdev_t* bdev, void* data, uint64_t index, uint64_t size, uint64_t block_count );
+  int common_transaction_extend( common_blockdev_t* bdev, void* data, common_transaction_entry_t* entry, uint64_t size, uint64_t block_count );
   int common_transaction_get( uint64_t index, common_blockdev_t* bdev, common_transaction_entry_t** entry );
   int common_transaction_write( common_transaction_entry_t* entry );
   int common_transaction_running(  common_blockdev_t* bdev, bool* running );
 #endif
+int common_transaction_begin( common_blockdev_t* bdev );
+int common_transaction_commit( common_blockdev_t* bdev );
+int common_transaction_rollback( common_blockdev_t* bdev );
 
 #endif

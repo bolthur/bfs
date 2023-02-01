@@ -86,7 +86,9 @@ typedef struct fat_directory {
   fat_directory_data_t* data;
 } fat_directory_t;
 
-int fat_type_validate( fat_fs_t* fs );
+#if defined( _BFS_COMPILING )
+  int fat_type_validate( fat_fs_t* fs );
+#endif
 
 #ifdef __cplusplus
 }

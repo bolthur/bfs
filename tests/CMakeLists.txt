@@ -18,7 +18,7 @@ file (GLOB fat32_file "fat32/*")
 add_custom_target(
   dummy_target ALL
   DEPENDS
-  generate_fat12_image generate_fat16_image generate_fat32_image
+  generate_fat12_image generate_fat16_image generate_fat32_image generate_ext2_image
 )
 add_custom_command(
   OUTPUT always_rebuild
@@ -43,6 +43,13 @@ add_custom_command(
   COMMAND nim -d:release -d:ssl compile --hints:off --run image.nim fat32 fat32 ${CMAKE_CURRENT_BINARY_DIR}
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.tools"
   COMMENT "Generating FAT32 test image"
+  DEPENDS always_rebuild
+)
+add_custom_command(
+  OUTPUT generate_ext2_image
+  COMMAND nim -d:release -d:ssl compile --hints:off --run image.nim ext2 ext2 ${CMAKE_CURRENT_BINARY_DIR}
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/.tools"
+  COMMENT "Generating ext2 test image"
   DEPENDS always_rebuild
 )
 

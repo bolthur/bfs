@@ -44,12 +44,14 @@ extern "C" {
 /** @brief FAT32 cluster chain end identifier */
 #define FAT_FAT32_CLUSTER_CHAIN_END 0x0FFFFFF8
 
-int fat_cluster_next( fat_fs_t* fs, uint64_t current, uint64_t* next );
-int fat_cluster_to_lba( fat_fs_t* fs, uint64_t cluster, uint64_t* lba );
-int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster );
-int fat_cluster_set_cluster( fat_fs_t* fs, uint64_t cluster, uint64_t value );
-int fat_cluster_get_by_num( fat_fs_t* fs, uint64_t cluster, uint64_t num, uint64_t* target );
-int fat_cluster_get_chain_end_value( fat_fs_t* fs, uint64_t* end );
+#if defined( _BFS_COMPILING )
+  int fat_cluster_next( fat_fs_t* fs, uint64_t current, uint64_t* next );
+  int fat_cluster_to_lba( fat_fs_t* fs, uint64_t cluster, uint64_t* lba );
+  int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster );
+  int fat_cluster_set_cluster( fat_fs_t* fs, uint64_t cluster, uint64_t value );
+  int fat_cluster_get_by_num( fat_fs_t* fs, uint64_t cluster, uint64_t num, uint64_t* target );
+  int fat_cluster_get_chain_end_value( fat_fs_t* fs, uint64_t* end );
+#endif
 
 #ifdef __cplusplus
 }
