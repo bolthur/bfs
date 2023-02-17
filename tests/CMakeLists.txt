@@ -13,6 +13,7 @@ file (GLOB blockdev_file "blockdevice/*")
 file (GLOB fat12_file "fat12/*")
 file (GLOB fat16_file "fat16/*")
 file (GLOB fat32_file "fat32/*")
+file (GLOB ext_file "ext/*")
 
 # custom commands for generation of image files
 add_custom_target(
@@ -58,11 +59,12 @@ add_executable(bfs_check
   ${blockdev_file}
   ${fat12_file}
   ${fat16_file}
-  ${fat32_file} )
+  ${fat32_file}
+  ${ext_file} )
 if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsblockdev bfscommon)
+  target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsext bfsblockdev bfscommon)
 else()
-  target_link_libraries(bfs_check GTest::gtest_main bfsfat bfsblockdev bfscommon)
+  target_link_libraries(bfs_check GTest::gtest_main bfsfat bfsext bfsblockdev bfscommon)
 endif()
 gtest_discover_tests(bfs_check)
 add_dependencies(bfs_check dummy_target)

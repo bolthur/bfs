@@ -35,11 +35,11 @@
 #include "gtest/gtest.h"
 
 TEST( fat32, mount_readonly ) {
-  helper_mount_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
-  helper_unmount_test_image( "fat32", "/fat32/" );
+  helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  helper_unmount_fat_test_image( "fat32", "/fat32/" );
 }
 
 TEST( fat32, mount_read_write ) {
-  helper_mount_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
-  helper_unmount_test_image( "fat32", "/fat32/" );
+  helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
+  helper_unmount_fat_test_image( "fat32", "/fat32/" );
 }

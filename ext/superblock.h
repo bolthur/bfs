@@ -15,19 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HELPER_HH
-#define _HELPER_HH
+/** @file ext/superblock.h */
 
-#include <fat/structure.h>
+#include <common/blockdev.h>
+#include <ext/structure.h>
+#include <ext/fs.h>
+
+#ifndef _EXT_SUPERBLOCK_H
+#define _EXT_SUPERBLOCK_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void helper_mount_fat_test_image( bool read_only, const char* fname, const char* device, const char* path, fat_type_t );
-void helper_unmount_fat_test_image( const char* device, const char* path );
-void helper_mount_ext_test_image( bool read_only, const char* fname, const char* device, const char* path );
-void helper_unmount_ext_test_image( const char* device, const char* path );
+#if defined( _BFS_COMPILING )
+  int ext_superblock_read( common_blockdev_t* bdev, ext_structure_superblock_t* superblock );
+  int ext_superblock_check( ext_fs_t* fs );
+  int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size );
+#endif
 
 #ifdef __cplusplus
 }

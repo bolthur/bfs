@@ -29,6 +29,9 @@
 #include <fat/iterator.h>
 #include <fat/fs.h>
 #include <fat/file.h>
+#include <ext/structure.h>
+#include <ext/fs.h>
+#include <ext/mountpoint.h>
 #include "_helper.hh"
 #include "gtest/gtest.h"
 
@@ -41,7 +44,7 @@
  * @param mountpoint
  * @param type
  */
-void helper_mount_test_image(
+void helper_mount_fat_test_image(
   bool read_only,
   const char* fname,
   const char* device,
@@ -74,12 +77,65 @@ void helper_mount_test_image(
 /**
  * @brief Helper to unmount test image
  */
-void helper_unmount_test_image( const char* device, const char* path ) {
+void helper_unmount_fat_test_image( const char* device, const char* path ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );
   // unmount
   int result = fat_mountpoint_umount( path );
+  EXPECT_EQ( result, EOK );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 0U );
+  // unregister device
+  result = common_blockdev_unregister_device( device );
+  EXPECT_EQ( result, EOK );
+}
+
+/**
+ * @brief Helper to mount test image
+ *
+ * @param read_only
+ * @param bdev_fname
+ * @param path
+ * @param mountpoint
+ */
+void helper_mount_ext_test_image(
+  bool read_only,
+  const char* fname,
+  const char* device,
+  const char* path
+) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  EXPECT_TRUE( bdev );
+  // set blockdev filename
+  common_blockdev_set_fname( fname );
+  /// FIXME: SHOULD BE DONE WITHIN BLOCKDEV OPEN (?)
+  bdev->part_offset = bdev->bdif->block_size;
+  // register block device
+  int result = common_blockdev_register_device( bdev, device );
+  EXPECT_EQ( result, EOK );
+  // mount device
+  result = ext_mountpoint_mount( device, path, read_only );
+  EXPECT_EQ( result, EOK );
+  // assert count
+  EXPECT_EQ( bdev->bdif->reference_counter, 1 );
+  // get fs
+  ext_fs_t* fs = ( ext_fs_t* )bdev->fs;
+  // assert fs and fs type
+  EXPECT_TRUE( fs );
+  EXPECT_EQ( fs->read_only, read_only );
+}
+
+/**
+ * @brief Helper to unmount test image
+ */
+void helper_unmount_ext_test_image( const char* device, const char* path ) {
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  EXPECT_TRUE( bdev );
+  // unmount
+  int result = ext_mountpoint_umount( path );
   EXPECT_EQ( result, EOK );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );

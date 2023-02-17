@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HELPER_HH
-#define _HELPER_HH
+/** @file ext/mountpoint.h */
 
-#include <fat/structure.h>
+#include <stdbool.h>
+
+#ifndef _EXT_MOUNTPOINT_H
+#define _EXT_MOUNTPOINT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void helper_mount_fat_test_image( bool read_only, const char* fname, const char* device, const char* path, fat_type_t );
-void helper_unmount_fat_test_image( const char* device, const char* path );
-void helper_mount_ext_test_image( bool read_only, const char* fname, const char* device, const char* path );
-void helper_unmount_ext_test_image( const char* device, const char* path );
+int ext_mountpoint_mount( const char* device_name, const char* mountpoint, bool read_only );
+int ext_mountpoint_umount( const char* mountpoint );
 
 #ifdef __cplusplus
 }

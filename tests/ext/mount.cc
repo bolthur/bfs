@@ -19,27 +19,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include <blockdev/tests/blockdev.h>
-#include <common/mountpoint.h>
-#include <common/blockdev.h>
-#include <common/errno.h>
-#include <fat/mountpoint.h>
-#include <fat/structure.h>
-#include <fat/directory.h>
-#include <fat/type.h>
-#include <fat/rootdir.h>
-#include <fat/iterator.h>
-#include <fat/fs.h>
-#include <fat/file.h>
 #include "../_helper.hh"
 #include "gtest/gtest.h"
 
-TEST( fat12, mount_readonly ) {
-  helper_mount_fat_test_image( true, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
-  helper_unmount_fat_test_image( "fat12", "/fat12/" );
+TEST( ext, mount_readonly ) {
+  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
+  helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
-TEST( fat12, mount_read_write ) {
-  helper_mount_fat_test_image( false, "fat12.img", "fat12", "/fat12/", FAT_FAT12 );
-  helper_unmount_fat_test_image( "fat12", "/fat12/" );
+TEST( ext, mount_read_write ) {
+  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
+  helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }

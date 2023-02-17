@@ -31,6 +31,11 @@ extern "C" {
 
 #pragma pack(push, 1)
 
+#define EXT_SUPERBLOCK_MAGIC 0xEF53
+
+#define EXT_GOOD_OLD_REV 0
+#define EXT_DYNAMIC_REV 1
+
 // s_state
 #define EXT_SUPERBLOCK_EXT2_VALID_FS 1
 #define EXT_SUPERBLOCK_EXT2_ERROR_FS 2
@@ -217,7 +222,7 @@ typedef struct {
   uint32_t i_dir_acl;
   uint32_t i_faddr;
   union {
-    typedef struct {
+    struct {
       uint8_t h_i_frag;
       uint8_t h_i_fsize;
       uint16_t h_i_mode_high;
@@ -225,7 +230,7 @@ typedef struct {
       uint16_t h_i_gid_high;
       uint32_t h_i_author;
     } i_osd2_hurd;
-    typedef struct {
+    struct {
       uint8_t h_i_frag;
       uint8_t h_i_fsize;
       uint16_t reserved0;
@@ -233,7 +238,7 @@ typedef struct {
       uint16_t h_i_gid_high;
       uint32_t reserved1;
     } i_osd2_linux;
-    typedef struct {
+    struct {
       uint8_t h_i_frag;
       uint8_t h_i_fsize;
       uint8_t reserved0[ 10 ];
@@ -260,8 +265,12 @@ typedef struct {
   uint16_t rec_len;
   uint8_t name_len;
   uint8_t file_type;
+#ifdef __cplusplus
+  char name[255];
+#else
   char name[];
-}
+#endif
+} ext_structure_directory_entry_t;
 
 #pragma pack(pop)
 
