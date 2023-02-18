@@ -1071,12 +1071,12 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   uint64_t necessary_entry_count = size
     / sizeof( fat_structure_directory_entry_t );
   // allocate buffer
-  fat_structure_directory_entry_t* entry = malloc( dir->file.fsize );
+  fat_structure_directory_entry_t* entry = malloc( ( size_t )dir->file.fsize );
   if ( ! entry ) {
     return ENOMEM;
   }
   // clear out space
-  memset( entry, 0, dir->file.fsize );
+  memset( entry, 0, ( size_t )dir->file.fsize );
   // load whole directory
   dir->file.fpos = 0;
   uint64_t cluster_size = fs->superblock.sectors_per_cluster
@@ -1097,7 +1097,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     memcpy(
       ( uint8_t* )entry + dir->file.fpos,
       dir->file.block.data,
-      cluster_size
+      ( size_t )cluster_size
     );
     dir->file.fpos += cluster_size;
   }
@@ -1148,14 +1148,14 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
       }
       dir->file.fsize += cluster_size;
       // realloc entry space
-      void* tmp_entry_extended = realloc( entry, dir->file.fsize );
+      void* tmp_entry_extended = realloc( entry, ( size_t )dir->file.fsize );
       // handle error
       if ( ! tmp_entry_extended ) {
         free( entry );
         return result;
       }
       // clear out additional space
-      memset( ( uint8_t* )tmp_entry_extended + old_size, 0, cluster_size );
+      memset( ( uint8_t* )tmp_entry_extended + old_size, 0, ( size_t )cluster_size );
       // increase found count by newly added entries
       found_size += ( dir->file.fsize - old_size )
         / sizeof( fat_structure_directory_entry_t );
@@ -1171,7 +1171,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     return ENOSPC;
   }
   // copy over changes
-  memcpy( start, buffer, size );
+  memcpy( start, buffer, ( size_t )size );
   // write block by block
   uint64_t block_count = dir->file.fsize / cluster_size;
   uint64_t block_current = 0;
@@ -1292,7 +1292,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       return ENOMEM;
     }
     entry_size = sizeof( *data );
-    memset( data, 0, entry_size );
+    memset( data, 0, ( size_t )entry_size );
     // copy over name
     const char* p = name;
     while ( *p && ( p - name ) < 8 ) {
@@ -1342,7 +1342,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       return ENOMEM;
     }
     entry_size = sizeof( *data ) * long_name_length;
-    memset( data, 0, entry_size );
+    memset( data, 0, ( size_t )entry_size );
     // build short name
     fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
       ( &data[ long_name_length - 1 ] );
@@ -1498,12 +1498,12 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   }
   int result;
   // allocate buffer for file directory entries
-  fat_structure_directory_entry_t* entry = malloc( dir->file.fsize );
+  fat_structure_directory_entry_t* entry = malloc( ( size_t )dir->file.fsize );
   if ( ! entry ) {
     return ENOMEM;
   }
   // clear out space
-  memset( entry, 0, dir->file.fsize );
+  memset( entry, 0, ( size_t )dir->file.fsize );
   // reset file position
   dir->file.fpos = 0;
   // calculate cluster size
@@ -1526,7 +1526,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
     memcpy(
       ( uint8_t* )entry + dir->file.fpos,
       dir->file.block.data,
-      cluster_size
+      ( size_t )cluster_size
     );
     // unload fat block
     result = fat_block_unload( &dir->file );
@@ -1592,7 +1592,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
     memcpy(
       dir->file.block.data,
       ( uint8_t* )entry + dir->file.fpos,
-      cluster_size
+      ( size_t )cluster_size
     );
     // write back fat block
     result = fat_block_write( &dir->file, cluster_size );

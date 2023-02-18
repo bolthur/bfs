@@ -253,13 +253,13 @@ BFSCOMMON_NO_EXPORT int common_transaction_push(
     return ENOMEM;
   }
   // allocate data
-  entry->data = malloc( size );
+  entry->data = malloc( ( size_t )size );
   if ( ! entry->data ) {
     free( entry );
     return ENOMEM;
   }
   // copy over data
-  memcpy( entry->data, data, size );
+  memcpy( entry->data, data, ( size_t )size );
   entry->index = index;
   entry->size = size;
   entry->bdev = bdev;
@@ -310,7 +310,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_update(
     return EINVAL;
   }
   // overwrite data
-  memcpy( entry->data, data, size );
+  memcpy( entry->data, data, ( size_t )size );
   // return success
   return EOK;
 }
@@ -432,7 +432,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_extend(
     return EINVAL;
   }
   // copy over existing data
-  memcpy( data, entry->data, entry->size );
+  memcpy( data, entry->data, ( size_t )entry->size );
   // free old data
   free( entry->data );
   // overwrite old buffer

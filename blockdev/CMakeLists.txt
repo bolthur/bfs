@@ -37,5 +37,5 @@ if(DEFINED INSTALL_LIB)
     FILES_MATCHING PATTERN "*.h*"
     PATTERN "CMakeFiles" EXCLUDE
     PATTERN "bfsblockdev_export.h" EXCLUDE)
-  INSTALL(TARGETS bfsblockdev DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs/blockdev)
+  INSTALL(TARGETS bfsblockdev DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs)
 endif()

@@ -185,7 +185,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
         * sizeof( fat_structure_directory_entry_t )
         + ( block_size - 1 )
     ) / block_size;
-    fat_structure_directory_entry_t* entry = malloc( rootdir_size * block_size );
+    fat_structure_directory_entry_t* entry = malloc(
+      ( size_t )( rootdir_size * block_size ) );
     if ( ! entry ) {
       return ENOMEM;
     }
@@ -238,7 +239,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
       return ENOSPC;
     }
     // copy over changes
-    memcpy( start, buffer, size );
+    memcpy( start, buffer, ( size_t )size );
     // write back whole root directory
     result = common_blockdev_bytes_write(
       fs->bdev,
@@ -310,7 +311,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     return EINVAL;
   }
   // allocate space
-  fat_structure_directory_entry_t* entry = malloc( rootdir_size * block_size );
+  fat_structure_directory_entry_t* entry = malloc(
+    ( size_t )( rootdir_size * block_size ) );
   if ( ! entry ) {
     return ENOMEM;
   }
@@ -354,7 +356,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   memset(
     ( uint8_t* )start + pos,
     0,
-    count * sizeof( fat_structure_directory_entry_t )
+    ( size_t )( count * sizeof( fat_structure_directory_entry_t ) )
   );
   // write back whole root directory
   result = common_blockdev_bytes_write(

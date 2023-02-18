@@ -522,11 +522,12 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   // handle shrink
   if ( old_count > new_count ) {
     // allocate space for cluster list
-    uint64_t* cluster_list = malloc( sizeof( uint64_t ) * old_count );
+    uint64_t* cluster_list = malloc(
+      ( size_t )( sizeof( uint64_t ) * old_count ) );
     if ( ! cluster_list ) {
       return ENOMEM;
     }
-    memset( cluster_list, 0, sizeof( uint64_t ) * old_count );
+    memset( cluster_list, 0, ( size_t )( sizeof( uint64_t ) * old_count ) );
     // load cluster list
     for ( uint64_t index = 0; index < old_count; index++ ) {
       // get cluster
@@ -592,7 +593,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         return EIO;
       }
       // clear out
-      memset( file->block.data, 0, cluster_size );
+      memset( file->block.data, 0, ( size_t )cluster_size );
       // write back
       result = fat_block_write( file, cluster_size );
       if ( EOK != result ) {
@@ -617,7 +618,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       return EIO;
     }
     // set new space to 0
-    memset( file->block.data + file->fsize, 0, size - file->fsize );
+    memset( file->block.data + file->fsize, 0, ( size_t )( size - file->fsize ) );
     // write back
     result = fat_block_write( file, cluster_size );
     if ( EOK != result ) {
@@ -738,7 +739,7 @@ BFSFAT_EXPORT int fat_file_write(
     memcpy(
       file->block.data + copy_offset,
       ( uint8_t* )buffer + copy_count,
-      copy_size
+      ( size_t )copy_size
     );
     // write back block
     result = fat_block_write( file, cluster_size );
@@ -892,10 +893,11 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
       uint64_t* new_list = NULL;
       // allocate list
       if ( ! cluster_list ) {
-        new_list = malloc( ( max_index + 1 ) * sizeof( uint64_t ) );
+        new_list = malloc( ( size_t )( ( max_index + 1 ) * sizeof( uint64_t ) ) );
       // reallocate list
       } else {
-        new_list = realloc( cluster_list, ( max_index + 1 ) * sizeof( uint64_t ) );
+        new_list = realloc( cluster_list,
+          ( size_t )( ( max_index + 1 ) * sizeof( uint64_t ) ) );
       }
       // handle error
       if ( ! new_list ) {
