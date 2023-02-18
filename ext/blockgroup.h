@@ -15,24 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/superblock.h */
+/** @file ext/blockgroup.h */
 
-#include <common/blockdev.h>
-#include <ext/structure.h>
-#include <ext/fs.h>
-
-#ifndef _EXT_SUPERBLOCK_H
-#define _EXT_SUPERBLOCK_H
+#ifndef _EXT_BLOCKGROUP_H
+#define _EXT_BLOCKGROUP_H
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if defined( _BFS_COMPILING )
-  int ext_superblock_read( common_blockdev_t* bdev, ext_structure_superblock_t* superblock );
-  int ext_superblock_check( ext_fs_t* fs );
-  int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size );
-  int superblock_is_power_of( uint32_t a, uint32_t b );
 #endif
 
 #ifdef __cplusplus

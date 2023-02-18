@@ -120,7 +120,7 @@ BFSEXT_NO_EXPORT int ext_superblock_check( ext_fs_t* fs ) {
  * @param block_size
  * @return int
  */
-int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size ) {
+BFSEXT_NO_EXPORT int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size ) {
   if ( ! fs || ! block_size ) {
     return EINVAL;
   }
@@ -128,4 +128,24 @@ int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size ) {
   *block_size = 1024 << fs->superblock.s_log_block_size;
   // return success
   return EOK;
+}
+
+/**
+ * @brief Helper to check if is power of
+ *
+ * @param a
+ * @param b
+ * @return int
+ */
+BFSEXT_NO_EXPORT int superblock_is_power_of( uint32_t a, uint32_t b )
+{
+  while (1) {
+    if (a < b)
+      return 0;
+    if (a == b)
+      return 1;
+    if ((a % b) != 0)
+      return 0;
+    a = a / b;
+  }
 }
