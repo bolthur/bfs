@@ -25,6 +25,7 @@
 #include <common/mountpoint.h>
 #include <common/errno.h>
 #include <common/util.h>
+#include <common/transaction.h>
 #include <fat/directory.h>
 #include <fat/type.h>
 #include <fat/structure.h>
@@ -107,13 +108,19 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   if ( fs->read_only ) {
     return EROFS;
   }
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
   // duplicate path for base and dirname
   char* pathdup_base = strdup( path );
   if ( ! pathdup_base ) {
+    common_transaction_rollback( fs->bdev );
     return ENOMEM;
   }
   char* pathdup_dir = strdup( path );
   if ( ! pathdup_dir ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     return ENOMEM;
   }
@@ -122,6 +129,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     return ENOTSUP;
@@ -132,6 +140,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   }
   // handle invalid
   if ( '.' == *base ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     return ENOTSUP;
@@ -139,6 +148,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // try to open directory
   fat_directory_t* dir = malloc( sizeof( *dir ) );
   if ( ! dir ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     return ENOMEM;
@@ -146,8 +156,9 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // clear out
   memset( dir, 0, sizeof( *dir ) );
   // first open complete path
-  int result = fat_directory_open( dir, path );
+  result = fat_directory_open( dir, path );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -155,6 +166,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   }
   // ensure it's empty
   if ( 2 != dir->entry_size ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -164,6 +176,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // close directory again
   result = fat_directory_close( dir );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -172,6 +185,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // open parent directory directory
   result = fat_directory_open( dir, dirpath );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -180,6 +194,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // get entry by name
   result = fat_directory_entry_by_name( dir, base );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -189,6 +204,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // try to remove it
   result = fat_directory_dentry_remove( dir, dir->entry, dir->entry_pos );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -198,6 +214,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // close directory
   result = fat_directory_close( dir );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
@@ -208,7 +225,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   free( pathdup_dir );
   free( dir );
   // return success
-  return EOK;
+  return common_transaction_commit( fs->bdev );
 }
 
 /**
@@ -499,8 +516,6 @@ BFSFAT_EXPORT int fat_directory_move(
  *
  * @param path
  * @return int
- *
- * @todo add transaction
  */
 BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // validate parameter
@@ -516,14 +531,20 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   if ( fs->read_only ) {
     return EROFS;
   }
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
   // duplicate path for base
   char* pathdup_base = strdup( path );
   if ( ! pathdup_base ) {
+    common_transaction_rollback( fs->bdev );
     return ENOMEM;
   }
   // duplicate path for dir
   char* pathdup_dir = strdup( path );
   if ( ! pathdup_dir ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     return ENOMEM;
   }
@@ -532,6 +553,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     return ENOTSUP;
@@ -544,8 +566,9 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   fat_directory_t dir;
   memset( &dir, 0, sizeof( dir ) );
   // try to open basename
-  int result = fat_directory_open( &dir, dirpath );
+  result = fat_directory_open( &dir, dirpath );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     free( pathdup_base );
     free( pathdup_dir );
     return result;
@@ -553,6 +576,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // ensure that the folder doesn't exist
   result = fat_directory_entry_by_name( &dir, base );
   if ( ENOENT != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -562,6 +586,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   uint64_t free_cluster;
   result = fat_cluster_get_free( fs, &free_cluster );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -569,6 +594,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   }
   result = fat_cluster_set_cluster( fs, free_cluster, FAT_CLUSTER_EOF );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -577,6 +603,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // insert directory entry
   result = fat_directory_dentry_insert( &dir, base, free_cluster, true );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     fat_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -586,6 +613,10 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // close directory
   result = fat_directory_close( &dir );
   if ( EOK != result ) {
+    // free up stuff
+    free( pathdup_base );
+    free( pathdup_dir );
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // free up stuff
@@ -594,24 +625,28 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   // open new directory
   result = fat_directory_open( &dir, path );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // create dot entries
   result = fat_directory_dentry_insert( &dir, ".", dir.file.cluster, true );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   result = fat_directory_dentry_insert( &dir, "..", parent_cluster, true );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // close new directory
   result = fat_directory_close( &dir );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // return success
-  return EOK;
+  return common_transaction_commit( fs->bdev );
 }
 
 /**

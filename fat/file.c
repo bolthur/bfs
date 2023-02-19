@@ -482,8 +482,6 @@ int fat_file_read(
  * @param file
  * @param size
  * @return int
- *
- * @todo add transaction
  */
 BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! file || ! file->mp || ! file->dir || ! file->dentry || ! file->cluster ) {
@@ -500,6 +498,10 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   if ( ! fs ) {
     return EINVAL;
   }
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
   // get cluster size
   uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
@@ -515,8 +517,9 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
   }
   // get custer chain end value by type
   uint64_t value;
-  int result = fat_cluster_get_chain_end_value( fs, &value );
+  result = fat_cluster_get_chain_end_value( fs, &value );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // handle shrink
@@ -525,6 +528,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     uint64_t* cluster_list = malloc(
       ( size_t )( sizeof( uint64_t ) * old_count ) );
     if ( ! cluster_list ) {
+      common_transaction_rollback( fs->bdev );
       return ENOMEM;
     }
     memset( cluster_list, 0, ( size_t )( sizeof( uint64_t ) * old_count ) );
@@ -534,6 +538,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       uint64_t cluster;
       result = fat_cluster_get_by_num( fs, file->cluster, index + 1, &cluster );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         free( cluster_list );
         return result;
       }
@@ -544,6 +549,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     if ( 0 != new_count ) {
       result = fat_cluster_set_cluster( fs, cluster_list[ new_count - 1 ], value );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         free( cluster_list );
         return result;
       }
@@ -556,6 +562,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         FAT_CLUSTER_UNUSED
       );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         free( cluster_list );
         return result;
       }
@@ -577,6 +584,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // extend
       result = fat_file_extend_cluster( file, 1 );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         return result;
       }
       file->fsize = ( old_count + index + 1 ) * cluster_size;
@@ -586,10 +594,12 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // load block
       result = fat_block_load( file, cluster_size );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         return result;
       }
       // handle nothing loaded
       if ( ! file->block.data ) {
+        common_transaction_rollback( fs->bdev );
         return EIO;
       }
       // clear out
@@ -597,6 +607,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // write back
       result = fat_block_write( file, cluster_size );
       if ( EOK != result ) {
+        common_transaction_rollback( fs->bdev );
         return result;
       }
       // restore fpos
@@ -609,6 +620,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     // load cluster
     result = fat_block_load( file, cluster_size );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       file->fpos = fpos;
       return result;
     }
@@ -622,6 +634,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     // write back
     result = fat_block_write( file, cluster_size );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       return result;
     }
     // restore position
@@ -637,10 +650,11 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     file->dentry_pos
   );
   if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
     return result;
   }
   // return success
-  return EOK;
+  return common_transaction_commit( fs->bdev );
 }
 
 /**
@@ -651,8 +665,6 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
  * @param size
  * @param write_count
  * @return int
- *
- * @todo add transaction
  */
 BFSFAT_EXPORT int fat_file_write(
   fat_file_t* file,
@@ -678,6 +690,11 @@ BFSFAT_EXPORT int fat_file_write(
   // size of 0 means success
   if ( ! size ) {
     return EOK;
+  }
+  // start transaction
+  result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
   }
   // backup file position
   uint64_t fpos = file->fpos;
@@ -707,6 +724,7 @@ BFSFAT_EXPORT int fat_file_write(
     // extend file cluster chain
     result = fat_file_extend_cluster( file, block_count );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       file->fpos = fpos;
       return result;
     }
@@ -732,6 +750,7 @@ BFSFAT_EXPORT int fat_file_write(
     // load sector
     result = fat_block_load( file, cluster_size );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       file->fpos = fpos;
       return result;
     }
@@ -744,6 +763,7 @@ BFSFAT_EXPORT int fat_file_write(
     // write back block
     result = fat_block_write( file, cluster_size );
     if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
       file->fpos = fpos;
       return result;
     }
@@ -760,7 +780,7 @@ BFSFAT_EXPORT int fat_file_write(
   file->fpos = fpos;
   file->fsize = old_size + copy_count;
   // return success
-  return EOK;
+  return common_transaction_commit( fs->bdev );
 }
 
 /**

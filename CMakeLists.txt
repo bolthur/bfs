@@ -15,8 +15,10 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 17)
 # cppcheck
-set(CMAKE_CXX_CPPCHECK "cppcheck")
-set(CMAKE_C_CPPCHECK "cppcheck")
+if(${TEST_ACTIVE})
+  set(CMAKE_CXX_CPPCHECK "cppcheck")
+  set(CMAKE_C_CPPCHECK "cppcheck")
+endif()
 
 # necessary when building with windows
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)

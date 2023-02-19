@@ -29,6 +29,7 @@
 #include <fat/type.h>
 #include <fat/fs.h>
 #include <fat/file.h>
+#include <fat/block.h>
 #include <fat/structure.h>
 #include <fat/bfsfat_export.h>
 
@@ -167,6 +168,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
   }
   // bunch of necessary variables
   fat_fs_t* fs = dir->file.mp->fs;
+  int result;
   // check for readonly
   if ( fs->read_only ) {
     return EROFS;
@@ -190,16 +192,22 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     if ( ! entry ) {
       return ENOMEM;
     }
-    // load whole root directory
-    int result = common_blockdev_bytes_read(
-      fs->bdev,
-      rootdir_offset * block_size,
-      entry,
-      rootdir_size * block_size
-    );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
+    // load root directory block by block
+    uint64_t fpos = 0;
+    uint64_t fsize = rootdir_size * block_size;
+    while ( fpos < fsize ) {
+      // load fat block
+      result = common_blockdev_bytes_read(
+        fs->bdev,
+        ( rootdir_offset + fpos / block_size ) * block_size,
+        ( uint8_t* )entry + fpos,
+        block_size
+      );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
+      fpos += block_size;
     }
     // loop through root directory and try to find a entry
     fat_structure_directory_entry_t* current = entry;
@@ -240,17 +248,24 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     }
     // copy over changes
     memcpy( start, buffer, ( size_t )size );
-    // write back whole root directory
-    result = common_blockdev_bytes_write(
-      fs->bdev,
-      rootdir_offset * block_size,
-      entry,
-      rootdir_size * block_size
-    );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
+    // write root directory block by block
+    fpos = 0;
+    fsize = rootdir_size * block_size;
+    while ( fpos < fsize ) {
+      // load fat block
+      result = common_blockdev_bytes_write(
+        fs->bdev,
+        ( rootdir_offset + fpos / block_size ) * block_size,
+        ( uint8_t* )entry + fpos,
+        block_size
+      );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
+      fpos += block_size;
     }
+    // free entry and return success
     free( entry );
     return EOK;
   } else if ( FAT_FAT32 == fs->type ) {

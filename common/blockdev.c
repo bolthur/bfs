@@ -434,8 +434,6 @@ BFSCOMMON_NO_EXPORT void common_blockdev_if_unlock( common_blockdev_t* bdev ) {
  * @param block_id
  * @param block_count
  * @return int
- *
- * @todo check for transaction is running and read from memory if existing
  */
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
   common_blockdev_t* bdev,
@@ -536,8 +534,6 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
  * @param block_id
  * @param block_count
  * @return int
- *
- * @todo check if transaction is running and write to memory
  */
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   common_blockdev_t* bdev,
