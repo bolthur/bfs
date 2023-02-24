@@ -17,6 +17,7 @@
 
 /** @file fat/directory.h */
 
+#include <time.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <fat/type.h>
@@ -38,6 +39,10 @@ int fat_directory_next_entry( fat_directory_t* dir );
 int fat_directory_rewind( fat_directory_t* dir );
 int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
 
+int fat_directory_ctime( fat_directory_t* dir, time_t* ctime );
+int fat_directory_mtime( fat_directory_t* dir, time_t* mtime );
+int fat_directory_atime( fat_directory_t* dir, time_t* atime );
+
 #if defined( _BFS_COMPILING )
   int fat_directory_size( fat_directory_t* dir, uint64_t* size );
   int fat_directory_entry_is_valid( fat_structure_directory_entry_t* entry, bool* is_valid );
@@ -49,6 +54,10 @@ int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
   int fat_directory_dentry_update( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
   int fat_directory_dentry_remove( fat_directory_t* dir, fat_structure_directory_entry_t* dentry, uint64_t pos );
   int fat_directory_dentry_checksum( uint8_t* name, uint8_t* checksum );
+
+  int fat_directory_dentry_ctime( fat_structure_directory_entry_t* dir, time_t* ctime );
+  int fat_directory_dentry_mtime( fat_structure_directory_entry_t* dir, time_t* mtime );
+  int fat_directory_dentry_atime( fat_structure_directory_entry_t* dir, time_t* atime );
 #endif
 
 #ifdef __cplusplus

@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <strings.h>
+#include <time.h>
 #include <common/blockdev.h>
 #include <common/mountpoint.h>
 #include <common/errno.h>
@@ -89,8 +90,6 @@ BFSFAT_NO_EXPORT int fat_directory_size(
  *
  * @param path
  * @return int
- *
- * @todo add transaction
  */
 BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
   // validate parameter
@@ -1647,5 +1646,110 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   // freeup entry again
   free( entry );
   // return success
+  return EOK;
+}
+
+/**
+ * @brief Get creation time of directory
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_directory_ctime( fat_directory_t* dir, time_t* ctime ) {
+  return fat_directory_dentry_ctime( dir->entry, ctime );
+}
+
+/**
+ * @brief Get modification time of directory
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_directory_mtime( fat_directory_t* dir, time_t* mtime ) {
+  return fat_directory_dentry_mtime( dir->entry, mtime );
+}
+
+/**
+ * @brief Get access time of directory
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_directory_atime( fat_directory_t* dir, time_t* atime ) {
+  return fat_directory_dentry_atime( dir->entry, atime );
+}
+
+/**
+ * @brief Get creation time of dentry
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_directory_dentry_ctime( fat_structure_directory_entry_t* dir, time_t* ctime ) {
+  // validate parameter
+  if ( ! dir || ! ctime ) {
+    return EINVAL;
+  }
+  struct tm t = {
+    .tm_sec = FAT_DIRECTORY_TIME_EXTRACT_SECOND( dir->creation_time ),
+    .tm_min = FAT_DIRECTORY_TIME_EXTRACT_MINUTE( dir->creation_time ),
+    .tm_hour = FAT_DIRECTORY_TIME_EXTRACT_HOUR( dir->creation_time ),
+    .tm_mday = FAT_DIRECTORY_DATE_EXTRACT_DAY( dir->creation_date ),
+    .tm_mon = FAT_DIRECTORY_DATE_EXTRACT_MONTH( dir->creation_date ),
+    .tm_year = FAT_DIRECTORY_DATE_EXTRACT_YEAR( dir->creation_date ) + 80,
+  };
+  *ctime = mktime(&t);
+  return EOK;
+}
+
+/**
+ * @brief Get modification time of dentry
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_directory_dentry_mtime( fat_structure_directory_entry_t* dir, time_t* mtime ) {
+  // validate parameter
+  if ( ! dir || ! mtime ) {
+    return EINVAL;
+  }
+  struct tm t = {
+    .tm_sec = FAT_DIRECTORY_TIME_EXTRACT_SECOND( dir->last_modification_time ),
+    .tm_min = FAT_DIRECTORY_TIME_EXTRACT_MINUTE( dir->last_modification_time ),
+    .tm_hour = FAT_DIRECTORY_TIME_EXTRACT_HOUR( dir->last_modification_time ),
+    .tm_mday = FAT_DIRECTORY_DATE_EXTRACT_DAY( dir->last_modification_date ),
+    .tm_mon = FAT_DIRECTORY_DATE_EXTRACT_MONTH( dir->last_modification_date ),
+    .tm_year = FAT_DIRECTORY_DATE_EXTRACT_YEAR( dir->last_modification_date ) + 80,
+  };
+  *mtime = mktime(&t);
+  return EOK;
+}
+
+/**
+ * @brief Get access time of dentry
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_directory_dentry_atime( fat_structure_directory_entry_t* dir, time_t* atime ) {
+  // validate parameter
+  if ( ! dir || ! atime ) {
+    return EINVAL;
+  }
+  struct tm t = {
+    .tm_sec = 0,
+    .tm_min = 0,
+    .tm_hour = 0,
+    .tm_mday = FAT_DIRECTORY_DATE_EXTRACT_DAY( dir->last_accessed_date ),
+    .tm_mon = FAT_DIRECTORY_DATE_EXTRACT_MONTH( dir->last_accessed_date ),
+    .tm_year = FAT_DIRECTORY_DATE_EXTRACT_YEAR( dir->last_accessed_date ) + 80,
+  };
+  *atime = mktime(&t);
   return EOK;
 }

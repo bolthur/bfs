@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <time.h>
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>
 #include <common/file.h>
@@ -1303,4 +1304,37 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
   }
   // return success
   return EOK;
+}
+
+/**
+ * @brief Get creation time of file
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_file_ctime( fat_file_t* file, time_t* ctime ) {
+  return fat_directory_dentry_ctime( file->dentry, ctime );
+}
+
+/**
+ * @brief Get modification time of file
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_file_mtime( fat_file_t* file, time_t* mtime ) {
+  return fat_directory_dentry_mtime( file->dentry, mtime );
+}
+
+/**
+ * @brief Get access time of file
+ *
+ * @param file
+ * @param ctime
+ * @return int
+ */
+BFSFAT_EXPORT int fat_file_atime( fat_file_t* file, time_t* atime ) {
+  return fat_directory_dentry_atime( file->dentry, atime );
 }
