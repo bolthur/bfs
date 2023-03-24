@@ -387,6 +387,11 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
     free( file->dentry );
     file->dentry = NULL;
   }
+  if ( file->chain ) {
+    free( file->chain );
+    file->chain = NULL;
+    file->chain_size = 0;
+  }
   if ( file->dir ) {
     result = fat_directory_close( file->dir );
     if ( EOK != result ) {

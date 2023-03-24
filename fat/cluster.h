@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <fat/fs.h>
+#include <fat/file.h>
 
 #ifndef _FAT_CLUSTER_H
 #define _FAT_CLUSTER_H
@@ -45,6 +46,7 @@ extern "C" {
 #define FAT_FAT32_CLUSTER_CHAIN_END 0x0FFFFFF8
 
 #if defined( _BFS_COMPILING )
+  int fat_cluster_load( fat_fs_t* fs, fat_file_t* file );
   int fat_cluster_next( fat_fs_t* fs, uint64_t current, uint64_t* next );
   int fat_cluster_to_lba( fat_fs_t* fs, uint64_t cluster, uint64_t* lba );
   int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster );

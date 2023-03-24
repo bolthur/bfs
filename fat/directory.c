@@ -54,31 +54,14 @@ BFSFAT_NO_EXPORT int fat_directory_size(
   if ( ! dir || ! dir->file.mp->fs || ! size ) {
     return EINVAL;
   }
-  // cache cluster
-  uint64_t cluster = dir->file.cluster;
+  // load cluster chain
+  int result = fat_cluster_load( dir->file.mp->fs, &dir->file );
+  if ( EOK != result ) {
+    return result;
+  }
   // cache fs structure
   fat_fs_t* fs = dir->file.mp->fs;
-  uint64_t sector_count = 0;
-  while ( true ) {
-    // increase sector count
-    sector_count++;
-    // get next cluster
-    uint64_t next;
-    int result = fat_cluster_next( fs, cluster, &next );
-    if ( EOK != result ) {
-      return result;
-    }
-    // handle chain end
-    if (
-      ( FAT_FAT12 == fs->type && next >= FAT_FAT12_CLUSTER_CHAIN_END )
-      || ( FAT_FAT16 == fs->type && next >= FAT_FAT16_CLUSTER_CHAIN_END )
-      || ( FAT_FAT32 == fs->type && next >= FAT_FAT32_CLUSTER_CHAIN_END )
-    ) {
-      break;
-    }
-    // overwrite cluster
-    cluster = next;
-  }
+  uint64_t sector_count = dir->file.chain_size;
   // return size
   *size = sector_count * fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
@@ -739,7 +722,6 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
     // handle error
     if ( EOK != result ) {
       fat_directory_close( dir );
-      free( dir );
       return result;
     // handle end reached
     } else if ( ! dir->data && ! dir->entry ) {
@@ -1210,6 +1192,8 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   uint64_t block_count = dir->file.fsize / cluster_size;
   uint64_t block_current = 0;
   for ( uint64_t block_index = 0; block_index < block_count; block_index++ ) {
+    /// FIXME: REPLACE IF/ELSE WITH LINE BELOW ONCE EXTENSION IS INTEGRATED
+    //block_current = dir->file.chain[ block_index ];
     // get cluster to write
     if ( 0 == block_current ) {
       block_current = dir->file.cluster;

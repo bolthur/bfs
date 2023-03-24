@@ -64,6 +64,10 @@ typedef struct fat_file {
   uint64_t cluster;
   /** @brief Some data block used for reading */
   fat_block_t block;
+  /** @brief cluster chain array */
+  uint64_t* chain;
+  /** @brief cluster chain size */
+  uint64_t chain_size;
   /** @brief Directory containing the file */
   fat_directory_t* dir;
   /** @brief fat directory entry of file */

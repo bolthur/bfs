@@ -19,12 +19,82 @@
 #include <stdlib.h>
 #include <common/blockdev.h>
 #include <common/errno.h>
+#include <fat/file.h>
 #include <fat/cluster.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
 #include <fat/bfsfat_export.h>
 
 #define SECTOR_BITS (512 * 8)
+
+/**
+ * @brief Load fat cluster chain
+ *
+ * @param fs file system instance
+ * @param file file instance
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
+  // validate
+  if ( ! fs || ! file ) {
+    return EINVAL;
+  }
+  // handle already loaded
+  if ( file->chain ) {
+    return EOK;
+  }
+
+  // cache cluster
+  uint64_t cluster = file->cluster;
+  uint64_t sector_count = 0;
+  while ( true ) {
+    // increase sector count
+    sector_count++;
+    // get next cluster
+    uint64_t next;
+    int result = fat_cluster_next( fs, cluster, &next );
+    if ( EOK != result ) {
+      return result;
+    }
+    // allocate / reallocate chain
+    uint64_t* tmp = NULL;
+    if ( file->chain )
+    {
+      tmp = realloc( file->chain, sector_count * sizeof( uint64_t ) );
+    }
+    else
+    {
+      tmp = malloc( sector_count * sizeof( uint64_t ) );
+    }
+    // check for error
+    if ( ! tmp ) {
+      // free possible chain
+      if ( file->chain ) {
+        free( file->chain );
+        file->chain = NULL;
+      }
+      // return error
+      return ENOMEM;
+    }
+    // push back cluster
+    tmp[ sector_count - 1 ] = cluster;
+    // set chain
+    file->chain = tmp;
+    file->chain_size = sector_count;
+    // handle chain end
+    if (
+      ( FAT_FAT12 == fs->type && next >= FAT_FAT12_CLUSTER_CHAIN_END )
+      || ( FAT_FAT16 == fs->type && next >= FAT_FAT16_CLUSTER_CHAIN_END )
+      || ( FAT_FAT32 == fs->type && next >= FAT_FAT32_CLUSTER_CHAIN_END )
+    ) {
+      break;
+    }
+    // overwrite cluster
+    cluster = next;
+  }
+  // return success
+  return EOK;
+}
 
 /**
  * @brief Transform cluster to logical block address
