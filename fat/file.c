@@ -1230,12 +1230,17 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
   if ( fs->read_only ) {
     return EROFS;
   }
+  // load cluster chain if not loaded
+  int result = fat_cluster_load( fs, file );
+  if ( EOK != result ) {
+    return result;
+  }
   // cache start cluster
   bool update_dentry = false;
   uint64_t start_cluster = file->cluster;
   // determine cluster chain end value
   uint64_t chain_end_value;
-  int result = fat_cluster_get_chain_end_value( fs, &chain_end_value );
+  result = fat_cluster_get_chain_end_value( fs, &chain_end_value );
   if ( EOK != result ) {
     return result;
   }
@@ -1255,17 +1260,7 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
     // get last cluster
     uint64_t last_cluster = 0;
     if ( start_cluster ) {
-      uint64_t chain_index = file->fsize / cluster_size;
-      if ( file->fsize % cluster_size ) {
-        chain_index++;
-      }
-      result = fat_cluster_get_by_num(
-        fs, file->cluster, chain_index, &last_cluster
-      );
-      // handle error
-      if ( EOK != result ) {
-        return result;
-      }
+      last_cluster = file->chain[ file->chain_size - 1 ];
     }
     // try to mark new cluster as chain end
     result = fat_cluster_set_cluster( fs, new_cluster, chain_end_value );
@@ -1281,6 +1276,15 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
         fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
         return result;
       }
+      // extend cluster chain
+      uint64_t* tmp = realloc(
+        file->chain, sizeof( uint64_t ) * ( file->chain_size + 1 ) );
+      if ( ! tmp ) {
+        fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
+        return ENOMEM;
+      }
+      file->chain = tmp;
+      tmp[ file->chain_size++ ] = new_cluster;
     } else {
       // set first cluster
       file->dentry->first_cluster_lower = ( uint16_t )new_cluster;
@@ -1291,6 +1295,14 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
       }
       start_cluster = new_cluster;
       file->cluster = new_cluster;
+      // initialize cluster chain
+      file->chain = malloc( sizeof( uint64_t ) );
+      if ( ! file->chain ) {
+        fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
+        return ENOMEM;
+      }
+      file->chain_size = 1;
+      file->chain[ 0 ] = new_cluster;
       update_dentry = true;
     }
     file->fsize += cluster_size;

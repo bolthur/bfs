@@ -253,6 +253,9 @@ BFSFAT_EXPORT int fat_directory_move(
   }
   // check if empty ( 2 entries . and .. are allowed )
   if ( 2 != source.entry_size ) {
+    // close directory
+    fat_directory_close( &source );
+    // return not empty
     return ENOTEMPTY;
   }
   // close directory again
@@ -267,6 +270,11 @@ BFSFAT_EXPORT int fat_directory_move(
       fat_directory_close( &target );
     }
     return EEXIST;
+  }
+  // close directory again
+  result = fat_directory_close( &target );
+  if ( EOK != result ) {
+    return result;
   }
   // duplicate strings
   char* dir_dup_old_path = strdup( old_path );
@@ -673,7 +681,11 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
     // search by name
     result = fat_directory_entry_by_name( dir, p );
     if ( EOK != result ) {
+      // close current directory
+      fat_directory_close( dir );
+      // free duplicated path
       free( duppath );
+      // return result
       return result;
     }
     // check for no entry
@@ -681,7 +693,11 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       ! dir->entry
       || !( dir->entry->attributes & FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY )
     ) {
+      // close current directory
+      fat_directory_close( dir );
+      // free duplicated path
       free( duppath );
+      // return result
       return ENOENT;
     }
     fat_fs_t* fs = mp->fs;
@@ -698,7 +714,11 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
     // extract offset and size
     result = fat_directory_size( dir, &size );
     if ( EOK != result ) {
+      // close current directory
+      fat_directory_close( dir );
+      // free duplicated path
       free( duppath );
+      // return result
       return result;
     }
     // calculate total size
@@ -1084,6 +1104,11 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     return EINVAL;
   }
   int result;
+  // load chain if necessary
+  result = fat_cluster_load( fs, &dir->file );
+  if ( EOK != result ) {
+    return result;
+  }
   uint64_t necessary_entry_count = size
     / sizeof( fat_structure_directory_entry_t );
   // allocate buffer
@@ -1192,22 +1217,8 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   uint64_t block_count = dir->file.fsize / cluster_size;
   uint64_t block_current = 0;
   for ( uint64_t block_index = 0; block_index < block_count; block_index++ ) {
-    /// FIXME: REPLACE IF/ELSE WITH LINE BELOW ONCE EXTENSION IS INTEGRATED
-    //block_current = dir->file.chain[ block_index ];
-    // get cluster to write
-    if ( 0 == block_current ) {
-      block_current = dir->file.cluster;
-    // get next cluster to write
-    } else {
-      uint64_t next;
-      result = fat_cluster_next( fs, block_current, &next );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      // overwrite block current
-      block_current = next;
-    }
+    // get block
+    block_current = dir->file.chain[ block_index ];
     // translate to lba
     uint64_t lba;
     result = fat_cluster_to_lba( fs, block_current, &lba );
