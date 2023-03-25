@@ -1389,9 +1389,12 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     short_entry->name[ 7 ] = '~';
     if ( ! directory && ext ) {
       if ( 3 >= extension_length ) {
-        strncpy( short_entry->extension, ext, 3 );
+        for ( size_t idx = 0; idx < extension_length; idx++ ) {
+          short_entry->extension[ idx ] = ext[ idx ];
+        }
       } else {
-        strncpy( short_entry->extension, ext, 2 );
+        short_entry->extension[ 0 ] = ext[ 0 ];
+        short_entry->extension[ 1 ] = ext[ 1 ];
         short_entry->extension[ 2 ] = '~';
       }
     }

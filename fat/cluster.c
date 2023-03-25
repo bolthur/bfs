@@ -60,11 +60,11 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     uint64_t* tmp = NULL;
     if ( file->chain )
     {
-      tmp = realloc( file->chain, sector_count * sizeof( uint64_t ) );
+      tmp = realloc( file->chain, ( size_t )sector_count * sizeof( uint64_t ) );
     }
     else
     {
-      tmp = malloc( sector_count * sizeof( uint64_t ) );
+      tmp = malloc( ( size_t )sector_count * sizeof( uint64_t ) );
     }
     // check for error
     if ( ! tmp ) {

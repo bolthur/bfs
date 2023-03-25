@@ -567,7 +567,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         file->chain_size = 0;
       }
     } else {
-      uint64_t* tmp = realloc( file->chain, new_count * sizeof( uint64_t ) );
+      uint64_t* tmp = realloc( file->chain, ( size_t )new_count * sizeof( uint64_t ) );
       if ( ! tmp ) {
         common_transaction_rollback( fs->bdev );
         return ENOMEM;
@@ -1270,7 +1270,7 @@ BFSFAT_NO_EXPORT int fat_file_extend_cluster( fat_file_t* file, uint64_t num ) {
       }
       // extend cluster chain
       uint64_t* tmp = realloc(
-        file->chain, sizeof( uint64_t ) * ( file->chain_size + 1 ) );
+        file->chain, sizeof( uint64_t ) * ( size_t )( file->chain_size + 1 ) );
       if ( ! tmp ) {
         fat_cluster_set_cluster( fs, new_cluster, FAT_CLUSTER_UNUSED );
         return ENOMEM;
