@@ -40,7 +40,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     return EINVAL;
   }
   // handle already loaded
-  if ( file->chain ) {
+  if ( file->chain || ! file->cluster ) {
     return EOK;
   }
 

@@ -68,6 +68,11 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   fat_fs_t* fs = file->mp->fs;
   // extract block device
   common_blockdev_t* bdev = fs->bdev;
+  // load chain
+  result = fat_cluster_load( fs, file );
+  if ( EOK != result ) {
+    return result;
+  }
   // clear block data if set
   result = fat_block_unload( file );
   if ( EOK != result ) {
@@ -132,13 +137,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     // adjust current block
     current_block = file->fpos / size;
     // get cluster by number
-    uint64_t cluster;
-    result = fat_cluster_get_by_num(
-      fs, file->cluster, current_block + 1, &cluster
-    );
-    if ( EOK != result ) {
-      return result;
-    }
+    uint64_t cluster = file->chain[ current_block ];
     // transform data cluster to lba
     uint64_t lba;
     result = fat_cluster_to_lba( fs, cluster, &lba );

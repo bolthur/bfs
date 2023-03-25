@@ -528,48 +528,29 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     common_transaction_rollback( fs->bdev );
     return result;
   }
+  // load chain if not loaded
+  result = fat_cluster_load( fs, file );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
   // handle shrink
   if ( old_count > new_count ) {
-    // allocate space for cluster list
-    uint64_t* cluster_list = malloc(
-      ( size_t )( sizeof( uint64_t ) * old_count ) );
-    if ( ! cluster_list ) {
-      common_transaction_rollback( fs->bdev );
-      return ENOMEM;
-    }
-    memset( cluster_list, 0, ( size_t )( sizeof( uint64_t ) * old_count ) );
-    // load cluster list
-    for ( uint64_t index = 0; index < old_count; index++ ) {
-      // get cluster
-      uint64_t cluster;
-      result = fat_cluster_get_by_num( fs, file->cluster, index + 1, &cluster );
-      if ( EOK != result ) {
-        common_transaction_rollback( fs->bdev );
-        free( cluster_list );
-        return result;
-      }
-      // push to array
-      cluster_list[ index ] = cluster;
-    }
     // set last new cluster as chain end if new count is not equal to zero
     if ( 0 != new_count ) {
-      result = fat_cluster_set_cluster( fs, cluster_list[ new_count - 1 ], value );
+      result = fat_cluster_set_cluster( fs, file->chain[ new_count - 1 ], value );
       if ( EOK != result ) {
         common_transaction_rollback( fs->bdev );
-        free( cluster_list );
         return result;
       }
     }
     // mark other clusters as unused
     for ( uint64_t index = new_count; index < old_count; index++ ) {
       result = fat_cluster_set_cluster(
-        fs,
-        cluster_list[ index ],
-        FAT_CLUSTER_UNUSED
+        fs, file->chain[ index ], FAT_CLUSTER_UNUSED
       );
       if ( EOK != result ) {
         common_transaction_rollback( fs->bdev );
-        free( cluster_list );
         return result;
       }
     }
@@ -580,9 +561,20 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
         file->dentry->first_cluster_upper = 0;
       }
       file->cluster = 0;
+      if ( file->chain ) {
+        free( file->chain );
+        file->chain = NULL;
+        file->chain_size = 0;
+      }
+    } else {
+      uint64_t* tmp = realloc( file->chain, new_count * sizeof( uint64_t ) );
+      if ( ! tmp ) {
+        common_transaction_rollback( fs->bdev );
+        return ENOMEM;
+      }
+      file->chain = tmp;
+      file->chain_size = new_count;
     }
-    // free cluster
-    free( cluster_list );
   // handle extend
   } else if ( old_count < new_count ) {
     uint64_t block_count = new_count - old_count;
