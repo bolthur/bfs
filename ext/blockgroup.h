@@ -17,11 +17,17 @@
 
 /** @file ext/blockgroup.h */
 
+#include <ext/structure.h>
+
 #ifndef _EXT_BLOCKGROUP_H
 #define _EXT_BLOCKGROUP_H
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined( _BFS_COMPILING )
+  int blockgroup_has_superblock( ext_structure_superblock_t* superblock, uint64_t blockgroup, bool* result );
 #endif
 
 #ifdef __cplusplus

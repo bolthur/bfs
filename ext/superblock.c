@@ -137,7 +137,7 @@ BFSEXT_NO_EXPORT int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_si
  * @param b
  * @return int
  */
-BFSEXT_NO_EXPORT int superblock_is_power_of( uint32_t a, uint32_t b )
+BFSEXT_NO_EXPORT int superblock_is_power_of( uint64_t a, uint64_t b )
 {
   while (1) {
     if (a < b)
