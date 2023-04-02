@@ -15,28 +15,41 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/directory.h */
+#include <common/errno.h>
+#include <ext/info.h>
 
-#include <ext/type.h>
-
-#ifndef _EXT_DIRECTORY_H
-#define _EXT_DIRECTORY_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int ext_directory_remove( const char* path );
-int ext_directory_move( const char* old_path, const char* new_path );
-int ext_directory_make( const char* path );
-int ext_directory_open( ext_directory_t* dir, const char* path );
-int ext_directory_close( ext_directory_t* dir );
-int ext_directory_next_entry( ext_directory_t* dir );
-int ext_directory_rewind( ext_directory_t* dir );
-int ext_directory_entry_by_name( ext_directory_t* dir, const char* path );
-
-#ifdef __cplusplus
+int ext_info_ctime( const char* path, time_t* ctime ) {
+  ( void )path;
+  ( void )ctime;
+  return ENOTSUP;
 }
-#endif
 
-#endif
+int ext_info_mtime( const char* path, time_t* mtime ) {
+  ( void )path;
+  ( void )mtime;
+  return ENOTSUP;
+}
+
+int ext_info_atime( const char* path, time_t* atime ) {
+  ( void )path;
+  ( void )atime;
+  return ENOTSUP;
+}
+
+int ext_info_mode( const char* path, uint64_t* mode ) {
+  ( void )path;
+  ( void )mode;
+  return ENOTSUP;
+}
+
+int ext_info_owner( const char* path, uint64_t* owner ) {
+  ( void )path;
+  ( void )owner;
+  return ENOTSUP;
+}
+
+int ext_info_link_count( const char* path, uint64_t* count ) {
+  ( void )path;
+  ( void )count;
+  return ENOTSUP;
+}

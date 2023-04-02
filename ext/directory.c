@@ -15,7 +15,48 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <common/errno.h>
 #include <ext/directory.h>
 
-__attribute__((unused)) static void dummy(void) {
+int ext_directory_remove( const char* path ) {
+  ( void )path;
+  return ENOTSUP;
+}
+
+int ext_directory_move( const char* old_path, const char* new_path ) {
+  ( void )old_path;
+  ( void )new_path;
+  return ENOTSUP;
+}
+
+int ext_directory_make( const char* path ) {
+  ( void )path;
+  return ENOTSUP;
+}
+
+int ext_directory_open( ext_directory_t* dir, const char* path ) {
+  ( void )dir;
+  ( void )path;
+  return ENOTSUP;
+}
+
+int ext_directory_close( ext_directory_t* dir ) {
+  ( void )dir;
+  return ENOTSUP;
+}
+
+int ext_directory_next_entry( ext_directory_t* dir ) {
+  ( void )dir;
+  return ENOTSUP;
+}
+
+int ext_directory_rewind( ext_directory_t* dir ) {
+  ( void )dir;
+  return ENOTSUP;
+}
+
+int ext_directory_entry_by_name( ext_directory_t* dir, const char* path ) {
+  ( void )dir;
+  ( void )path;
+  return ENOTSUP;
 }

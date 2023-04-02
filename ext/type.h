@@ -15,25 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/directory.h */
+/** @file ext/type.h */
 
-#include <ext/type.h>
+#include <stdint.h>
+#include <limits.h>
+#include <common/mountpoint.h>
+#include <ext/structure.h>
+#include <ext/fs.h>
 
-#ifndef _EXT_DIRECTORY_H
-#define _EXT_DIRECTORY_H
+#ifndef _EXT_TYPE_H
+#define _EXT_TYPE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int ext_directory_remove( const char* path );
-int ext_directory_move( const char* old_path, const char* new_path );
-int ext_directory_make( const char* path );
-int ext_directory_open( ext_directory_t* dir, const char* path );
-int ext_directory_close( ext_directory_t* dir );
-int ext_directory_next_entry( ext_directory_t* dir );
-int ext_directory_rewind( ext_directory_t* dir );
-int ext_directory_entry_by_name( ext_directory_t* dir, const char* path );
+typedef struct ext_directory ext_directory_t;
+
+/** @brief Ext file definition */
+typedef struct ext_file {
+  /** @brief Mount point this file is related to */
+  common_mountpoint_t *mp;
+  /** @brief Directory containing the file */
+  ext_directory_t* dir;
+} ext_file_t;
+
+/** @brief Ext directory structure */
+typedef struct ext_directory {
+  /** @brief File instance used for accessing clusters */
+  ext_file_t file;
+} ext_directory_t;
+
 
 #ifdef __cplusplus
 }
