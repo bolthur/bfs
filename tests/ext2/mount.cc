@@ -22,12 +22,12 @@
 #include "../_helper.hh"
 #include "gtest/gtest.h"
 
-TEST( ext, mount_readonly ) {
+TEST( ext2, mount_readonly ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
-TEST( ext, mount_read_write ) {
+TEST( ext2, mount_read_write ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }

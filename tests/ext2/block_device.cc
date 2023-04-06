@@ -26,7 +26,7 @@
 #include "../_helper.hh"
 #include "gtest/gtest.h"
 
-TEST( ext, mount_null_block_device ) {
+TEST( ext2, mount_null_block_device ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );
@@ -56,7 +56,7 @@ TEST( ext, mount_null_block_device ) {
   EXPECT_EQ( result, EOK );
 }
 
-TEST( ext, mount_invalid_block_device ) {
+TEST( ext2, mount_invalid_block_device ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
   EXPECT_TRUE( bdev );

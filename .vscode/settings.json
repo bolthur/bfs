@@ -14,5 +14,8 @@
   "cmake.debugConfig": {
     "MIMode": "gdb"
   },
-  "C_Cpp.autoAddFileAssociations": false
+  "C_Cpp.autoAddFileAssociations": false,
+  "C_Cpp.default.defines": [
+    "_BFS_COMPILING"
+  ]
 }

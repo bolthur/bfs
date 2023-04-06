@@ -13,7 +13,7 @@ file (GLOB blockdev_file "blockdevice/*")
 file (GLOB fat12_file "fat12/*")
 file (GLOB fat16_file "fat16/*")
 file (GLOB fat32_file "fat32/*")
-file (GLOB ext_file "ext/*")
+file (GLOB ext_file "ext2/*")
 
 # custom commands for generation of image files
 add_custom_target(
