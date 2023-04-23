@@ -33,7 +33,11 @@ int ext_directory_open( ext_directory_t* dir, const char* path );
 int ext_directory_close( ext_directory_t* dir );
 int ext_directory_next_entry( ext_directory_t* dir );
 int ext_directory_rewind( ext_directory_t* dir );
-int ext_directory_entry_by_name( ext_directory_t* dir, const char* path );
+int ext_directory_entry_by_name( ext_directory_t* dir, const char* name );
+
+#if defined( _BFS_COMPILING )
+  int ext_directory_load( ext_fs_t* fs, ext_directory_t* dir, ext_structure_inode_t* inode );
+#endif
 
 #ifdef __cplusplus
 }

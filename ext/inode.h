@@ -17,11 +17,19 @@
 
 /** @file ext/inode.h */
 
+#include <ext/fs.h>
+#include <ext/structure.h>
+
 #ifndef _EXT_INODE_H
 #define _EXT_INODE_H
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined( _BFS_COMPILING )
+  int ext_inode_get_local_inode( ext_fs_t* fs, uint64_t inode, uint64_t* result );
+  int ext_inode_read_inode( ext_fs_t* fs, uint64_t number, ext_structure_inode_t* inode );
 #endif
 
 #ifdef __cplusplus

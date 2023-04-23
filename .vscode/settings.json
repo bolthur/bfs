@@ -17,5 +17,6 @@
   "C_Cpp.autoAddFileAssociations": false,
   "C_Cpp.default.defines": [
     "_BFS_COMPILING"
-  ]
+  ],
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

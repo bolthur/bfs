@@ -46,13 +46,13 @@ TEST( ext2, directory_open_sub_directory ) {
   memset( &it, 0, sizeof( it ) );
   result = ext_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
-  EXPECT_TRUE( it.name );
-  EXPECT_STREQ( ".", it.name );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( ".", it.entry->name, it.entry->name_len ) );
 
   // finish
   result = ext_iterator_directory_fini( &it );
   EXPECT_EQ( result, EOK );
-  EXPECT_FALSE( it.name );
+  EXPECT_FALSE( it.entry );
 
   // close directory
   result = ext_directory_close( &dir );
@@ -60,7 +60,7 @@ TEST( ext2, directory_open_sub_directory ) {
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
-TEST( ext2, root_directory_read_dir_utils ) {
+TEST( ext2, directory_read_dir_utils ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
@@ -76,136 +76,119 @@ TEST( ext2, root_directory_read_dir_utils ) {
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( ".", dir.name );
+  EXPECT_EQ( 0, strncmp( ".", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "..", dir.name );
+  EXPECT_EQ( 0, strncmp( "..", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "lost+found", dir.name );
+  EXPECT_EQ( 0, strncmp( "lost+found", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "fmove.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "fmove.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "fmovelongname.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "fmovelongname.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "foobarlongfolder", dir.name );
+  EXPECT_EQ( 0, strncmp( "foobarlongfolder", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "fremove.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "fremove.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "fremovelongname.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "fremovelongname.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "hello", dir.name );
+  EXPECT_EQ( 0, strncmp( "hello", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "lorem.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "lorem.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "move", dir.name );
+  EXPECT_EQ( 0, strncmp( "move", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "movefail", dir.name );
+  EXPECT_EQ( 0, strncmp( "movefail", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "movelongname", dir.name );
+  EXPECT_EQ( 0, strncmp( "movelongname", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "remove", dir.name );
+  EXPECT_EQ( 0, strncmp( "remove", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "removefail", dir.name );
+  EXPECT_EQ( 0, strncmp( "removefail", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "removelongname", dir.name );
+  EXPECT_EQ( 0, strncmp( "removelongname", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "world.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "world.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
 
   // close directory
@@ -215,7 +198,7 @@ TEST( ext2, root_directory_read_dir_utils ) {
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
-TEST( ext2, root_directory_read_dir_utils_rewind ) {
+TEST( ext2, directory_read_dir_utils_rewind ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
@@ -231,24 +214,21 @@ TEST( ext2, root_directory_read_dir_utils_rewind ) {
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( ".", dir.name );
+  EXPECT_EQ( 0, strncmp( ".", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "..", dir.name );
+  EXPECT_EQ( 0, strncmp( "..", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // get next entry
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "lost+found", dir.name );
+  EXPECT_EQ( 0, strncmp( "lost+found", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // rewind
@@ -259,8 +239,7 @@ TEST( ext2, root_directory_read_dir_utils_rewind ) {
   result = ext_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( ".", dir.name );
+  EXPECT_EQ( 0, strncmp( ".", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
   // close directory
@@ -282,8 +261,7 @@ TEST( ext2, directory_get_by_name ) {
   result = ext_directory_entry_by_name( &dir, "truncate.txt" );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
-  EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "truncate.txt", dir.name );
+  EXPECT_EQ( 0, strncmp( "truncate.txt", dir.entry->name, dir.entry->name_len ) );
   EXPECT_EQ( dir.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
   // close directory
   result = ext_directory_close( &dir );
@@ -292,188 +270,470 @@ TEST( ext2, directory_get_by_name ) {
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
-TEST( ext2, directory_iterator_root_dir_read ) {
+TEST( ext2, directory_iterator_dir_read ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = ext_directory_open( &dir, "/ext2/" );
+  EXPECT_EQ( result, EOK );
 
-TEST( ext2, directory_util_root_dir_get_existing_by_name ) {
-  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
+  ext_iterator_directory_t it;
+  memset( &it, 0, sizeof( it ) );
+  result = ext_iterator_directory_init(&it, &dir, 0);
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( ".", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
-TEST( ext2, directory_util_dir_get_existing_by_name ) {
-  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "..", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
 
-TEST( ext2, directory_util_root_dir_get_non_existing_by_name ) {
-  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "lost+found", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "fmove.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "fmovelongname.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "foobarlongfolder", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "fremove.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "fremovelongname.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "hello", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "lorem.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "move", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "movefail", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "movelongname", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "remove", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "removefail", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "removelongname", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_DIR );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_TRUE( it.entry );
+  EXPECT_EQ( 0, strncmp( "world.txt", it.entry->name, it.entry->name_len ) );
+  EXPECT_EQ( it.entry->file_type, EXT_DIRECTORY_EXT2_FT_REG_FILE );
+
+  // get next entry
+  result = ext_iterator_directory_next( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_FALSE( it.entry );
+
+  // finish
+  result = ext_iterator_directory_fini( &it );
+  EXPECT_EQ( result, EOK );
+  EXPECT_FALSE( it.entry );
+
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_util_dir_get_non_existing_by_name ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = ext_directory_open( &dir, "/ext2/hello" );
+  EXPECT_EQ( result, EOK );
 
-TEST( ext2, directory_new_root_dir_folder ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  result = ext_directory_entry_by_name( &dir, "foo" );
+  EXPECT_EQ( result, ENOENT );
+  EXPECT_FALSE( dir.entry );
+
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_new_dir_folder ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_new_root_dir_folder_long ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = ext_directory_make( "/ext2/hello/foobar" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = ext_directory_open( &dir, "/ext2/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = ext_directory_entry_by_name( &dir, "foobar" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // create new folder
+  result = ext_directory_make( "/ext2/hello/foobar" );
+  EXPECT_EQ( result, EEXIST );
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_new_dir_folder_long ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_remove_rootdir_ro_fail ) {
-  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_remove_rootdir_rw_success ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_remove_rootdir_rw_notempty ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_remove_rootdir_rw_longname ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
+  EXPECT_TRUE( mp );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // create new folder
+  int result = ext_directory_make( "/ext2/hello/thisisalongname" );
+  EXPECT_EQ( result, EOK );
+  // load root dir
+  result = ext_directory_open( &dir, "/ext2/hello/" );
+  EXPECT_EQ( result, EOK );
+  // try to find created folder
+  result = ext_directory_entry_by_name( &dir, "thisisalongname" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // create new folder
+  result = ext_directory_make( "/ext2/hello/thisisalongname" );
+  EXPECT_EQ( result, EEXIST );
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_remove_dir_ro_fail ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_remove( "/ext2/hello/folder/remove/" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/remove/" );
+  EXPECT_EQ( result, EOK );
+  EXPECT_EQ( dir.entry_size, 2 );
+  // close directory again
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_remove_dir_rw_success ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_remove( "/ext2/hello/folder/remove/" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get entry by name
+  result = ext_directory_entry_by_name( &dir, "remove" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_remove_dir_rw_notempty ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_remove( "/ext2/hello/folder/removefail/" );
+  EXPECT_EQ( result, ENOTEMPTY );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get entry by name
+  result = ext_directory_entry_by_name( &dir, "removefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory again
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_remove_dir_rw_longname ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_ro_fail ) {
-  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_rw_notempty ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_rw_exist ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_source_not_exist_fail ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_rw_short_name_success ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_rootdir_rw_long_name_success ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_remove( "/ext2/hello/folder/removelongname/" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get entry by name
+  result = ext_directory_entry_by_name( &dir, "removelongname" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory again
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_ro_fail ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/move2" );
+  EXPECT_EQ( result, EROFS );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "move" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_rw_notempty ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/movefail", "/ext2/hello/folder/move2" );
+  EXPECT_EQ( result, ENOTEMPTY );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_rw_exist ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/movefail" );
+  EXPECT_EQ( result, EEXIST );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_source_not_exist_fail ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/moveasdf", "/ext2/hello/folder/moveasdf2" );
+  EXPECT_EQ( result, ENOENT );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movefail" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_rw_short_name_success ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/move2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = ext_directory_move( "/ext2/hello/folder/move2", "/ext2/hello/folder/MOVE" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "MOVE" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "move2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
 TEST( ext2, directory_move_dir_rw_long_name_success ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_dir_rw_short_name_cluster_check ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
-  helper_unmount_ext_test_image( "ext2", "/ext2/" );
-}
-
-TEST( ext2, directory_move_to_dir_rw_long_name_cluster_check ) {
-  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
-  /// FIXME: ADD LOGIC
+  // try to remove directory
+  int result = ext_directory_move( "/ext2/hello/folder/movelongname", "/ext2/hello/folder/movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // directory variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, ENOENT );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, EOK );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // try to revert directory move
+  result = ext_directory_move( "/ext2/hello/folder/movelongname2", "/ext2/hello/folder/movelongname" );
+  EXPECT_EQ( result, EOK );
+  // open base directory
+  result = ext_directory_open( &dir, "/ext2/hello/folder/" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movelongname" );
+  EXPECT_EQ( result, EOK );
+  // get by name
+  result = ext_directory_entry_by_name( &dir, "movelongname2" );
+  EXPECT_EQ( result, ENOENT );
+  // close directory
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
+  // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }

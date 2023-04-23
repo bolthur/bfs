@@ -29,10 +29,18 @@ extern "C" {
 #endif
 
 #if defined( _BFS_COMPILING )
-  int ext_superblock_read( common_blockdev_t* bdev, ext_structure_superblock_t* superblock );
+  int ext_superblock_read( ext_fs_t* fs, ext_structure_superblock_t* superblock );
+  int ext_superblock_write( ext_fs_t* fs, ext_structure_superblock_t* superblock );
   int ext_superblock_check( ext_fs_t* fs );
   int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size );
   int superblock_is_power_of( uint64_t a, uint64_t b );
+
+  int ext_superblock_frag_size( ext_fs_t* fs, uint64_t* value );
+  int ext_superblock_total_group_by_blocks( ext_fs_t* fs, uint64_t* value );
+  int ext_superblock_total_group_by_inode( ext_fs_t* fs, uint64_t* value );
+  int ext_superblock_start( ext_fs_t* fs, uint64_t* value );
+  int ext_superblock_inode_size( ext_fs_t* fs, uint64_t* value );
+  int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* value );
 #endif
 
 #ifdef __cplusplus

@@ -18,8 +18,11 @@
 // IWYU pragma: no_include <errno.h>
 #include <endian.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <common/blockdev.h>
 #include <common/errno.h>
+#include <ext/blockgroup.h>
 #include <ext/superblock.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
@@ -33,15 +36,87 @@
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_superblock_read(
-  common_blockdev_t* bdev,
+  ext_fs_t* fs,
   ext_structure_superblock_t* superblock
 ) {
   return common_blockdev_bytes_read(
-    bdev,
+    fs->bdev,
     1024,
     superblock,
     sizeof( ext_structure_superblock_t )
   );
+}
+
+/**
+ * @brief Write back superblock
+ *
+ * @param fs
+ * @param superblock
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_write(
+  ext_fs_t* fs,
+  ext_structure_superblock_t* superblock
+) {
+  if ( ! fs || ! superblock ) {
+    return EINVAL;
+  }
+  // get group count
+  uint64_t group_count;
+  int result = ext_superblock_blockgroup_count( fs, &group_count );
+  if ( EOK != result ) {
+    return result;
+  }
+  // get block size
+  uint64_t block_size;
+  result = ext_superblock_block_size( fs, &block_size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // allocate buffer
+  uint8_t* buffer = malloc( block_size );
+  if ( ! buffer ) {
+    return ENOMEM;
+  }
+  // loop through groups
+  for ( uint64_t idx = 0; idx < group_count; idx++ ) {
+    // check for block group
+    bool has_superblock;
+    result = ext_blockgroup_has_superblock( fs, idx, &has_superblock );
+    if ( EOK != result ) {
+      free( buffer );
+      return result;
+    }
+    // skip if not there
+    if ( ! has_superblock ) {
+      continue;
+    }
+    // determine start
+    uint64_t start = 0 == idx
+      ? 1024
+      : ( fs->superblock.s_first_data_block + idx * fs->superblock.s_blocks_per_group ) * block_size;
+    // read block
+    result = common_blockdev_bytes_read( fs->bdev, start, buffer, block_size );
+    if ( EOK != result ) {
+      free( buffer );
+      return result;
+    }
+    // update superblock
+    if ( 0 == idx && 1024 < block_size ) {
+      memcpy( buffer + 1024, superblock, sizeof( *superblock ) );
+    } else {
+      memcpy( buffer, superblock, sizeof( *superblock ) );
+    }
+    // write back
+    result = common_blockdev_bytes_write( fs->bdev, start, buffer, block_size );
+    if ( EOK != result ) {
+      free( buffer );
+      return result;
+    }
+  }
+  // free buffer
+  free( buffer );
+  return EOK;
 }
 
 /**
@@ -148,4 +223,105 @@ BFSEXT_NO_EXPORT int superblock_is_power_of( uint64_t a, uint64_t b )
       return 0;
     a = a / b;
   }
+}
+
+/**
+ * @brief Get fragment size
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_frag_size( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  *value = 1024 << fs->superblock.s_log_frag_size;
+  return EOK;
+}
+
+/**
+ * @brief Get total group by blocks
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_total_group_by_blocks( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  *value = fs->superblock.s_blocks_count / fs->superblock.s_blocks_per_group +
+    ( fs->superblock.s_blocks_count % fs->superblock.s_blocks_per_group ? 1 : 0 );
+  return EOK;
+}
+
+/**
+ * @brief Get total group by inode
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_total_group_by_inode( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  *value = fs->superblock.s_inodes_count / fs->superblock.s_inodes_per_group +
+    ( fs->superblock.s_inodes_count % fs->superblock.s_inodes_per_group ? 1 : 0 );
+  return EOK;
+}
+
+/**
+ * @brief Get start
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_start( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  // fetch block size
+  uint64_t size;
+  int result = ext_superblock_block_size( fs, &size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // populate result
+  *value = 1024 < size ? 0 : 1;
+  return EOK;
+}
+
+/**
+ * @brief Get inode size
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_inode_size( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  *value = 0 == fs->superblock.s_rev_level ? 128 : fs->superblock.s_inode_size;
+  return EOK;
+}
+
+/**
+ * @brief Get blockgroup count
+ *
+ * @param fs
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* value ) {
+  if ( ! fs || ! value ) {
+    return EINVAL;
+  }
+  ext_structure_superblock_t* sb = &fs->superblock;
+  *value = ( sb->s_blocks_count - sb->s_first_data_block + ( sb->s_blocks_per_group - 1 ) ) /
+    sb->s_blocks_per_group;
+  return EOK;
 }

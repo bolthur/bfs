@@ -38,12 +38,30 @@ typedef struct ext_file {
   common_mountpoint_t *mp;
   /** @brief Directory containing the file */
   ext_directory_t* dir;
+  /** @brief inode */
+  ext_structure_inode_t inode;
+  /** @brief inode number */
+  uint64_t inode_number;
+  /** @brief file size */
+  uint64_t fsize;
+  /** @brief current file position */
+  uint64_t fpos;
 } ext_file_t;
 
 /** @brief Ext directory structure */
 typedef struct ext_directory {
-  /** @brief File instance used for accessing clusters */
-  ext_file_t file;
+  /** @brief inode */
+  ext_structure_inode_t inode;
+  /** @brief Directory data */
+  uint8_t* data;
+  /** @brief current directory entry */
+  ext_structure_directory_entry_t* entry;
+  /** @brief current position */
+  uint64_t pos;
+  /** @brief directory content size */
+  uint64_t entry_size;
+  /** @brief mount point this directory is related to */
+  common_mountpoint_t* mp;
 } ext_directory_t;
 
 

@@ -45,7 +45,7 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   fs->bdev = bdev;
   fs->read_only = read_only;
   // read superblock into structure
-  int result = ext_superblock_read( fs->bdev, &fs->superblock );
+  int result = ext_superblock_read( fs, &fs->superblock );
   if ( EOK != result ) {
     return result;
   }

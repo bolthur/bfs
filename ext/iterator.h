@@ -33,18 +33,15 @@ extern "C" {
   typedef struct ext_directory_iterator {
     /** @brief Directory being iterated */
     ext_directory_t* reference;
-    /** @brief Current directory name */
-    #ifdef __cplusplus
-      char name[255];
-    #else
-      char name[];
-    #endif
+    /** @brief iterator position */
+    uint64_t pos;
+    /** @brief current directory entry of position */
+    ext_structure_directory_entry_t* entry;
   } ext_iterator_directory_t;
 
   int ext_iterator_directory_init( ext_iterator_directory_t* it, ext_directory_t* dir, uint64_t pos );
   int ext_iterator_directory_next( ext_iterator_directory_t* it );
   int ext_iterator_directory_seek( ext_iterator_directory_t* it, uint64_t pos );
-  int ext_iterator_directory_set( ext_iterator_directory_t* it, uint64_t block_size );
   int ext_iterator_directory_fini( ext_iterator_directory_t* it );
 #endif
 

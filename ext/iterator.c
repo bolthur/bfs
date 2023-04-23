@@ -16,6 +16,7 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
+#include <string.h>
 #include <common/errno.h>
 #include <ext/iterator.h>
 #include <ext/bfsext_export.h>
@@ -40,9 +41,9 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_init(
   // setup iterator
   it->pos = pos;
   it->reference = dir;
-  it->name = NULL;
-  // return success
-  return EOK;
+  it->entry = dir->entry;
+  // return result of seek
+  return ext_iterator_directory_seek( it, pos );
 }
 
 /**
@@ -52,8 +53,10 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_init(
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_iterator_directory_next( ext_iterator_directory_t* it ) {
-  ( void )it;
-  return EINVAL;
+  // skip value is sizeof entry structure
+  uint64_t skip = it->entry->rec_len;
+  // get next directory
+  return ext_iterator_directory_seek( it, it->reference->pos + skip );
 }
 
 /**
@@ -67,25 +70,50 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
   ext_iterator_directory_t* it,
   uint64_t pos
 ) {
-  ( void )it;
-  ( void )pos;
-  return EINVAL;
-}
-
-/**
- * @brief Iterator set
- *
- * @param it
- * @param block_size
- * @return int
- */
-BFSEXT_NO_EXPORT int ext_iterator_directory_set(
-  ext_iterator_directory_t* it,
-  uint64_t block_size
-) {
-  ( void )it;
-  ( void )block_size;
-  return EINVAL;
+  // validate parameter
+  if ( ! it ) {
+    return EINVAL;
+  }
+  // handle position exceeds size
+  if ( pos >= it->reference->inode.i_size ) {
+    // set fpos to position
+    it->pos = it->reference->inode.i_size;
+    it->entry = NULL;
+    // return no entry
+    return EOK;
+  }
+  // set iterator data
+  it->pos = pos;
+  it->entry = NULL;
+  // loop through data and try to find entry
+  while ( pos < it->reference->inode.i_size ) {
+    // get entry
+    ext_structure_directory_entry_t* entry = ( ext_structure_directory_entry_t* )(
+      &it->reference->data[ pos ]
+    );
+    // increment position
+    pos += entry->rec_len;
+    // handle unknown
+    if ( EXT_DIRECTORY_EXT2_FT_UNKNOWN == entry->file_type ) {
+      continue;
+    }
+    // handle invalid size
+    if ( 0 == entry->rec_len ) {
+      return EIO;
+    }
+    // set entry pointer and position
+    it->entry = entry;
+    it->pos = pos - entry->rec_len;
+    break;
+  }
+  // handle nothing found
+  if ( ! it->entry ) {
+    // set fpos to position
+    it->pos = it->reference->inode.i_size;
+    it->entry = NULL;
+  }
+  // return success
+  return EOK;
 }
 
 /**
@@ -99,11 +127,8 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_fini( ext_iterator_directory_t* it )
   if ( ! it ) {
     return EINVAL;
   }
-  // clear name
-  if ( it->name ) {
-    free( it->name );
-    it->name = NULL;
-  }
+  it->entry = NULL;
+  it->reference = NULL;
   // return success
   return EOK;
 }

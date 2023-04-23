@@ -15,23 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/blockgroup.h */
+/** @file ext/indirection.h */
 
 #include <ext/fs.h>
 #include <ext/structure.h>
 
-#ifndef _EXT_BLOCKGROUP_H
-#define _EXT_BLOCKGROUP_H
+#ifndef _EXT_INDIRECTION_H
+#define _EXT_INDIRECTION_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined( _BFS_COMPILING )
-  int ext_blockgroup_has_superblock( ext_fs_t* fs, uint64_t blockgroup, bool* result );
-  int ext_blockgroup_get_by_inode( ext_fs_t* fs, uint64_t inode, uint64_t* result );
-  int ext_blockgroup_read( ext_fs_t* fs, uint64_t group, ext_structure_block_group_descriptor_t* value );
-  int ext_blockgroup_write( ext_fs_t* fs, uint64_t group, ext_structure_block_group_descriptor_t* value );
+  int ext_indirection_level( ext_fs_t* fs, uint64_t block, uint64_t* direct_block, uint64_t* indirect_block, uint64_t* level );
 #endif
 
 #ifdef __cplusplus
