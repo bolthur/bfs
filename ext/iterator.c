@@ -56,7 +56,7 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_next( ext_iterator_directory_t* it )
   // skip value is sizeof entry structure
   uint64_t skip = it->entry->rec_len;
   // get next directory
-  return ext_iterator_directory_seek( it, it->reference->pos + skip );
+  return ext_iterator_directory_seek( it, it->pos + skip );
 }
 
 /**

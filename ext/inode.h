@@ -30,6 +30,9 @@ extern "C" {
 #if defined( _BFS_COMPILING )
   int ext_inode_get_local_inode( ext_fs_t* fs, uint64_t inode, uint64_t* result );
   int ext_inode_read_inode( ext_fs_t* fs, uint64_t number, ext_structure_inode_t* inode );
+  int ext_inode_read_data( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t start, uint64_t length, uint8_t* buffer );
+  int ext_inode_read_block( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint8_t* buffer, uint64_t count );
+  int ext_inode_get_block_offset( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint64_t* offset );
 #endif
 
 #ifdef __cplusplus

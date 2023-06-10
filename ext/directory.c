@@ -21,6 +21,7 @@
 #include <ext/inode.h>
 #include <ext/iterator.h>
 #include <ext/directory.h>
+#include <ext/superblock.h>
 #include <ext/bfsext_export.h>
 
 /**
@@ -36,10 +37,31 @@ BFSEXT_NO_EXPORT int ext_directory_load(
   ext_directory_t* dir,
   ext_structure_inode_t* inode
 ) {
-  ( void )fs;
-  ( void )dir;
-  ( void )inode;
-  return ENOTSUP;
+  // validate parameter
+  if ( ! fs || ! dir || ! inode ) {
+    return EINVAL;
+  }
+  // get block size
+  uint64_t block_size;
+  int result = ext_superblock_block_size( fs, &block_size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // allocate data
+  dir->data = malloc( inode->i_size );
+  if ( ! dir->data ) {
+    return ENOMEM;
+  }
+  // read inode data
+  result = ext_inode_read_data( fs, inode, 0, inode->i_size, dir->data );
+  if ( EOK != result ) {
+    free( dir->data );
+    return result;
+  }
+  // set inode
+  memcpy( &dir->inode, inode, sizeof( *inode ) );
+  // return success
+  return EOK;
 }
 
 /**
@@ -171,11 +193,118 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     return ENOENT;
   }
 
-  //uint64_t parent_no = EXT_INODE_EXT2_ROOT_INO;
+  uint64_t parent_no = EXT_INODE_EXT2_ROOT_INO;
+  ext_structure_inode_t parent;
+  ext_directory_t dirent;
 
-  ( void )dir;
-  ( void )path;
-  return ENOTSUP;
+  // create path duplicate
+  const char* real_path = path + strlen( mp->name ) - 1;
+  char* duppath = strdup( real_path );
+  if ( ! duppath ) {
+    return ENOMEM;
+  }
+  char* p = duppath;
+
+  p = strtok( p, CONFIG_PATH_SEPARATOR_STRING );
+  while ( p != NULL ) {
+    // only valid when there is something
+    if ( strlen( p ) ) {
+      // read inode
+      int result = ext_inode_read_inode( mp->fs, parent_no, &parent );
+      if ( EOK != result ) {
+        if ( dir->data ) {
+          free( dir->data );
+          dir->data = NULL;
+        }
+        free( duppath );
+        return result;
+      }
+      // load directory
+      memset( &dirent, 0, sizeof( dirent ) );
+      result = ext_directory_load( mp->fs, &dirent, &parent );
+      if ( EOK != result ) {
+        if ( dir->data ) {
+          free( dir->data );
+          dir->data = NULL;
+        }
+        free( duppath );
+        return result;
+      }
+      // get entry
+      result = ext_directory_entry_by_name( &dirent, p );
+      if ( EOK != result ) {
+        if ( dir->data ) {
+          free( dir->data );
+          dir->data = NULL;
+        }
+        free( dirent.data );
+        free( duppath );
+        return result;
+      }
+      // overwrite parent number
+      parent_no = dirent.entry->inode;
+      // handle already allocated
+      if ( dir->data ) {
+        free( dir->data );
+        dir->data = NULL;
+      }
+      // copy over data
+      dir->data = malloc( dirent.inode.i_size );
+      if ( ! dir->data ) {
+        free( duppath );
+        free( dirent.data );
+        return ENOMEM;
+      }
+      memcpy( dir->data, dirent.data, dirent.inode.i_size );
+      memcpy( &dir->inode, &dirent.inode, sizeof( dir->inode ) );
+      // free up data again
+      free( dirent.data );
+    }
+    // get next one
+    p = strtok( NULL, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // free duplicate
+  free( duppath );
+
+  // read inode
+  int result = ext_inode_read_inode( mp->fs, parent_no, &parent );
+  if ( EOK != result ) {
+    if ( dir->data ) {
+      free( dir->data );
+      dir->data = NULL;
+    }
+    return result;
+  }
+  // load directory
+  memset( &dirent, 0, sizeof( dirent ) );
+  result = ext_directory_load( mp->fs, &dirent, &parent );
+  if ( EOK != result ) {
+    if ( dir->data ) {
+      free( dir->data );
+      dir->data = NULL;
+    }
+    return result;
+  }
+  // handle already allocated
+  if ( dir->data ) {
+    free( dir->data );
+    dir->data = NULL;
+  }
+  // copy over data
+  dir->data = malloc( dirent.inode.i_size );
+  if ( ! dir->data ) {
+    free( dirent.data );
+    return ENOMEM;
+  }
+  memcpy( dir->data, dirent.data, dirent.inode.i_size );
+  memcpy( &dir->inode, &dirent.inode, sizeof( dir->inode ) );
+  // free up data again
+  free( dirent.data );
+  // copy over mountpoint
+  dir->mp = mp;
+
+  // return success
+  return EOK;
 }
 
 /**
