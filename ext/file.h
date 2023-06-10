@@ -40,7 +40,7 @@ int ext_file_tell( ext_file_t* file, uint64_t* offset );
 int ext_file_size( ext_file_t* file, uint64_t* size );
 
 #if defined( _BFS_COMPILING )
-  int fat_file_get( ext_file_t* file, const char* path, int flags );
+  int ext_file_get( ext_file_t* file, const char* path, int flags );
 #endif
 
 #ifdef __cplusplus

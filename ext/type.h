@@ -36,14 +36,16 @@ typedef struct ext_directory ext_directory_t;
 typedef struct ext_file {
   /** @brief Mount point this file is related to */
   common_mountpoint_t *mp;
+  /** @brief Flags used while opening the file */
+  uint32_t flags;
+  /** @brief File size in bytes */
+  uint64_t fsize;
   /** @brief Directory containing the file */
   ext_directory_t* dir;
   /** @brief inode */
   ext_structure_inode_t inode;
   /** @brief inode number */
   uint64_t inode_number;
-  /** @brief file size */
-  uint64_t fsize;
   /** @brief current file position */
   uint64_t fpos;
 } ext_file_t;
