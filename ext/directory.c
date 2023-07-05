@@ -707,6 +707,10 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     }
     return result;
   }
+  // check for is folder
+  if ( ! ( parent.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    return ENOTDIR;
+  }
   // load directory
   memset( &dirent, 0, sizeof( dirent ) );
   result = ext_directory_load( mp->fs, &dirent, &parent );

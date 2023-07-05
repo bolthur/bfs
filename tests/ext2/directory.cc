@@ -737,3 +737,17 @@ TEST( ext2, directory_move_dir_rw_long_name_success ) {
   // unmount test image
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
+
+TEST( ext2, directory_open_file ) {
+  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
+  // file variable
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // load root dir
+  int result = ext_directory_open(
+    &dir,
+    "/ext2/foobarlongfolder/foo/bar/hello.txt"
+  );
+  EXPECT_EQ( result, ENOTDIR );
+  helper_unmount_ext_test_image( "ext2", "/ext2/" );
+}
