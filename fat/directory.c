@@ -540,7 +540,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
   }
   // extract dirname
   char* base = basename( pathdup_base );
-  char* dirpath  = dirname( pathdup_dir );
+  char* dirpath = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
     common_transaction_rollback( fs->bdev );

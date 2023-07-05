@@ -15,23 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/block.h */
+/** @file ext/link.h */
 
-#include <ext/fs.h>
-#include <ext/structure.h>
+#include <ext/type.h>
 
-#ifndef _EXT_BLOCK_H
-#define _EXT_BLOCK_H
+#ifndef _EXT_LINK_H
+#define _EXT_LINK_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined( _BFS_COMPILING )
-  int ext_block_read_bitmap( ext_fs_t* fs, ext_structure_block_group_descriptor_t* descriptor, uint32_t* value );
-  int ext_block_write_bitmap( ext_fs_t* fs, ext_structure_block_group_descriptor_t* descriptor, uint32_t* value );
-  int ext_block_allocate( ext_fs_t* fs, uint64_t* value );
-  int ext_block_deallocate( ext_fs_t* fs, uint64_t value );
+  int ext_link_link( ext_fs_t* fs, ext_directory_t* dir, ext_structure_inode_t* inode, uint64_t number, const char* path );
+  int ext_link_unlink( ext_fs_t* fs, ext_directory_t* dir, const char* path );
 #endif
 
 #ifdef __cplusplus

@@ -37,6 +37,7 @@ int ext_directory_entry_by_name( ext_directory_t* dir, const char* name );
 
 #if defined( _BFS_COMPILING )
   int ext_directory_load( ext_fs_t* fs, ext_directory_t* dir, ext_structure_inode_t* inode );
+  int ext_directory_entry_size( uint64_t name_length, uint64_t* value );
 #endif
 
 #ifdef __cplusplus

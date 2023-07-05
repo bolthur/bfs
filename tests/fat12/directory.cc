@@ -170,15 +170,15 @@ TEST( fat12, root_directory_read_dir_utils ) {
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "FREMOVE.TXT", dir.data->name );
+  EXPECT_STREQ( "foobarlongfolder", dir.data->name );
+  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
 
   // get next entry
   result = fat_directory_next_entry( &dir );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( dir.entry );
   EXPECT_TRUE( dir.data );
-  EXPECT_STREQ( "foobarlongfolder", dir.data->name );
-  EXPECT_EQ( dir.entry->attributes, FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY );
+  EXPECT_STREQ( "FREMOVE.TXT", dir.data->name );
 
   // close directory
   result = fat_directory_close( &dir );
@@ -358,13 +358,13 @@ TEST( fat12, directory_iterator_root_dir_read ) {
   result = fat_iterator_directory_next( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
-  EXPECT_STREQ( "FREMOVE.TXT", it.data->name );
+  EXPECT_STREQ( "foobarlongfolder", it.data->name );
 
   // get next entry
   result = fat_iterator_directory_next( &it );
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
-  EXPECT_STREQ( "foobarlongfolder", it.data->name );
+  EXPECT_STREQ( "FREMOVE.TXT", it.data->name );
 
   // finish
   result = fat_iterator_directory_fini( &it );

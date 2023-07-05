@@ -22,9 +22,11 @@
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>
 #include <common/file.h>
+#include <common/transaction.h>
 #include <ext/directory.h>
 #include <ext/file.h>
 #include <ext/inode.h>
+#include <ext/link.h>
 #include <ext/bfsext_export.h>
 
 /**
@@ -109,12 +111,48 @@ BFSEXT_NO_EXPORT int ext_file_get(
   result = ext_directory_entry_by_name( dir, base );
   // handle no directory with creation
   if ( ENOENT == result && ( flags & O_CREAT ) ) {
-    /// FIXME: CREATE FILE
-    ext_directory_close( dir );
-    free( pathdup_base );
-    free( pathdup_dir );
-    free( dir );
-    return result;
+    result = common_transaction_begin( fs->bdev );
+    if ( EOK != result ) {
+      ext_directory_close( dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    // allocate inode
+    ext_structure_inode_t inode;
+    uint64_t number;
+    memset( &inode, 0, sizeof( inode ) );
+    result = ext_inode_allocate( fs, &inode, &number );
+    if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
+      ext_directory_close( dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( dir );
+      return result;
+    }
+    // prepare inode
+    inode.i_mode = EXT_INODE_EXT2_S_IFREG;
+    inode.i_dtime = 0;
+    // link in parent directory
+    result = ext_link_link( fs, dir, &inode, number, base );
+    if ( EOK != result ) {
+      common_transaction_rollback( fs->bdev );
+      ext_directory_close( dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      return result;
+    }
+    result = common_transaction_commit( fs->bdev );
+    if ( EOK != result ) {
+      ext_directory_close( dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      return result;
+    }
+    // try to get entry again
+    result = ext_directory_entry_by_name( dir, base );
   }
   // handle no file
   if ( EOK != result ) {
@@ -163,15 +201,337 @@ BFSEXT_NO_EXPORT int ext_file_get(
   return EOK;
 }
 
-int ext_file_remove( const char* path ) {
-  ( void )path;
-  return ENOTSUP;
+/**
+ * @brief Remove a file
+ *
+ * @param path
+ * @return int
+ */
+BFSEXT_EXPORT int ext_file_remove( const char* path ) {
+  // validate parameter
+  if ( ! path ) {
+    return EINVAL;
+  }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  // get fs
+  ext_fs_t* fs = mp->fs;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // duplicate path for base and dirname
+  char* pathdup_base = strdup( path );
+  if ( ! pathdup_base ) {
+    return ENOMEM;
+  }
+  char* pathdup_dir = strdup( path );
+  if ( ! pathdup_dir ) {
+    free( pathdup_base );
+    return ENOMEM;
+  }
+  // extract base and dirname
+  char* base = basename( pathdup_base );
+  char* dirpath  = dirname( pathdup_dir );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // try to open directory
+  ext_directory_t* dir = malloc( sizeof( *dir ) );
+  if ( ! dir ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOMEM;
+  }
+  // start transaction
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // clear out
+  memset( dir, 0, sizeof( *dir ) );
+  // open directory
+  result = ext_directory_open( dir, dirpath );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // unlink
+  result = ext_link_unlink( fs, dir, base );
+  if ( EOK != result ) {
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // close directory and free memory
+  result = ext_directory_close( dir );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // free memory
+  free( dir );
+  free( pathdup_base );
+  free( pathdup_dir );
+  // commit transaction
+  result = common_transaction_commit( fs->bdev );
+  if ( EOK != result ) {
+    return EOK;
+  }
+  // return success
+  return EOK;
 }
 
-int ext_file_move( const char* old_path, const char* new_path ) {
-  ( void )old_path;
-  ( void )new_path;
-  return ENOTSUP;
+/**
+ * @brief Move file
+ *
+ * @param old_path
+ * @param new_path
+ * @return int
+ */
+BFSEXT_EXPORT int ext_file_move( const char* old_path, const char* new_path ) {
+  if ( ! old_path || ! new_path ) {
+    return EINVAL;
+  }
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_find( old_path );
+  if ( ! mp ) {
+    return ENOMEM;
+  }
+  common_mountpoint_t* mp_new = common_mountpoint_find( new_path );
+  if ( ! mp_new ) {
+    return ENOMEM;
+  }
+  // get fs
+  ext_fs_t* fs = mp->fs;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // start transaction
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
+  // open destination to check whether it exists
+  ext_file_t file;
+  ext_directory_t source, target;
+  memset( &source, 0, sizeof( source ) );
+  memset( &target, 0, sizeof( target ) );
+  memset( &file, 0, sizeof( file ) );
+  result = ext_file_open2( &file, new_path, O_RDONLY );
+  if ( ENOENT != result ) {
+    ext_file_close( &file );
+    common_transaction_rollback( fs->bdev );
+    return EOK == result ? EEXIST : result;
+  }
+  // open source to check whether it exists
+  result = ext_file_open2( &file, old_path, O_RDONLY );
+  if ( EOK != result ) {
+    ext_file_close( &file );
+    common_transaction_rollback( fs->bdev );
+    return EOK == result ? ENOENT : result;
+  }
+  result = ext_file_close( &file );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // duplicate strings
+  char* dir_dup_old_path = strdup( old_path );
+  if ( ! dir_dup_old_path ) {
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  char* base_dup_old_path = strdup( old_path );
+  if ( ! base_dup_old_path ) {
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  char* dir_dup_new_path = strdup( new_path );
+  if ( ! dir_dup_new_path ) {
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  char* base_dup_new_path = strdup( new_path );
+  if ( ! base_dup_new_path ) {
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  // get base name of both
+  char* dir_old_path = dirname( dir_dup_old_path );
+  char* base_old_path = basename( base_dup_old_path );
+  // check for unsupported
+  if ( '.' == *dir_old_path ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dir_old_path[ strlen( dir_old_path ) - 1 ] ) {
+    strcat( dir_old_path, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  char* dir_new_path = dirname( dir_dup_new_path );
+  char* base_new_path = basename( base_dup_new_path );
+  // check for unsupported
+  if ( '.' == *dir_old_path ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dir_new_path[ strlen( dir_new_path ) - 1 ] ) {
+    strcat( dir_new_path, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // clear out source and target
+  memset( &source, 0, sizeof( source ) );
+  memset( &target, 0, sizeof( target ) );
+  memset( &file, 0, sizeof( file ) );
+  // open source file
+  result = ext_file_open2( &file, old_path, O_RDONLY );
+  if ( EOK != result ) {
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // open source directory
+  result = ext_directory_open( &source, dir_old_path );
+  if ( EOK != result ) {
+    ext_file_close( &file );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // open target directory
+  result = ext_directory_open( &target, dir_new_path );
+  if ( EOK != result ) {
+    ext_directory_close( &source );
+    ext_file_close( &file );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // link in target
+  result = ext_link_link(
+    target.mp->fs,
+    &target,
+    &file.inode,
+    file.inode_number,
+    base_new_path
+  );
+  if ( EOK != result ) {
+    ext_directory_close( &target );
+    ext_directory_close( &source );
+    ext_file_close( &file );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // unlink in source
+  if ( 0 == strcmp( dir_new_path, dir_old_path ) ) {
+    result = ext_link_unlink( target.mp->fs, &target, base_old_path );
+  } else {
+    result = ext_link_unlink( source.mp->fs, &source, base_old_path );
+  }
+  if ( EOK != result ) {
+    ext_directory_close( &target );
+    ext_directory_close( &source );
+    ext_file_close( &file );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // close source directory
+  result = ext_file_close( &file );
+  if ( EOK != result ) {
+    ext_directory_close( &target );
+    ext_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // close source directory
+  result = ext_directory_close( &source );
+  if ( EOK != result ) {
+    ext_directory_close( &target );
+    ext_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // close target directory
+  result = ext_directory_close( &target );
+  if ( EOK != result ) {
+    ext_directory_close( &target );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // free duplicates
+  free( base_dup_new_path );
+  free( dir_dup_new_path );
+  free( base_dup_old_path );
+  free( dir_dup_old_path );
+  // return success
+  return common_transaction_commit( fs->bdev );
 }
 
 /**
@@ -257,7 +617,16 @@ BFSEXT_EXPORT int ext_file_close( ext_file_t* file ) {
   return result;
 }
 
-int ext_file_truncate( ext_file_t* file, uint64_t size ) {
+/**
+ * @brief Truncate file
+ *
+ * @param file
+ * @param size
+ * @return int
+ *
+ * @todo implement
+ */
+BFSEXT_EXPORT int ext_file_truncate( ext_file_t* file, uint64_t size ) {
   // validate
   if ( ! file || ! file->mp || ! file->dir || ! file->inode_number ) {
     return EINVAL;
@@ -322,17 +691,64 @@ BFSEXT_EXPORT int ext_file_read(
   return EOK;
 }
 
-int ext_file_write(
+/**
+ * @brief Write file
+ *
+ * @param file
+ * @param buffer
+ * @param size
+ * @param write_count
+ * @return int
+ */
+BFSEXT_EXPORT int ext_file_write(
   ext_file_t* file,
   void* buffer,
   uint64_t size,
   uint64_t* write_count
 ) {
-  ( void )file;
-  ( void )buffer;
-  ( void )size;
-  ( void )write_count;
-  return ENOTSUP;
+  // validate parameter
+  if ( ! file || ! file->mp || ! buffer || ! write_count ) {
+    return EINVAL;
+  }
+  common_mountpoint_t* mp = file->mp;
+  ext_fs_t* fs = mp->fs;
+  int result;
+  // handle read only
+  if ( fs->read_only ) {
+    return EROFS;
+  }
+  // handle invalid mode
+  if ( file->flags & O_RDONLY ) {
+    return EPERM;
+  }
+  // size of 0 means success
+  if ( ! size ) {
+    return EOK;
+  }
+  // start transaction
+  result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
+  // backup file position
+  uint64_t fpos = file->fpos;
+  // handle append mode
+  if ( file->flags & O_APPEND ) {
+    file->fpos = file->fsize;
+  }
+  // write to file
+  result = ext_inode_write_data( fs, &file->inode, file->fpos, size, buffer );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // update write count
+  *write_count = size;
+  // restore file position and update fsize
+  file->fpos = fpos;
+  file->fsize = file->fsize + size;
+  // return success
+  return common_transaction_commit( fs->bdev );
 }
 
 /**

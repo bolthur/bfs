@@ -17,12 +17,16 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <libgen.h>
 #include <common/errno.h>
+#include <common/transaction.h>
 #include <ext/inode.h>
 #include <ext/iterator.h>
 #include <ext/directory.h>
 #include <ext/superblock.h>
 #include <ext/bfsext_export.h>
+#include <ext/blockgroup.h>
+#include <ext/link.h>
 
 /**
  * @brief Load ext directory data
@@ -84,7 +88,143 @@ BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
   if ( fs->read_only ) {
     return EROFS;
   }
-  return ENOTSUP;
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
+  // duplicate path for base and dirname
+  char* pathdup_base = strdup( path );
+  if ( ! pathdup_base ) {
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  char* pathdup_dir = strdup( path );
+  if ( ! pathdup_dir ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    return ENOMEM;
+  }
+  // extract base and dirname
+  char* base = basename( pathdup_base );
+  char* dirpath  = dirname( pathdup_dir );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // handle invalid
+  if ( '.' == *base ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // try to open directory
+  ext_directory_t* dir = malloc( sizeof( *dir ) );
+  if ( ! dir ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOMEM;
+  }
+  // clear out
+  memset( dir, 0, sizeof( *dir ) );
+  // first open complete path
+  result = ext_directory_open( dir, path );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // ensure it's empty
+  if ( 2 != dir->entry_size ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return ENOTEMPTY;
+  }
+  // unlink
+  result = ext_link_unlink( fs, dir, "." );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return ENOTEMPTY;
+  }
+  result = ext_link_unlink( fs, dir, ".." );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return ENOTEMPTY;
+  }
+  // close directory again
+  result = ext_directory_close( dir );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // open parent directory directory
+  result = ext_directory_open( dir, dirpath );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // get entry by name
+  result = ext_directory_entry_by_name( dir, base );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // try to remove it
+  result = ext_link_unlink( fs, dir, base );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // close directory
+  result = ext_directory_close( dir );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( dir );
+    return result;
+  }
+  // free everything up
+  free( pathdup_base );
+  free( pathdup_dir );
+  free( dir );
+  // return success
+  return common_transaction_commit( fs->bdev );
 }
 
 /**
@@ -93,6 +233,8 @@ BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
  * @param old_path
  * @param new_path
  * @return int
+ *
+ * @todo add transaction
  */
 BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path ) {
   // validate parameter
@@ -149,7 +291,149 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
   if ( EOK != result ) {
     return result;
   }
-  return ENOTSUP;
+
+  // duplicate paths
+  char* dup_old_base = strdup( old_path );
+  if ( ! dup_old_base ) {
+    return ENOMEM;
+  }
+  char* dup_old_dir = strdup( old_path );
+  if ( ! dup_old_dir ) {
+    free( dup_old_base );
+    return ENOMEM;
+  }
+  char* dup_new_base = strdup( new_path );
+  if ( ! dup_new_base ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    return ENOMEM;
+  }
+  char* dup_new_dir = strdup( new_path );
+  if ( ! dup_new_dir ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    return ENOMEM;
+  }
+  // get dirnames ( parent directory )
+  char* base_old_path = basename( dup_old_base );
+  char* dir_old_path = dirname( dup_old_dir );
+  char* base_new_path = basename( dup_new_base );
+  char* dir_new_path = dirname( dup_new_dir );
+  // check for unsupported
+  if ( '.' == *dir_old_path || '.' == *dir_new_path ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return ENOTSUP;
+  }
+  // open source directory
+  result = ext_directory_open( &source, old_path );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // open base directory
+  ext_directory_t new_dir_dir;
+  memset( &new_dir_dir, 0, sizeof( new_dir_dir ) );
+  result = ext_directory_open( &new_dir_dir, dir_new_path );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // unlink .. and link it again
+  result = ext_link_unlink( source.mp->fs, &source, ".." );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  result = ext_link_link(
+    source.mp->fs,
+    &source,
+    &new_dir_dir.inode,
+    new_dir_dir.inode_number,
+    ".."
+  );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // link in dir dir
+  result = ext_link_link(
+    new_dir_dir.mp->fs,
+    &new_dir_dir,
+    &source.inode,
+    source.inode_number,
+    base_new_path
+  );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // close directories
+  result = ext_directory_close( &source );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  result = ext_directory_close( &new_dir_dir );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // open old base directory
+  ext_directory_t old_dir_dir;
+  memset( &old_dir_dir, 0, sizeof( old_dir_dir ) );
+  result = ext_directory_open( &old_dir_dir, dir_old_path );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  // unlink
+  result = ext_link_unlink( old_dir_dir.mp->fs, &old_dir_dir, base_old_path );
+  if ( EOK != result ) {
+    free( dup_old_base );
+    free( dup_old_dir );
+    free( dup_new_base );
+    free( dup_new_dir );
+    return result;
+  }
+  free( dup_old_base );
+  free( dup_old_dir );
+  free( dup_new_base );
+  free( dup_new_dir );
+  // close old dir again
+  result = ext_directory_close( &old_dir_dir );
+  if ( EOK != result ) {
+    return result;
+  }
+  // return success
+  return EOK;
 }
 
 /**
@@ -172,7 +456,154 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   if ( fs->read_only ) {
     return EROFS;
   }
-  return ENOTSUP;
+  int result = common_transaction_begin( fs->bdev );
+  if ( EOK != result ) {
+    return result;
+  }
+  // duplicate path for base
+  char* pathdup_base = strdup( path );
+  if ( ! pathdup_base ) {
+    common_transaction_rollback( fs->bdev );
+    return ENOMEM;
+  }
+  // duplicate path for dir
+  char* pathdup_dir = strdup( path );
+  if ( ! pathdup_dir ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    return ENOMEM;
+  }
+  // extract dirname
+  char* base = basename( pathdup_base );
+  char* dirpath = dirname( pathdup_dir );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return ENOTSUP;
+  }
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != dirpath[ strlen( dirpath ) - 1 ] ) {
+    strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // local variable for directory operations
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  // try to open basename
+  result = ext_directory_open( &dir, dirpath );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // ensure that the folder doesn't exist
+  result = ext_directory_entry_by_name( &dir, base );
+  if ( ENOENT != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return EOK != result ? result : EEXIST;
+  }
+  // allocate new inode
+  ext_structure_inode_t inode;
+  uint64_t number;
+  memset( &inode, 0, sizeof( inode ) );
+  result = ext_inode_allocate( fs, &inode, &number );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // prepare inode
+  inode.i_mode = EXT_INODE_EXT2_S_IFDIR;
+  inode.i_dtime = 0;
+  // temporary new directory
+  ext_directory_t newdir = {
+    .inode = inode,
+    .inode_number = number,
+    .data = NULL,
+    .entry = NULL,
+    .pos = 0,
+    .entry_size = 0,
+    .mp = mp,
+  };
+  // link in parent
+  result = ext_link_link( fs, &dir, &inode, number, base );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // create . and ..
+  result = ext_link_link( fs, &newdir, &inode, number, "." );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  result = ext_link_link( fs, &newdir, &dir.inode, dir.inode_number, ".." );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // translate to local number
+  uint64_t local_inode_number;
+  result = ext_inode_get_local_inode( fs, number, &local_inode_number );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  uint64_t bgnumber = local_inode_number / fs->superblock.s_inodes_per_group;
+  // read block group
+  ext_structure_block_group_descriptor_t bgd;
+  result = ext_blockgroup_read(fs, bgnumber, &bgd );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  // increment directories
+  bgd.bg_used_dirs_count++;
+  result = ext_blockgroup_write(fs, bgnumber, &bgd );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  free( pathdup_base );
+  free( pathdup_dir );
+  // close directory
+  result = ext_directory_close( &dir );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  result = ext_directory_close( &newdir );
+  if ( EOK != result ) {
+    common_transaction_rollback( fs->bdev );
+    return result;
+  }
+  // return success
+  return common_transaction_commit( fs->bdev );
 }
 
 /**
@@ -257,6 +688,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       }
       memcpy( dir->data, dirent.data, dirent.inode.i_size );
       memcpy( &dir->inode, &dirent.inode, sizeof( dir->inode ) );
+      dir->inode_number = dirent.entry->inode;
       // free up data again
       free( dirent.data );
     }
@@ -298,10 +730,42 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   }
   memcpy( dir->data, dirent.data, dirent.inode.i_size );
   memcpy( &dir->inode, &dirent.inode, sizeof( dir->inode ) );
+  dir->inode_number = parent_no;
   // free up data again
   free( dirent.data );
   // copy over mountpoint
   dir->mp = mp;
+
+  // rewind
+  result = ext_directory_rewind(dir);
+  if ( EOK != result ) {
+    ext_directory_close( dir );
+    return result;
+  }
+  // count entries
+  uint64_t entry_size = 0;
+  while ( true ) {
+    // get next entry
+    result = ext_directory_next_entry( dir );
+    // handle error
+    if ( EOK != result ) {
+      ext_directory_close( dir );
+      return result;
+    // handle end reached
+    } else if ( ! dir->entry ) {
+      break;
+    }
+    // increment entry size
+    entry_size++;
+  }
+  // rewind again
+  result = ext_directory_rewind(dir);
+  if ( EOK != result ) {
+    ext_directory_close( dir );
+    return result;
+  }
+  // set entry size
+  dir->entry_size = entry_size;
 
   // return success
   return EOK;
@@ -431,4 +895,29 @@ BFSEXT_EXPORT int ext_directory_entry_by_name( ext_directory_t* dir, const char*
   }
   // return last error of next entry
   return EOK != result ? result : ENOENT;
+}
+
+/**
+ * @brief calculate directory entry size
+ *
+ * @param name_length
+ * @param value
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_directory_entry_size(
+  uint64_t name_length,
+  uint64_t* value
+) {
+  // validate
+  if ( ! value ) {
+    return EINVAL;
+  }
+  // calculate length
+  uint64_t length = name_length + sizeof( ext_structure_directory_entry_t );
+  if ( length % 4 ) {
+    length += 4 - length % 4;
+  }
+  // save
+  *value = length;
+  return EOK;
 }

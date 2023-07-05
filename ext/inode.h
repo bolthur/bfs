@@ -27,12 +27,23 @@
 extern "C" {
 #endif
 
+typedef enum {
+  INODE_NO_ALLOC = 0,
+  INODE_ALLOC = 1
+} inode_allocate_t;
+
 #if defined( _BFS_COMPILING )
   int ext_inode_get_local_inode( ext_fs_t* fs, uint64_t inode, uint64_t* result );
   int ext_inode_read_inode( ext_fs_t* fs, uint64_t number, ext_structure_inode_t* inode );
+  int ext_inode_write_inode( ext_fs_t* fs, uint64_t number, ext_structure_inode_t* inode );
   int ext_inode_read_data( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t start, uint64_t length, uint8_t* buffer );
+  int ext_inode_write_data( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t start, uint64_t length, uint8_t* buffer );
   int ext_inode_read_block( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint8_t* buffer, uint64_t count );
-  int ext_inode_get_block_offset( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint64_t* offset );
+  int ext_inode_write_block( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint8_t* buffer, uint64_t count );
+  int ext_inode_get_block_offset( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint64_t* offset, inode_allocate_t allocate );
+  int ext_inode_allocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t* number );
+  int ext_inode_deallocate_block_recursive( ext_fs_t* fs, uint64_t table_block, uint64_t level );
+  int ext_inode_deallocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t number );
 #endif
 
 #ifdef __cplusplus

@@ -85,6 +85,48 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
   if 0 != cmdResult.exitCode:
     echo "Unable to format partition: " & cmdResult.output
     quit( 1 )
+  # remove gitkeep files
+  if imageType == "ext2":
+    command = "e2rm " & partitionImage & ":hello/folder/move/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":hello/folder/movelongname/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":hello/folder/remove/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":hello/folder/removelongname/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":move/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":movelongname/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":remove/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
+    command = "e2rm " & partitionImage & ":removelongname/.gitkeep"
+    cmdResult = execCmdEx( command )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to remove gitkeep file: " & cmdResult.output
+      quit( 1 )
   # copy files with mtools if flag is set
   if true == useMtools:
     # copy normal files

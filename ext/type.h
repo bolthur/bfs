@@ -54,6 +54,8 @@ typedef struct ext_file {
 typedef struct ext_directory {
   /** @brief inode */
   ext_structure_inode_t inode;
+  /** @brief inode number */
+  uint64_t inode_number;
   /** @brief Directory data */
   uint8_t* data;
   /** @brief current directory entry */
