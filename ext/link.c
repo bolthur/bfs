@@ -137,11 +137,11 @@ BFSEXT_NO_EXPORT int ext_link_link(
     return EOK;
   }
   // allocate space for new block
-  uint8_t* buffer = malloc( block_size );
+  uint8_t* buffer = malloc( ( size_t )block_size );
   if ( ! buffer ) {
     return ENOMEM;
   }
-  memset( buffer, 0, block_size );
+  memset( buffer, 0, ( size_t )block_size );
   ext_structure_directory_entry_t* new_entry = ( ext_structure_directory_entry_t* )buffer;
   // create new entry
   new_entry->name_len = ( uint8_t )strlen( path );

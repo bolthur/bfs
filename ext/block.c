@@ -145,13 +145,13 @@ BFSEXT_NO_EXPORT int ext_block_allocate( ext_fs_t* fs, uint64_t* value ) {
     return result;
   }
   // allocate space for bitmap
-  uint32_t* bitmap = malloc( sizeof( uint32_t ) * block_size );
+  uint8_t* bitmap = malloc( ( size_t )block_size );
   if ( ! bitmap ) {
     return ENOMEM;
   }
   // read bitmap
-  memset( bitmap, 0, block_size );
-  result = ext_block_read_bitmap( fs, &bgd, bitmap );
+  memset( bitmap, 0, ( size_t )block_size );
+  result = ext_block_read_bitmap( fs, &bgd, ( uint32_t* )bitmap );
   if ( EOK != result ) {
     free( bitmap );
     return result;
@@ -159,15 +159,15 @@ BFSEXT_NO_EXPORT int ext_block_allocate( ext_fs_t* fs, uint64_t* value ) {
   // search for free bit
   for ( uint64_t i = 0; i < fs->superblock.s_blocks_per_group / 32; i++ ) {
     // skip if bitmap is full
-    if ( bitmap[ i ] == ~0U ) {
+    if ( ( ( uint32_t* )bitmap )[ i ] == ~0U ) {
       continue;
     }
     for ( uint64_t j = 0; j < 32; j++ ) {
-      if ( 0 == ( bitmap[ i ] & ( 1U << j ) ) ) {
+      if ( 0 == ( ( ( uint32_t* )bitmap )[ i ] & ( 1U << j ) ) ) {
         // mark as used in bitmap
-        bitmap[ i ] |= ( 1U << j );
+        ( ( uint32_t* )bitmap )[ i ] |= ( 1U << j );
         // write back bitmap
-        result = ext_block_write_bitmap( fs, &bgd, bitmap );
+        result = ext_block_write_bitmap( fs, &bgd, ( uint32_t* )bitmap );
         if ( EOK != result ) {
           free( bitmap );
           return result;
@@ -189,12 +189,12 @@ BFSEXT_NO_EXPORT int ext_block_allocate( ext_fs_t* fs, uint64_t* value ) {
         uint64_t block_number = fs->superblock.s_blocks_per_group * ( uint64_t )blockgroup
           + ( i * 32 + j ) + fs->superblock.s_first_data_block;
         // allocate space and fill new block with 0
-        uint8_t* new_block = malloc( block_size );
+        uint8_t* new_block = malloc( ( size_t )block_size );
         if ( ! new_block ) {
           free( bitmap );
           return ENOMEM;
         }
-        memset( new_block, 0, block_size );
+        memset( new_block, 0, ( size_t )block_size );
         result = common_blockdev_bytes_write( fs->bdev, block_number * block_size, new_block, block_size );
         if ( EOK != result ) {
           free( bitmap );
@@ -241,21 +241,21 @@ BFSEXT_NO_EXPORT int ext_block_deallocate( ext_fs_t* fs, uint64_t value ) {
     return result;
   }
   // allocate space for bitmap
-  uint32_t* bitmap = malloc( sizeof( uint32_t ) * block_size );
+  uint8_t* bitmap = malloc( ( size_t )block_size );
   if ( ! bitmap ) {
     return ENOMEM;
   }
   // read bitmap
-  memset( bitmap, 0, block_size );
-  result = ext_block_read_bitmap( fs, &bgd, bitmap );
+  memset( bitmap, 0, ( size_t )block_size );
+  result = ext_block_read_bitmap( fs, &bgd, ( uint32_t* )bitmap );
   if ( EOK != result ) {
     free( bitmap );
     return result;
   }
   // free in bitmap
-  bitmap[ value / 32 ] &= ~( 1U << ( value % 32 ) );
+  ( ( uint32_t* )bitmap )[ value / 32 ] &= ~( 1U << ( value % 32 ) );
   // write back bitmap
-  result = ext_block_write_bitmap( fs, &bgd, bitmap );
+  result = ext_block_write_bitmap( fs, &bgd, ( uint32_t* )bitmap );
   if ( EOK != result ) {
     free( bitmap );
     return result;

@@ -111,7 +111,7 @@ BFSEXT_NO_EXPORT int ext_blockgroup_read(
   }
   block_number += 1
     + ( group * sizeof( ext_structure_block_group_descriptor_t ) / block_size);
-  uint8_t* tmp = malloc( block_size );
+  uint8_t* tmp = malloc( ( size_t )block_size );
   if ( ! tmp ) {
     return ENOMEM;
   }
@@ -166,7 +166,7 @@ BFSEXT_NO_EXPORT int ext_blockgroup_write(
   }
   block_number += 1
     + ( group * sizeof( ext_structure_block_group_descriptor_t ) / block_size);
-  uint8_t* tmp = malloc( block_size );
+  uint8_t* tmp = malloc( ( size_t )block_size );
   if ( ! tmp ) {
     return ENOMEM;
   }

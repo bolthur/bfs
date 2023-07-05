@@ -74,7 +74,7 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
     return result;
   }
   // allocate buffer
-  uint8_t* buffer = malloc( block_size );
+  uint8_t* buffer = malloc( ( size_t )block_size );
   if ( ! buffer ) {
     return ENOMEM;
   }

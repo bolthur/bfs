@@ -93,7 +93,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
   // calculate offset
   uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
   // allocate buffer
-  uint8_t* buffer = malloc( block_size );
+  uint8_t* buffer = malloc( ( size_t )block_size );
   if ( ! buffer ) {
     return ENOMEM;
   }
@@ -219,7 +219,7 @@ BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
     inode->i_blocks++;
   }
   // allocate space for table
-  uint8_t* table = malloc( block_size );
+  uint8_t* table = malloc( ( size_t )block_size );
   if ( ! table ) {
     return ENOMEM;
   }
@@ -292,7 +292,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
     return result;
   }
   // allocate buffer
-  uint8_t* tmp = malloc( block_size );
+  uint8_t* tmp = malloc( ( size_t )block_size );
   if ( ! tmp ) {
     return ENOMEM;
   }
@@ -306,7 +306,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
     }
     // handle sparse file
     if ( 0 == offset ) {
-      memset( buffer + block_size * idx, 0, block_size );
+      memset( buffer + block_size * idx, 0, ( size_t )block_size );
       continue;
     }
     // load block
@@ -316,7 +316,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
       return result;
     }
     // copy over
-    memcpy( buffer + block_size * idx, tmp, block_size );
+    memcpy( buffer + block_size * idx, tmp, ( size_t )block_size );
   }
   // free tmp and return success
   free( tmp );
@@ -354,7 +354,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
   uint64_t start_block = start / block_size;
   uint64_t end_block = ( start + length - 1 ) / block_size;
   // allocate a local buffer
-  uint8_t* local_buffer = malloc( block_size );
+  uint8_t* local_buffer = malloc( ( size_t )block_size );
   if ( ! local_buffer ) {
     return ENOMEM;
   }
@@ -374,7 +374,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
       copy_size = length;
     }
     // copy
-    memcpy( buffer, local_buffer + offset, copy_size );
+    memcpy( buffer, local_buffer + offset, ( size_t )copy_size );
     // decrement length and increment buffer
     length -= copy_size;
     buffer += copy_size;
@@ -391,7 +391,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
       return result;
     }
     // copy over
-    memcpy( buffer + length - copy_size, local_buffer, copy_size );
+    memcpy( buffer + length - copy_size, local_buffer, ( size_t )copy_size );
     // decrement length and end block
     length -= copy_size;
     end_block--;
@@ -491,7 +491,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
   uint64_t end_block = ( start + length - 1 ) / block_size;
   uint64_t req_length = length;
   // allocate a local buffer
-  uint8_t* local_buffer = malloc( block_size );
+  uint8_t* local_buffer = malloc( ( size_t )block_size );
   if ( ! local_buffer ) {
     return ENOMEM;
   }
@@ -511,7 +511,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
       copy_size = length;
     }
     // copy
-    memcpy( local_buffer + offset, buffer, copy_size );
+    memcpy( local_buffer + offset, buffer, ( size_t )copy_size );
     // write stuff
     result = ext_inode_write_block( fs, inode, start_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -534,7 +534,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
       return result;
     }
     // copy over
-    memcpy( local_buffer, buffer + length - copy_size, copy_size );
+    memcpy( local_buffer, buffer + length - copy_size, ( size_t )copy_size );
     // write stuff
     result = ext_inode_write_block( fs, inode, start_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -596,7 +596,7 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
     return result;
   }
   // allocate space for bitmap
-  uint32_t* bitmap = malloc( sizeof( uint32_t ) * block_size );
+  uint8_t* bitmap = malloc( ( size_t )block_size );
   if ( ! bitmap ) {
     return ENOMEM;
   }
@@ -611,8 +611,8 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
       return result;
     }
     // read bitmap
-    memset( bitmap, 0, block_size );
-    result = ext_block_read_bitmap( fs, &bgd, bitmap );
+    memset( bitmap, 0, ( size_t )block_size );
+    result = ext_block_read_bitmap( fs, &bgd, ( uint32_t* )bitmap );
     if ( EOK != result ) {
       free( bitmap );
       return result;
@@ -623,18 +623,18 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
       i++
     ) {
       // skip if inode is not empty
-      if ( bitmap[i] == ~0U ) {
+      if ( ( ( uint32_t* )bitmap )[i] == ~0U ) {
         continue;
       }
       for ( uint64_t j = 0; j < 32 && 0 == number; j++ ) {
         if (
-          (0 == (bitmap[i] & (1U << j)))
+          ( 0 == ( ( ( uint32_t* )bitmap )[ i ] & ( 1U << j ) ) )
           && ( i * 32 + j <= fs->superblock.s_inodes_per_group )
         ) {
           // mark as used in bitmap
-          bitmap[ i ] |= ( 1U << j );
+          ( ( uint32_t* )bitmap )[ i ] |= ( 1U << j );
           // write back bitmap
-          result = ext_block_write_bitmap( fs, &bgd, bitmap );
+          result = ext_block_write_bitmap( fs, &bgd, ( uint32_t* )bitmap );
           if ( EOK != result ) {
             free( bitmap );
             return result;
@@ -699,7 +699,7 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
     return result;
   }
   // allocate space for table
-  uint8_t* table = malloc( block_size );
+  uint8_t* table = malloc( ( size_t )block_size );
   if ( ! table ) {
     return ENOMEM;
   }
@@ -782,21 +782,21 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate(
   if ( EOK != result ) {
     return result;
   }
-  uint32_t* bitmap = malloc( sizeof( uint32_t ) * block_size );
+  uint8_t* bitmap = malloc( ( size_t )block_size );
   if ( ! bitmap ) {
     return ENOMEM;
   }
   // read bitmap
-  memset( bitmap, 0, block_size );
-  result = ext_block_read_bitmap( fs, &bgd, bitmap );
+  memset( bitmap, 0, ( size_t )block_size );
+  result = ext_block_read_bitmap( fs, &bgd, ( uint32_t* )bitmap );
   if ( EOK != result ) {
     free( bitmap );
     return result;
   }
   // free in bitmap
-  bitmap[num / 32] &= ~(1U << (num % 32));
+  ( ( uint32_t* )bitmap )[num / 32] &= ~(1U << (num % 32));
   // write back bitmap
-  result = ext_block_write_bitmap( fs, &bgd, bitmap );
+  result = ext_block_write_bitmap( fs, &bgd, ( uint32_t* )bitmap );
   if ( EOK != result ) {
     free( bitmap );
     return result;
