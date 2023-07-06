@@ -15,12 +15,159 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <common/errno.h>
+// IWYU pragma: no_include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <libgen.h>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <common/mountpoint.h>
+#include <common/errno.h> // IWYU pragma: keep
+#include <ext/structure.h>
+#include <ext/superblock.h>
+#include <ext/inode.h>
+#include <ext/directory.h>
 #include <ext/stat.h>
+#include <ext/type.h>
+#include <ext/fs.h>
+#include <bfsconfig.h>
+#include <ext/bfsext_export.h>
 
-int ext_stat( const char* path, struct stat *st ) {
+/**
+ * @brief Get stat information of path
+ *
+ * @param path
+ * @param st
+ * @return int
+ */
+BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
+  // validate
   if ( ! path || ! st ) {
     return EINVAL;
   }
-  return ENOTSUP;
+  // try to get mountpoint by path
+  common_mountpoint_t* mp = common_mountpoint_find( path );
+  if ( ! mp ) {
+    return ENOENT;
+  }
+  // get block size
+  uint64_t block_size;
+  int result = ext_superblock_block_size( mp->fs, &block_size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // get real path without mountpoint
+  const char* real_path = path + strlen( mp->name ) - 1;
+  char* duppath = strdup( real_path );
+  if ( ! duppath ) {
+    return ENOMEM;
+  }
+  // duplicate path for base and dirname
+  char* pathdup_dir = strdup( duppath );
+  if ( ! pathdup_dir ) {
+    free( duppath );
+    return ENOMEM;
+  }
+  char* pathdup_base = strdup( duppath );
+  if ( ! pathdup_base ) {
+    free( pathdup_dir );
+    free( duppath );
+    return ENOMEM;
+  }
+  // get dir and base name
+  char* dirpath = dirname( pathdup_dir );
+  char* basepath = basename( pathdup_base );
+  // check for unsupported
+  if ( '.' == *dirpath ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( duppath );
+    return ENOTSUP;
+  }
+  size_t open_path_size = strlen( mp->name ) + strlen( dirpath ) + 1;
+  char* open_path = malloc( open_path_size );
+  if ( ! open_path ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( duppath );
+    return ENOMEM;
+  }
+  strcpy( open_path, mp->name );
+  strcat( open_path, dirpath + 1 );
+  // Add trailing slash if not existing, necessary, when opening root directory
+  if ( CONFIG_PATH_SEPARATOR_CHAR != open_path[ strlen( open_path ) - 1 ] ) {
+    strcat( open_path, CONFIG_PATH_SEPARATOR_STRING );
+  }
+  // open directory
+  ext_directory_t dir;
+  memset( &dir, 0, sizeof( dir ) );
+  result = ext_directory_open( &dir, open_path );
+  if ( EOK != result ) {
+    free( open_path );
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( duppath );
+    return result;
+  }
+  free( open_path );
+  // default inode is ext inode
+  ext_structure_inode_t inode;
+  uint64_t inode_number = dir.inode_number;
+  memcpy( &inode, &dir.inode, sizeof( inode ) );
+  // overwrite i_size of inode by entry size in case it's a directory
+  inode.i_size = ( uint32_t )dir.entry_size;
+  // handle valid base path
+  if ( 0 != strcmp( dirpath, basepath ) ) {
+    // get entry by name
+    result = ext_directory_entry_by_name( &dir, basepath );
+    if ( EOK != result ) {
+      ext_directory_close( &dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( duppath );
+      return result;
+    }
+    // read inode
+    result = ext_inode_read_inode( mp->fs, dir.entry->inode, &inode );
+    if ( EOK != result ) {
+      ext_directory_close( &dir );
+      free( pathdup_base );
+      free( pathdup_dir );
+      free( duppath );
+      return result;
+    }
+    // set inode number
+    inode_number = dir.entry->inode;
+  }
+  // close directory again
+  result = ext_directory_close( &dir );
+  if ( EOK != result ) {
+    free( pathdup_base );
+    free( pathdup_dir );
+    free( duppath );
+    return result;
+  }
+  // fill stat struct
+  st->st_dev = 0;
+  st->st_ino = inode_number;
+  st->st_mode = inode.i_mode;
+  st->st_nlink = inode.i_links_count;
+  st->st_uid = inode.i_uid;
+  st->st_gid = inode.i_gid;
+  st->st_rdev = 0;
+  st->st_size = inode.i_size;
+  st->st_atim.tv_sec = inode.i_atime;
+  st->st_atim.tv_nsec = 0;
+  st->st_mtim.tv_sec = inode.i_mtime;
+  st->st_mtim.tv_nsec = 0;
+  st->st_ctim.tv_sec = inode.i_ctime;
+  st->st_ctim.tv_nsec = 0;
+  st->st_blksize = ( blksize_t )( ( ext_fs_t* )mp->fs)->bdev->bdif->block_size;
+  st->st_blocks = ( blkcnt_t )inode.i_blocks;
+  // free duplicates
+  free( pathdup_base );
+  free( pathdup_dir );
+  free( duppath );
+  // return success
+  return EOK;
 }

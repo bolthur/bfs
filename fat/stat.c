@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <common/errno.h>
+// IWYU pragma: no_include <errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <fat/stat.h>
 
 int fat_stat( const char* path, struct stat *st ) {

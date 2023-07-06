@@ -16,11 +16,11 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 // IWYU pragma: no_include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <common/errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <common/blockdev.h>
 #include <ext/fs.h>
-#include <ext/structure.h>
 #include <ext/superblock.h>
 #include <ext/bfsext_export.h>
 

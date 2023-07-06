@@ -244,7 +244,7 @@ typedef struct {
       uint8_t reserved0[ 10 ];
     } i_osd2_masix;
     uint8_t i_osd2[ 12 ];
-  };
+  } os_information;
 } ext_structure_inode_t;
 static_assert(
   128 == sizeof( ext_structure_inode_t ),

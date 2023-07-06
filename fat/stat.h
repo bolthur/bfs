@@ -17,9 +17,6 @@
 
 /** @file fat/stat.h */
 
-#include <sys/stat.h>
-#include <fat/type.h>
-
 #ifndef _FAT_STAT_H
 #define _FAT_STAT_H
 
@@ -27,6 +24,7 @@
 extern "C" {
 #endif
 
+struct stat;
 int fat_stat( const char* path, struct stat *st );
 
 #ifdef __cplusplus

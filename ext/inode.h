@@ -17,6 +17,7 @@
 
 /** @file ext/inode.h */
 
+#include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
 

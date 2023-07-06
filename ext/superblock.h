@@ -17,7 +17,7 @@
 
 /** @file ext/superblock.h */
 
-#include <common/blockdev.h>
+#include <stdint.h>
 #include <ext/structure.h>
 #include <ext/fs.h>
 

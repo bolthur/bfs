@@ -15,13 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
+// IWYU pragma: no_include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <common/errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <ext/superblock.h>
 #include <ext/inode.h>
 #include <ext/directory.h>
 #include <ext/link.h>
+#include <ext/type.h>
+#include <ext/fs.h>
+#include <ext/structure.h>
 #include <ext/blockgroup.h>
 #include <ext/bfsext_export.h>
 

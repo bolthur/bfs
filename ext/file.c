@@ -15,19 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
+// IWYU pragma: no_include <errno.h>
+// IWYU pragma: no_include <stdio.h>
 #include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <common/stdio.h> // IWYU pragma: keep
-#include <common/errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <common/file.h>
 #include <common/transaction.h>
+#include <common/mountpoint.h>
 #include <ext/directory.h>
 #include <ext/file.h>
 #include <ext/inode.h>
 #include <ext/link.h>
+#include <ext/fs.h>
+#include <ext/structure.h>
+#include <ext/type.h>
 #include <ext/bfsext_export.h>
+#include <bfsconfig.h>
 
 /**
  * @brief Get a file by path

@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-#include <common/errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <common/blockdev.h>
 #include <common/mountpoint.h>
 #include <ext/fs.h>

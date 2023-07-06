@@ -17,8 +17,8 @@
 
 /** @file ext/indirection.h */
 
+#include <stdint.h>
 #include <ext/fs.h>
-#include <ext/structure.h>
 
 #ifndef _EXT_INDIRECTION_H
 #define _EXT_INDIRECTION_H

@@ -17,6 +17,9 @@
 
 /** @file ext/directory.h */
 
+#include <stdint.h>
+#include <ext/fs.h>
+#include <ext/structure.h>
 #include <ext/type.h>
 
 #ifndef _EXT_DIRECTORY_H

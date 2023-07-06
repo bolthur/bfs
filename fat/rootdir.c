@@ -29,7 +29,6 @@
 #include <fat/type.h>
 #include <fat/fs.h>
 #include <fat/file.h>
-#include <fat/block.h>
 #include <fat/structure.h>
 #include <fat/bfsfat_export.h>
 

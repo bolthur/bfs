@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 #include <fat/fs.h>
-#include <fat/file.h>
+#include <fat/type.h>
 
 #ifndef _FAT_CLUSTER_H
 #define _FAT_CLUSTER_H

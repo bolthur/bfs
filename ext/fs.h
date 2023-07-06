@@ -18,7 +18,6 @@
 /** @file ext/fs.h */
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <common/blockdev.h>
 #include <ext/structure.h>
 

@@ -15,11 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
+// IWYU pragma: no_include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <libgen.h>
-#include <common/errno.h>
+#include <stdbool.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <common/transaction.h>
+#include <common/mountpoint.h>
 #include <ext/inode.h>
 #include <ext/iterator.h>
 #include <ext/directory.h>
@@ -27,6 +30,10 @@
 #include <ext/bfsext_export.h>
 #include <ext/blockgroup.h>
 #include <ext/link.h>
+#include <ext/type.h>
+#include <ext/fs.h>
+#include <ext/structure.h>
+#include <bfsconfig.h>
 
 /**
  * @brief Load ext directory data
@@ -709,6 +716,10 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   }
   // check for is folder
   if ( ! ( parent.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    if ( dir->data ) {
+      free( dir->data );
+      dir->data = NULL;
+    }
     return ENOTDIR;
   }
   // load directory

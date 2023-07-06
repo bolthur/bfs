@@ -17,12 +17,13 @@
 
 // IWYU pragma: no_include <errno.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <common/blockdev.h>
 #include <common/errno.h>
-#include <fat/file.h>
 #include <fat/cluster.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
+#include <fat/type.h>
 #include <fat/bfsfat_export.h>
 
 #define SECTOR_BITS (512 * 8)

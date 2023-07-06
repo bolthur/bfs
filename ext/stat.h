@@ -17,9 +17,6 @@
 
 /** @file ext/stat.h */
 
-#include <sys/stat.h>
-#include <ext/type.h>
-
 #ifndef _EXT_STAT_H
 #define _EXT_STAT_H
 
@@ -27,6 +24,7 @@
 extern "C" {
 #endif
 
+struct stat;
 int ext_stat( const char* path, struct stat *st );
 
 #ifdef __cplusplus

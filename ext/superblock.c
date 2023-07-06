@@ -16,12 +16,12 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 // IWYU pragma: no_include <errno.h>
-#include <endian.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <common/blockdev.h>
-#include <common/errno.h>
+#include <common/errno.h> // IWYU pragma: keep
 #include <ext/blockgroup.h>
 #include <ext/superblock.h>
 #include <ext/fs.h>
@@ -200,7 +200,7 @@ BFSEXT_NO_EXPORT int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_si
     return EINVAL;
   }
   // set block size
-  *block_size = 1024 << fs->superblock.s_log_block_size;
+  *block_size = 1024U << fs->superblock.s_log_block_size;
   // return success
   return EOK;
 }
@@ -236,7 +236,7 @@ BFSEXT_NO_EXPORT int ext_superblock_frag_size( ext_fs_t* fs, uint64_t* value ) {
   if ( ! fs || ! value ) {
     return EINVAL;
   }
-  *value = 1024 << fs->superblock.s_log_frag_size;
+  *value = 1024U << fs->superblock.s_log_frag_size;
   return EOK;
 }
 
