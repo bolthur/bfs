@@ -95,26 +95,16 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
   }
   // calculate offset
   uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
-  // allocate buffer
-  uint8_t* buffer = malloc( ( size_t )block_size );
-  if ( ! buffer ) {
-    return ENOMEM;
-  }
   // read data
   result = common_blockdev_bytes_read(
     fs->bdev,
     descriptor.bg_inode_table * block_size + inode_offset,
-    buffer,
-    block_size
+    inode,
+    sizeof( *inode )
   );
   if ( EOK != result ) {
-    free( buffer );
-    return ENOMEM;
+    return result;
   }
-  // copy over data
-  memcpy( inode, buffer, sizeof( *inode ) );
-  // free data
-  free( buffer );
   return EOK;
 }
 

@@ -114,8 +114,6 @@ BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
   ext_structure_inode_t inode;
   uint64_t inode_number = dir.inode_number;
   memcpy( &inode, &dir.inode, sizeof( inode ) );
-  // overwrite i_size of inode by entry size in case it's a directory
-  inode.i_size = ( uint32_t )dir.entry_size;
   // handle valid base path
   if ( 0 != strcmp( dirpath, basepath ) ) {
     // get entry by name

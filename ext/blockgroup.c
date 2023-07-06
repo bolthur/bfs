@@ -115,28 +115,17 @@ BFSEXT_NO_EXPORT int ext_blockgroup_read(
   }
   block_number += 1
     + ( group * sizeof( ext_structure_block_group_descriptor_t ) / block_size);
-  uint8_t* tmp = malloc( ( size_t )block_size );
-  if ( ! tmp ) {
-    return ENOMEM;
-  }
   // read block group
   result = common_blockdev_bytes_read(
     fs->bdev,
-    block_number * block_size,
-    tmp,
-    block_size
+    ( block_number * block_size ) +
+      ( ( group * sizeof( ext_structure_block_group_descriptor_t ) ) % block_size ),
+    value,
+    sizeof( *value )
   );
   if ( EOK != result ) {
-    free( tmp );
     return result;
   }
-  // copy over content
-  memcpy(
-    value,
-    tmp + ( ( group * sizeof( ext_structure_block_group_descriptor_t ) ) % block_size ),
-    sizeof( ext_structure_block_group_descriptor_t )
-  );
-  free( tmp );
   return EOK;
 }
 
@@ -170,38 +159,16 @@ BFSEXT_NO_EXPORT int ext_blockgroup_write(
   }
   block_number += 1
     + ( group * sizeof( ext_structure_block_group_descriptor_t ) / block_size);
-  uint8_t* tmp = malloc( ( size_t )block_size );
-  if ( ! tmp ) {
-    return ENOMEM;
-  }
-  // read block group
-  result = common_blockdev_bytes_read(
-    fs->bdev,
-    block_number * block_size,
-    tmp,
-    block_size
-  );
-  if ( EOK != result ) {
-    free( tmp );
-    return result;
-  }
-  // copy over content
-  memcpy(
-    tmp + ( ( group * sizeof( ext_structure_block_group_descriptor_t ) ) % block_size ),
-    value,
-    sizeof( ext_structure_block_group_descriptor_t )
-  );
   // read block group
   result = common_blockdev_bytes_write(
     fs->bdev,
-    block_number * block_size,
-    tmp,
-    block_size
+    ( block_number * block_size ) +
+      ( ( group * sizeof( ext_structure_block_group_descriptor_t ) ) % block_size ),
+    value,
+    sizeof( *value )
   );
   if ( EOK != result ) {
-    free( tmp );
     return result;
   }
-  free( tmp );
   return EOK;
 }
