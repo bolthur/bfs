@@ -82,7 +82,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
     return EIO;
   }
   // populate bunch of information from stat result
-  bdev->part_size = ( uint32_t )st.st_size;
+  bdev->part_size = ( uint64_t )st.st_size;
   bdev->bdif->block_count = bdev->part_size / bdev->bdif->block_size;
   // allocate space for file dscriptor
   if ( ! bdev->bdif->p_user ) {
