@@ -91,10 +91,12 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   if ( ! blk_cnt ) {
     return EOK;
   }
-  if ( fseeko( fp, ( off_t )( blk_id * bdev->bdif->block_size ), SEEK_SET ) ) {
+  size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
+  off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
+  if ( fseeko( fp, offset, SEEK_SET ) ) {
     return EIO;
   }
-  if ( ! fread( buf, bdev->bdif->block_size * blk_cnt, 1, fp ) ) {
+  if ( ! fread( buf, size, 1, fp ) ) {
     return EIO;
   }
   return EOK;
