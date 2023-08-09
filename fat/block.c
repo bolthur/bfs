@@ -89,7 +89,7 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
     memset( dir->blocks, 0, ( size_t )dir->block_count * sizeof( fat_block_t ) );
     for ( uint64_t i = 0; i < dir->block_count; i++ ) {
       // allocate data block
-      uint8_t* data = malloc( fs->bdev->bdif->block_size );
+      uint8_t* data = malloc( ( size_t )fs->bdev->bdif->block_size );
       if ( ! data ) {
         for ( uint64_t j = 0; j < dir->block_count; j++ ) {
           if ( dir->blocks[ j ].data ) {
@@ -163,7 +163,7 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
       }
       memset( &block[ i ], 0, sizeof( fat_block_t ) );
       // get last index
-      uint8_t* data = malloc( dir->file.block.data_size );
+      uint8_t* data = malloc( ( size_t )dir->file.block.data_size );
       if ( ! data ) {
         return ENOMEM;
       }
@@ -173,7 +173,7 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
       memcpy(
         block[ i ].data,
         dir->file.block.data,
-        dir->file.block.data_size
+        ( size_t )dir->file.block.data_size
       );
       // increment block count
       dir->blocks = block;
