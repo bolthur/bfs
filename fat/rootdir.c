@@ -30,6 +30,7 @@
 #include <fat/fs.h>
 #include <fat/file.h>
 #include <fat/structure.h>
+#include <fat/block.h>
 #include <fat/bfsfat_export.h>
 
 /**
@@ -66,6 +67,11 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   dir->file.fpos = 0;
   dir->file.fsize = FAT_FAT32 == fs->type
     ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
+  // load blocks
+  result = fat_block_load_directory( dir );
+  if ( EOK != result ) {
+    return result;
+  }
   // return success
   return EOK;
 }

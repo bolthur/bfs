@@ -410,6 +410,29 @@ BFSFAT_EXPORT int fat_directory_move(
     return result;
   }
   uint64_t target_cluster = target.file.cluster;
+  // reload blocks
+  result = fat_block_unload_directory( &target );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  result = fat_block_load_directory( &target );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
   // get entry by file
   result = fat_directory_entry_by_name( &target, base_new_path );
   if ( EOK != result ) {
@@ -678,6 +701,26 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   // parse sub directories
   p = strtok( p, CONFIG_PATH_SEPARATOR_STRING );
   while ( p != NULL ) {
+    // unload blocks
+    result = fat_block_unload_directory( dir );
+    if ( EOK != result ) {
+      // close current directory
+      fat_directory_close( dir );
+      // free duplicated path
+      free( duppath );
+      // return result
+      return result;
+    }
+    // load blocks
+    result = fat_block_load_directory( dir );
+    if ( EOK != result ) {
+      // close current directory
+      fat_directory_close( dir );
+      // free duplicated path
+      free( duppath );
+      // return result
+      return result;
+    }
     // search by name
     result = fat_directory_entry_by_name( dir, p );
     if ( EOK != result ) {
@@ -730,6 +773,21 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   free( duppath );
   // set offset to 0
   dir->file.fpos = 0;
+  // load blocks
+  result = fat_block_unload_directory( dir );
+  if ( EOK != result ) {
+    // close current directory
+    fat_directory_close( dir );
+    // return result
+    return result;
+  }
+  result = fat_block_load_directory( dir );
+  if ( EOK != result ) {
+    // close current directory
+    fat_directory_close( dir );
+    // return result
+    return result;
+  }
   // rewind
   result = fat_directory_rewind( dir );
   if ( EOK != result ) {
@@ -767,6 +825,11 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
   if ( ! dir ) {
     return EINVAL;
   }
+  // clear loaded blocks
+  int result = fat_block_unload_directory( dir );
+  if ( EOK != result ) {
+    return result;
+  }
   // different handling for root directory
   if ( 0 == dir->file.cluster ) {
     return fat_rootdir_close( dir );
@@ -779,7 +842,7 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
     free( dir->entry );
   }
   // close file
-  int result = fat_file_close( &dir->file );
+  result = fat_file_close( &dir->file );
   if ( EOK != result ) {
     return result;
   }

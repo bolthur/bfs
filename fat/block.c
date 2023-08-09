@@ -48,7 +48,160 @@ BFSFAT_NO_EXPORT int fat_block_unload( fat_file_t* file ) {
     file->block.sector = 0;
     file->block.cluster = 0;
     file->block.block = 0;
+    file->block.data_size = 0;
   }
+  return EOK;
+}
+
+/**
+ * @brief Helper to load directory blocks
+ *
+ * @param dir
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
+  if ( ! dir ) {
+    return EINVAL;
+  }
+  // extract fs pointer
+  fat_fs_t* fs = dir->file.mp->fs;
+  // load chain
+  int result = fat_cluster_load( fs, &dir->file );
+  if ( EOK != result ) {
+    return result;
+  }
+
+  // load root directory
+  if ( 0 == dir->file.cluster ) {
+    // next root block is root directory offset + sector
+    uint64_t rootdir_offset;
+    uint64_t rootdir_size;
+    // get offset and size of root directory
+    result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
+    if ( EOK != result ) {
+      return result;
+    }
+    dir->block_count = rootdir_size;
+    dir->blocks = malloc( ( size_t )dir->block_count * sizeof( fat_block_t ) );
+    if ( ! dir->blocks ) {
+      return ENOMEM;
+    }
+    memset( dir->blocks, 0, ( size_t )dir->block_count * sizeof( fat_block_t ) );
+    for ( uint64_t i = 0; i < dir->block_count; i++ ) {
+      // allocate data block
+      uint8_t* data = malloc( fs->bdev->bdif->block_size );
+      if ( ! data ) {
+        for ( uint64_t j = 0; j < dir->block_count; j++ ) {
+          if ( dir->blocks[ j ].data ) {
+            free( dir->blocks[ j ].data );
+          }
+        }
+        free( dir->blocks );
+        dir->blocks = NULL;
+        return ENOMEM;
+      }
+      dir->blocks[ i ].data = data;
+      dir->blocks[ i ].data_size = fs->bdev->bdif->block_size;
+      // clear out block
+      memset( dir->blocks[ i ].data, 0, ( size_t )fs->bdev->bdif->block_size );
+      // read bytes from device
+      result = common_blockdev_bytes_read(
+        fs->bdev,
+        ( rootdir_offset + i ) * fs->bdev->bdif->block_size,
+        dir->blocks[ i ].data,
+        fs->bdev->bdif->block_size
+      );
+      // handle error
+      if ( EOK != result ) {
+        for ( uint64_t j = 0; j < dir->block_count; j++ ) {
+          if ( dir->blocks[ j ].data ) {
+            free( dir->blocks[ j ].data );
+          }
+        }
+        free( dir->blocks );
+        dir->blocks = NULL;
+        return result;
+      }
+    }
+  } else {
+    uint64_t fpos = dir->file.fpos;
+    // cache block size
+    uint64_t cluster_size = fs->superblock.sectors_per_cluster
+      * fs->superblock.bytes_per_sector;
+    // different cluster size for root directory for non fat32
+    if ( dir->file.cluster == 0 && FAT_FAT32 != fs->type ) {
+      cluster_size = fs->superblock.bytes_per_sector;
+    }
+    dir->block_count = 0;
+    // load cluster by cluster
+    for ( uint64_t i = 0; i < dir->file.chain_size; i++ ) {
+      // unload first
+      result = fat_block_unload( &dir->file );
+      if ( EOK != result ) {
+        return result;
+      }
+      dir->file.fpos = i * cluster_size;
+      // load block
+      result = fat_block_load( &dir->file, cluster_size );
+      // handle error
+      if ( EOK != result ) {
+        return result;
+      }
+      if ( ! dir->file.block.data ) {
+        return EINVAL;
+      }
+      // extend blocks
+      fat_block_t* block;
+      if ( ! dir->blocks ) {
+        block = malloc( sizeof( fat_block_t ) );
+      } else {
+        block = realloc( dir->blocks, ( ( size_t )dir->block_count + 1 ) * sizeof( fat_block_t ) );
+      }
+      // handle error
+      if ( ! block ) {
+        return ENOMEM;
+      }
+      memset( &block[ i ], 0, sizeof( fat_block_t ) );
+      // get last index
+      uint8_t* data = malloc( dir->file.block.data_size );
+      if ( ! data ) {
+        return ENOMEM;
+      }
+      block[ i ].data = data;
+      block[ i ].data_size = dir->file.block.data_size;
+      // copy over data
+      memcpy(
+        block[ i ].data,
+        dir->file.block.data,
+        dir->file.block.data_size
+      );
+      // increment block count
+      dir->blocks = block;
+      dir->block_count++;
+    }
+    dir->file.fpos = fpos;
+  }
+  // return success
+  return EOK;
+}
+
+/**
+ * @brief Unload directory blocks
+ *
+ * @param dir
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_block_unload_directory( fat_directory_t* dir ) {
+  if ( ! dir ) {
+    return EINVAL;
+  }
+  for ( uint64_t i = 0; i < dir->block_count; i++ ) {
+    if ( dir->blocks[ i ].data ) {
+      free( dir->blocks[ i ].data );
+    }
+  }
+  free( dir->blocks );
+  dir->blocks = NULL;
   return EOK;
 }
 
@@ -103,6 +256,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     if ( ! file->block.data ) {
       // allocate block
       file->block.data = malloc( ( size_t )block_size );
+      file->block.data_size = block_size;
       if ( ! file->block.data ) {
         return ENOMEM;
       }
@@ -133,6 +287,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
       }
       // clear out block
       memset( file->block.data, 0, ( size_t )size );
+      file->block.data_size = size;
     }
     // adjust current block
     current_block = file->fpos / size;
@@ -183,16 +338,10 @@ BFSFAT_NO_EXPORT int fat_block_write( fat_file_t* file, uint64_t size ) {
     block_size = size;
   }
   // write cluster
-  int result = common_blockdev_bytes_write(
+  return common_blockdev_bytes_write(
     fs->bdev,
     lba * fs->bdev->bdif->block_size,
     file->block.data,
     block_size
   );
-  // handle error
-  if ( EOK != result ) {
-    return result;
-  }
-  // return success
-  return EOK;
 }

@@ -111,19 +111,6 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
     cluster_size = fs->superblock.bytes_per_sector;
   }
-  uint64_t next_block = pos / cluster_size;
-  if (
-    ! it->reference->file.block.data
-    || it->reference->file.block.block != next_block
-  ) {
-    it->reference->file.fpos = pos;
-    // load block
-    int result = fat_block_load( &it->reference->file, cluster_size );
-    // validate return
-    if ( EOK != result ) {
-      return result;
-    }
-  }
   // update iterator position
   it->reference->file.fpos = pos;
   // return result of iterator set
@@ -167,27 +154,11 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     // cache block size
     uint64_t next_block = pos / cluster_size;
     uint64_t offset_within_block = pos % cluster_size;
-    if (
-      ! it->reference->file.block.data
-      || it->reference->file.block.block != next_block
-    ) {
-      it->reference->file.fpos = pos;
-      // load block
-      result = fat_block_load( &it->reference->file, cluster_size );
-      // validate return
-      if ( EOK != result ) {
-        return result;
-      }
-    }
     // update iterator position
     it->reference->file.fpos = pos;
-    // handle no valid one found ( end reached )
-    if ( ! it->reference->file.block.data ) {
-      return EOK;
-    }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->reference->file.block.data + offset_within_block
+      it->reference->blocks[ next_block ].data + offset_within_block
     );
     // valid flag
     bool is_valid;
@@ -226,27 +197,11 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
     // cache block size
     uint64_t next_block = pos / cluster_size;
     uint64_t offset_within_block = pos % cluster_size;
-    if (
-      ! it->reference->file.block.data
-      || it->reference->file.block.block != next_block
-    ) {
-      it->reference->file.fpos = pos;
-      // load block
-      result = fat_block_load( &it->reference->file, cluster_size );
-      // validate return
-      if ( EOK != result ) {
-        return result;
-      }
-    }
     // update iterator position
     it->reference->file.fpos = pos;
-    // handle no valid one found ( end reached )
-    if ( ! it->reference->file.block.data ) {
-      return EOK;
-    }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->reference->file.block.data + offset_within_block
+      it->reference->blocks[ next_block ].data + offset_within_block
     );
     // push filename with extension to data
     if ( FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME == entry->attributes ) {
