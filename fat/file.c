@@ -263,27 +263,6 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
       free( dir );
       return result;
     }
-    // reload blocks
-    result = fat_block_unload_directory( dir );
-    if ( EOK != result ) {
-      common_transaction_rollback( fs->bdev );
-      fat_directory_close( dir );
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
-    result = fat_block_load_directory( dir );
-    if ( EOK != result ) {
-      common_transaction_rollback( fs->bdev );
-      fat_directory_close( dir );
-      free( dentry );
-      free( pathdup_base );
-      free( pathdup_dir );
-      free( dir );
-      return result;
-    }
     // try to get entry again
     result = fat_directory_entry_by_name( dir, base );
   }
@@ -1139,35 +1118,35 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
     free( dir_dup_old_path );
     return result;
   }
+  // reload cluster
+  result = fat_block_load_directory( &source, true );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  result = fat_block_load_directory( &target, true );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
   uint64_t cluster = source.entry->first_cluster_lower;
   if ( FAT_FAT32 == fs->type ) {
     cluster |= ( ( uint64_t )source.entry->first_cluster_upper << 16 );
   }
   // insert new entry
   result = fat_directory_dentry_insert( &target, base_new_path, cluster, false );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
-  // reload blocks
-  result = fat_block_unload_directory( &target );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
-  result = fat_block_load_directory( &target );
   if ( EOK != result ) {
     free( dentry );
     fat_directory_close( &target );

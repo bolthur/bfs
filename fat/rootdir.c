@@ -68,7 +68,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   dir->file.fsize = FAT_FAT32 == fs->type
     ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
   // load blocks
-  result = fat_block_load_directory( dir );
+  result = fat_block_load_directory( dir, false );
   if ( EOK != result ) {
     return result;
   }
@@ -182,10 +182,6 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
   uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
   // root dir of fat12 and 16 fixed sized
   if ( FAT_FAT12 == fs->type || FAT_FAT16 == fs->type ) {
-    // FAT12 and FAT16 have fixed offset and root directory size
-    uint64_t rootdir_offset = ( uint64_t )( fs->superblock.reserved_sector_count + (
-      fs->superblock.table_count * fs->superblock.table_size_16
-    ) );
     // calculate root dir size with round up
     uint64_t rootdir_size = (
       fs->superblock.root_entry_count
@@ -197,22 +193,15 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     if ( ! entry ) {
       return ENOMEM;
     }
-    // load root directory block by block
-    uint64_t fpos = 0;
-    uint64_t fsize = rootdir_size * block_size;
-    while ( fpos < fsize ) {
-      // load fat block
-      result = common_blockdev_bytes_read(
-        fs->bdev,
-        ( rootdir_offset + fpos / block_size ) * block_size,
-        ( uint8_t* )entry + fpos,
-        block_size
+    // copy over data
+    uint64_t copy_pos = 0;
+    for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+      memcpy(
+        ( uint8_t* )entry + copy_pos,
+        dir->blocks[ idx ].data,
+        ( size_t )dir->blocks[ idx ].data_size
       );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      fpos += block_size;
+      copy_pos += dir->blocks[ idx ].data_size;
     }
     // loop through root directory and try to find a entry
     fat_structure_directory_entry_t* current = entry;
@@ -253,22 +242,20 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     }
     // copy over changes
     memcpy( start, buffer, ( size_t )size );
-    // write root directory block by block
-    fpos = 0;
-    fsize = rootdir_size * block_size;
-    while ( fpos < fsize ) {
-      // load fat block
-      result = common_blockdev_bytes_write(
-        fs->bdev,
-        ( rootdir_offset + fpos / block_size ) * block_size,
-        ( uint8_t* )entry + fpos,
-        block_size
+    // write back data
+    copy_pos = 0;
+    for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+      memcpy(
+        dir->blocks[ idx ].data,
+        ( uint8_t* )entry + copy_pos,
+        ( size_t )dir->blocks[ idx ].data_size
       );
-      if ( EOK != result ) {
-        free( entry );
-        return result;
-      }
-      fpos += block_size;
+      copy_pos += dir->blocks[ idx ].data_size;
+    }
+    result = fat_block_write_directory( dir );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
     }
     // free entry and return success
     free( entry );
@@ -317,9 +304,6 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     return EINVAL;
   }
   uint64_t block_size = fs->bdev->bdif->block_size;
-  uint64_t rootdir_offset = ( uint64_t )( fs->superblock.reserved_sector_count + (
-    fs->superblock.table_count * fs->superblock.table_size_16
-  ) );
   // calculate root dir size with round up
   uint64_t rootdir_size = (
     fs->superblock.root_entry_count
@@ -336,16 +320,15 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   if ( ! entry ) {
     return ENOMEM;
   }
-  // load whole root directory
-  int result = common_blockdev_bytes_read(
-    fs->bdev,
-    rootdir_offset * block_size,
-    entry,
-    rootdir_size * block_size
-  );
-  if ( EOK != result ) {
-    free( entry );
-    return result;
+  // copy over data
+  uint64_t copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    memcpy(
+      ( uint8_t* )entry + copy_pos,
+      dir->blocks[ idx ].data,
+      ( size_t )dir->blocks[ idx ].data_size
+    );
+    copy_pos += dir->blocks[ idx ].data_size;
   }
   fat_structure_directory_entry_t* start = entry;
   fat_structure_directory_entry_t* current = ( fat_structure_directory_entry_t* )(
@@ -373,18 +356,26 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   // increment due to short entry
   count++;
   // clear out
-  memset(
-    ( uint8_t* )start + pos,
-    0,
-    ( size_t )( count * sizeof( fat_structure_directory_entry_t ) )
-  );
-  // write back whole root directory
-  result = common_blockdev_bytes_write(
-    fs->bdev,
-    rootdir_offset * block_size,
-    entry,
-    rootdir_size * block_size
-  );
+  for ( uint64_t index = 0; index < count; index++ ) {
+    // get entry to delete
+    fat_structure_directory_entry_long_t* current2 =
+      ( fat_structure_directory_entry_long_t* )start;
+    current2 += ( pos / sizeof( fat_structure_directory_entry_long_t ) );
+    current2 += index;
+    // mark as deleted
+    current2->order = FAT_DIRECTORY_ENTRY_ERASED_AVAILABLE;
+  }
+  // write back data
+  copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    memcpy(
+      dir->blocks[ idx ].data,
+      ( uint8_t* )entry + copy_pos,
+      ( size_t )dir->blocks[ idx ].data_size
+    );
+    copy_pos += dir->blocks[ idx ].data_size;
+  }
+  int result = fat_block_write_directory( dir );
   if ( EOK != result ) {
     free( entry );
     return result;

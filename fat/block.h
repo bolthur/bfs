@@ -17,6 +17,7 @@
 
 /** @file fat/block.h */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <fat/type.h>
 
@@ -30,9 +31,10 @@ extern "C" {
 #if defined( _BFS_COMPILING )
   int fat_block_load( fat_file_t* file, uint64_t size );
   int fat_block_unload( fat_file_t* file );
-  int fat_block_load_directory( fat_directory_t* dir );
+  int fat_block_load_directory( fat_directory_t* dir, bool reload );
   int fat_block_unload_directory( fat_directory_t* dir );
   int fat_block_write( fat_file_t* file, uint64_t size );
+  int fat_block_write_directory( fat_directory_t* dir );
 #endif
 
 #ifdef __cplusplus

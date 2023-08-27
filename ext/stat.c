@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <common/mountpoint.h>
+#include <common/blockdev.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <ext/structure.h>
 #include <ext/superblock.h>

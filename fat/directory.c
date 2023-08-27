@@ -22,7 +22,6 @@
 #include <stdint.h>
 #include <strings.h>
 #include <time.h>
-#include <common/blockdev.h>
 #include <common/mountpoint.h>
 #include <common/errno.h>
 #include <common/util.h>
@@ -393,6 +392,29 @@ BFSFAT_EXPORT int fat_directory_move(
     free( dir_dup_old_path );
     return result;
   }
+  // reload cluster
+  result = fat_block_load_directory( &source, true );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
+  result = fat_block_load_directory( &target, true );
+  if ( EOK != result ) {
+    free( dentry );
+    fat_directory_close( &target );
+    fat_directory_close( &source );
+    free( base_dup_new_path );
+    free( dir_dup_new_path );
+    free( base_dup_old_path );
+    free( dir_dup_old_path );
+    return result;
+  }
   uint64_t cluster = source.entry->first_cluster_lower;
   if ( FAT_FAT32 == fs->type ) {
     cluster |= ( ( uint64_t )source.entry->first_cluster_upper << 16 );
@@ -410,29 +432,6 @@ BFSFAT_EXPORT int fat_directory_move(
     return result;
   }
   uint64_t target_cluster = target.file.cluster;
-  // reload blocks
-  result = fat_block_unload_directory( &target );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
-  result = fat_block_load_directory( &target );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
   // get entry by file
   result = fat_directory_entry_by_name( &target, base_new_path );
   if ( EOK != result ) {
@@ -700,26 +699,21 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
 
   // parse sub directories
   p = strtok( p, CONFIG_PATH_SEPARATOR_STRING );
+  bool first = true;
   while ( p != NULL ) {
-    // unload blocks
-    result = fat_block_unload_directory( dir );
-    if ( EOK != result ) {
-      // close current directory
-      fat_directory_close( dir );
-      // free duplicated path
-      free( duppath );
-      // return result
-      return result;
-    }
     // load blocks
-    result = fat_block_load_directory( dir );
-    if ( EOK != result ) {
-      // close current directory
-      fat_directory_close( dir );
-      // free duplicated path
-      free( duppath );
-      // return result
-      return result;
+    if ( first ) {
+      first = !first;
+    } else {
+      result = fat_block_load_directory( dir, true );
+      if ( EOK != result ) {
+        // close current directory
+        fat_directory_close( dir );
+        // free duplicated path
+        free( duppath );
+        // return result
+        return result;
+      }
     }
     // search by name
     result = fat_directory_entry_by_name( dir, p );
@@ -774,14 +768,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
   // set offset to 0
   dir->file.fpos = 0;
   // load blocks
-  result = fat_block_unload_directory( dir );
-  if ( EOK != result ) {
-    // close current directory
-    fat_directory_close( dir );
-    // return result
-    return result;
-  }
-  result = fat_block_load_directory( dir );
+  result = fat_block_load_directory( dir, true );
   if ( EOK != result ) {
     // close current directory
     fat_directory_close( dir );
@@ -1181,30 +1168,20 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   }
   // clear out space
   memset( entry, 0, ( size_t )dir->file.fsize );
+  // copy over data
+  uint64_t copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    memcpy(
+      ( uint8_t* )entry + copy_pos,
+      dir->blocks[ idx ].data,
+      ( size_t )dir->blocks[ idx ].data_size
+    );
+    copy_pos += dir->blocks[ idx ].data_size;
+  }
   // load whole directory
   dir->file.fpos = 0;
   uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
-  /// FIXME: EXTEND DIRECTORY IF NECESSARY
-  while ( dir->file.fpos < dir->file.fsize ) {
-    // load fat block
-    result = fat_block_load( &dir->file, cluster_size );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    if ( ! dir->file.block.data ) {
-      free( entry );
-      return result;
-    }
-    // copy over to buffer
-    memcpy(
-      ( uint8_t* )entry + dir->file.fpos,
-      dir->file.block.data,
-      ( size_t )cluster_size
-    );
-    dir->file.fpos += cluster_size;
-  }
   // loop through root directory and try to find a entry
   fat_structure_directory_entry_t* current = entry;
   fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
@@ -1267,6 +1244,12 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
       entry = tmp_entry_extended;
       // reset start
       start = entry + start_offset;
+      // reload cluster
+      result = fat_block_load_directory( dir, true );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
     }
   }
   // handle not enough space
@@ -1276,30 +1259,20 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   }
   // copy over changes
   memcpy( start, buffer, ( size_t )size );
-  // write block by block
-  uint64_t block_count = dir->file.fsize / cluster_size;
-  uint64_t block_current = 0;
-  for ( uint64_t block_index = 0; block_index < block_count; block_index++ ) {
-    // get block
-    block_current = dir->file.chain[ block_index ];
-    // translate to lba
-    uint64_t lba;
-    result = fat_cluster_to_lba( fs, block_current, &lba );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // write cluster
-    result = common_blockdev_bytes_write(
-      fs->bdev,
-      lba * fs->bdev->bdif->block_size,
-      ( uint8_t* )entry + block_index * cluster_size,
-      cluster_size
+  // write back data
+  copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    memcpy(
+      dir->blocks[ idx ].data,
+      ( uint8_t* )entry + copy_pos,
+      ( size_t )dir->blocks[ idx ].data_size
     );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
+    copy_pos += dir->blocks[ idx ].data_size;
+  }
+  result = fat_block_write_directory( dir );
+  if ( EOK != result ) {
+    free( entry );
+    return result;
   }
   // freeup entry again
   free( entry );
@@ -1552,17 +1525,13 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_update(
   if ( fs->read_only ) {
     return EROFS;
   }
-  // load block data
-  int result = fat_block_load( &dir->file, cluster_size );
-  if ( EOK != result ) {
-    return result;
-  }
-  // calculate offset in block
-  uint64_t offset = dir->file.fpos % cluster_size;
+  // get index and offset
+  uint64_t index = pos / cluster_size;
+  uint64_t offset = pos % cluster_size;
   // overwrite data
-  memcpy( dir->file.block.data + offset, dentry, sizeof( *dentry ) );
+  memcpy( dir->blocks[ index ].data + offset, dentry, sizeof( *dentry ) );
   // write data again
-  return fat_block_write( &dir->file, cluster_size );
+  return fat_block_write_directory( dir );
 }
 
 /**
@@ -1599,38 +1568,15 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   }
   // clear out space
   memset( entry, 0, ( size_t )dir->file.fsize );
-  // reset file position
-  dir->file.fpos = 0;
-  // calculate cluster size
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
-    * fs->superblock.bytes_per_sector;
-  // load whole directory
-  while ( dir->file.fpos < dir->file.fsize ) {
-    // load fat block
-    result = fat_block_load( &dir->file, cluster_size );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // handle no data
-    if ( ! dir->file.block.data ) {
-      free( entry );
-      return result;
-    }
-    // copy over to buffer
+  // copy over data
+  uint64_t copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
     memcpy(
-      ( uint8_t* )entry + dir->file.fpos,
-      dir->file.block.data,
-      ( size_t )cluster_size
+      ( uint8_t* )entry + copy_pos,
+      dir->blocks[ idx ].data,
+      ( size_t )dir->blocks[ idx ].data_size
     );
-    // unload fat block
-    result = fat_block_unload( &dir->file );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // increase position
-    dir->file.fpos += cluster_size;
+    copy_pos += dir->blocks[ idx ].data_size;
   }
   // set start
   fat_structure_directory_entry_t* start = entry;
@@ -1668,41 +1614,20 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
     // mark as deleted
     current2->order = FAT_DIRECTORY_ENTRY_ERASED_AVAILABLE;
   }
-  // reset file position
-  dir->file.fpos = 0;
-  // load whole directory
-  while ( dir->file.fpos < dir->file.fsize ) {
-    // load fat block
-    result = fat_block_load( &dir->file, cluster_size );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // handle no data
-    if ( ! dir->file.block.data ) {
-      free( entry );
-      return result;
-    }
-    // copy over to buffer
+  // write back data
+  copy_pos = 0;
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
     memcpy(
-      dir->file.block.data,
-      ( uint8_t* )entry + dir->file.fpos,
-      ( size_t )cluster_size
+      dir->blocks[ idx ].data,
+      ( uint8_t* )entry + copy_pos,
+      ( size_t )dir->blocks[ idx ].data_size
     );
-    // write back fat block
-    result = fat_block_write( &dir->file, cluster_size );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // unload fat block
-    result = fat_block_unload( &dir->file );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
-    }
-    // increase position
-    dir->file.fpos += cluster_size;
+    copy_pos += dir->blocks[ idx ].data_size;
+  }
+  result = fat_block_write_directory( dir );
+  if ( EOK != result ) {
+    free( entry );
+    return result;
   }
   // freeup entry again
   free( entry );

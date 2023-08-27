@@ -27,6 +27,7 @@
 #include <fat/block.h>
 #include <fat/cluster.h>
 #include <fat/rootdir.h>
+#include <fat/structure.h>
 #include <fat/bfsfat_export.h>
 
 /**
@@ -59,7 +60,7 @@ BFSFAT_NO_EXPORT int fat_block_unload( fat_file_t* file ) {
  * @param dir
  * @return int
  */
-BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
+BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir, bool reload ) {
   if ( ! dir ) {
     return EINVAL;
   }
@@ -69,6 +70,17 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
   int result = fat_cluster_load( fs, &dir->file );
   if ( EOK != result ) {
     return result;
+  }
+  // handle already loaded
+  if ( ! reload && dir->blocks ) {
+    return EOK;
+  }
+  // reload if necessary
+  if ( reload ) {
+    result = fat_block_unload_directory( dir );
+    if ( EOK != result ) {
+      return result;
+    }
   }
 
   // load root directory
@@ -94,21 +106,25 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
         for ( uint64_t j = 0; j < dir->block_count; j++ ) {
           if ( dir->blocks[ j ].data ) {
             free( dir->blocks[ j ].data );
+            dir->blocks[ j ].data = NULL;
           }
         }
         free( dir->blocks );
         dir->blocks = NULL;
         return ENOMEM;
       }
+      // clear out block
+      memset( data, 0, ( size_t )fs->bdev->bdif->block_size );
+      // fill block
       dir->blocks[ i ].data = data;
       dir->blocks[ i ].data_size = fs->bdev->bdif->block_size;
-      // clear out block
-      memset( dir->blocks[ i ].data, 0, ( size_t )fs->bdev->bdif->block_size );
+      dir->blocks[ i ].sector = rootdir_offset + i;
+      dir->blocks[ i ].cluster = 0;
       // read bytes from device
       result = common_blockdev_bytes_read(
         fs->bdev,
-        ( rootdir_offset + i ) * fs->bdev->bdif->block_size,
-        dir->blocks[ i ].data,
+        dir->blocks[ i ].sector * fs->bdev->bdif->block_size,
+        data,
         fs->bdev->bdif->block_size
       );
       // handle error
@@ -116,6 +132,7 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
         for ( uint64_t j = 0; j < dir->block_count; j++ ) {
           if ( dir->blocks[ j ].data ) {
             free( dir->blocks[ j ].data );
+            dir->blocks[ j ].data = NULL;
           }
         }
         free( dir->blocks );
@@ -165,10 +182,20 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir ) {
       // get last index
       uint8_t* data = malloc( ( size_t )dir->file.block.data_size );
       if ( ! data ) {
+        for ( uint64_t j = 0; j <= i; j++ ) {
+          if ( block[ j ].data ) {
+            free( block[ j ].data );
+            block[ j ].data = NULL;
+          }
+        }
+        free( block );
+        dir->blocks = NULL;
         return ENOMEM;
       }
       block[ i ].data = data;
       block[ i ].data_size = dir->file.block.data_size;
+      block[ i ].cluster = dir->file.block.cluster;
+      block[ i ].sector = dir->file.block.sector;
       // copy over data
       memcpy(
         block[ i ].data,
@@ -274,9 +301,10 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     if ( EOK != result ) {
       return result;
     }
-    file->block.sector = ( rootdir_offset + current_block );
+    file->block.sector = rootdir_offset + current_block;
     file->block.cluster = 0;
     file->block.block = current_block;
+    file->block.data_size = block_size;
   } else {
     // allocate buffer if not allocated
     if ( ! file->block.data ) {
@@ -313,6 +341,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     file->block.sector = lba;
     file->block.cluster = cluster;
     file->block.block = current_block;
+    file->block.data_size = size;
   }
   // return success
   return EOK;
@@ -344,4 +373,42 @@ BFSFAT_NO_EXPORT int fat_block_write( fat_file_t* file, uint64_t size ) {
     file->block.data,
     block_size
   );
+}
+
+/**
+ * @brief Write blocks of directory
+ *
+ * @param dir
+ * @return int
+ */
+BFSFAT_NO_EXPORT int fat_block_write_directory( fat_directory_t* dir ) {
+  // validate parameter
+  if ( ! dir || ! dir->blocks ) {
+    return EINVAL;
+  }
+  // get mountpoint and fs instance
+  common_mountpoint_t* mp = dir->file.mp;
+  fat_fs_t* fs = mp->fs;
+  // loop through blocks
+  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    fat_block_t* block = &dir->blocks[ idx ];
+    // determine block size
+    uint64_t block_size = fs->bdev->bdif->block_size;
+    if ( 0 != block->cluster ) {
+      block_size = block->data_size;
+    }
+    // try to write
+    int result = common_blockdev_bytes_write(
+      fs->bdev,
+      block->sector * fs->bdev->bdif->block_size,
+      block->data,
+      block_size
+    );
+    // check for error
+    if ( EOK != result ) {
+      return result;
+    }
+  }
+  // return success
+  return EOK;
 }
