@@ -248,6 +248,16 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   fat_fs_t* fs = file->mp->fs;
   // extract block device
   common_blockdev_t* bdev = fs->bdev;
+  // calculate current block
+  uint64_t block_size = fs->bdev->bdif->block_size;
+  uint64_t current_block = file->fpos / block_size;
+  if ( 0 != file->cluster ) {
+    current_block = file->fpos / size;
+  }
+  // handle block already loaded
+  if ( file->block.data && file->block.block == current_block ) {
+    return EOK;
+  }
   // load chain
   result = fat_cluster_load( fs, file );
   if ( EOK != result ) {
@@ -262,9 +272,6 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   if ( file->fpos > file->fsize ) {
     return EOK;
   }
-  // calculate current block
-  uint64_t block_size = fs->bdev->bdif->block_size;
-  uint64_t current_block = file->fpos / block_size;
   // get next block index
   if ( 0 == file->cluster ) {
     // next root block is root directory offset + sector
@@ -317,8 +324,6 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
       memset( file->block.data, 0, ( size_t )size );
       file->block.data_size = size;
     }
-    // adjust current block
-    current_block = file->fpos / size;
     // get cluster by number
     uint64_t cluster = file->chain[ current_block ];
     // transform data cluster to lba
