@@ -107,6 +107,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
       free( pathdup_base );
       free( pathdup_dir );
       free( duppath );
+      free( open_path );
       return result;
     }
     // fetch access modification and creation time
@@ -119,6 +120,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
       free( pathdup_base );
       free( pathdup_dir );
       free( duppath );
+      free( open_path );
       return result;
     }
     // set mode and size
@@ -131,6 +133,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
     free( pathdup_base );
     free( pathdup_dir );
     free( duppath );
+    free( open_path );
     return result;
   }
   free( open_path );

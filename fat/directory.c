@@ -1449,7 +1449,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
       uint8_t* end = ( uint8_t* )( name + name_length );
       // order index
-      size_t order_index = long_name_length - 2 - index;
+      size_t order_index = long_name_length - 1 - index;
       // set order information
       data[ order_index ].order = ( uint8_t )index + 1;
       // last entry is orred with 0x40
