@@ -35,7 +35,7 @@ include(GenerateExportHeader)
 include(CheckIncludeFile)
 include(CheckCCompilerFlag)
 include(CheckLinkerFlag)
-include(Dart)
+include(CTest)
 # local modules
 include(EnableCompilerFlagIfSupported)
 include(EnableCompilerFlagDebugIfSupported)
