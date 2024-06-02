@@ -56,6 +56,7 @@ option(BFS_BUILD_DOC "Build library documentation" OFF)
 option(BFS_BUILD_WITH_COVERAGE "Build with coverage data" OFF)
 option(BFS_MALLOC_FALLBACK_SIZE "Malloc fallback size" 0)
 option(BFS_USE_TRANSACTION "Use transaction for file operations" 1)
+option(BFS_ENABLE_LOGGING "Enable logging" 0)
 
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
@@ -203,6 +204,12 @@ if(${BFS_USE_TRANSACTION})
   add_definitions(-DCONFIG_USE_TRANSACTION=1)
 else()
   add_definitions(-DCONFIG_USE_TRANSACTION=0)
+endif()
+
+if (${BFS_ENABLE_LOGGING})
+  add_definitions(-DCONFIG_ENABLE_LOGGING=1)
+else()
+  add_definitions(-DCONFIG_ENABLE_LOGGING=0)
 endif()
 
 if (NOT ${HAVE_STDLIB_H} AND ${BFS_MALLOC_FALLBACK_SIZE})
