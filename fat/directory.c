@@ -1590,6 +1590,10 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   uint64_t count = 0;
   // loop backwards until first possible non long name
   while( true ) {
+    // check for beginning reached => we've only one short entry
+    if (start >= current) {
+      break;
+    }
     // decrement current
     current--;
     // increment count if long name

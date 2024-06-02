@@ -337,6 +337,10 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   uint64_t count = 0;
   // loop backwards until first possible long name
   while( true ) {
+    // check for beginning reached => we've only one short entry
+    if (start >= current) {
+      break;
+    }
     // decrement current
     current--;
     // increment count if long name

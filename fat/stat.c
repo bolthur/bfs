@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <libgen.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <common/mountpoint.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <fat/stat.h>
