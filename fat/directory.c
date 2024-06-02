@@ -1444,12 +1444,14 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       free( data );
       return result;
     }
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wanalyzer-out-of-bounds"
     // loop through long name parts and fill them
     for ( size_t index = 0; index < long_name_length - 1; index++ ) {
       uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
       uint8_t* end = ( uint8_t* )( name + name_length );
       // order index
-      size_t order_index = long_name_length - 1 - index;
+      size_t order_index = long_name_length - 2 - index;
       // set order information
       data[ order_index ].order = ( uint8_t )index + 1;
       // last entry is orred with 0x40
@@ -1481,6 +1483,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
         data[ order_index ].final_two_byte[ local_index ] = *base_offsetted;
       }
     }
+    #pragma GCC diagnostic pop
     // set entry data
     entry_data = data;
   }
