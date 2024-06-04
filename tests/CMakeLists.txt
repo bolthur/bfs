@@ -6,10 +6,10 @@ enable_compiler_flag_if_supported("-Wno-missing-prototypes")
 enable_compiler_flag_if_supported("-Wno-unused-variable")
 
 file (GLOB blockdev_file "blockdevice/*")
+file (GLOB ext_file "ext2/*")
 file (GLOB fat12_file "fat12/*")
 file (GLOB fat16_file "fat16/*")
 file (GLOB fat32_file "fat32/*")
-file (GLOB ext_file "ext2/*")
 
 # custom commands for generation of image files
 add_custom_target(
@@ -53,10 +53,10 @@ add_custom_command(
 add_executable(bfs_check
   _helper.cc
   ${blockdev_file}
+  ${ext_file}
   ${fat12_file}
   ${fat16_file}
-  ${fat32_file}
-  ${ext_file} )
+  ${fat32_file} )
 if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsext bfsblockdev bfscommon)
 else()

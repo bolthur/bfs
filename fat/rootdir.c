@@ -24,6 +24,7 @@
 #include <common/blockdev.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <common/mountpoint.h>
+#include <common/log.h>
 #include <fat/rootdir.h>
 #include <fat/directory.h>
 #include <fat/type.h>
@@ -31,7 +32,6 @@
 #include <fat/file.h>
 #include <fat/structure.h>
 #include <fat/block.h>
-#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 
 /**
@@ -55,7 +55,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   uint64_t rootdir_size;
   uint64_t rootdir_offset;
   // query root dir size and
-  fat_log( "Querying root directory offset and size!\r\n" );
+  common_log( "Querying root directory offset and size!\r\n" );
   int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
   if ( EOK != result ) {
     dir->file.mp = NULL;

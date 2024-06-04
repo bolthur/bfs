@@ -22,11 +22,11 @@
 #include <string.h>
 #include <common/blockdev.h>
 #include <common/errno.h>
+#include <common/log.h>
 #include <fat/cluster.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
 #include <fat/type.h>
-#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 
 #define SECTOR_BITS (512 * 8)
@@ -63,7 +63,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
       return result;
     }
     // debug logging
-    fat_log( "cluster = %#"PRIx64", next = %#"PRIx64"\r\n", cluster, next );
+    common_log( "cluster = %#"PRIx64", next = %#"PRIx64"\r\n", cluster, next );
     // allocate / reallocate chain
     uint64_t* tmp = NULL;
     if ( file->chain )
@@ -186,7 +186,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     // clear out buffer
     memset( *buffer, 0, fs->superblock.bytes_per_sector );
     // log output
-    fat_log( "Loading sector %#"PRIx64"\r\n", fat_sector );
+    common_log( "Loading sector %#"PRIx64"\r\n", fat_sector );
     // read sector to memory
     int result = common_blockdev_bytes_read(
       fs->bdev,

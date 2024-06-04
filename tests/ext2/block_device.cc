@@ -85,3 +85,18 @@ TEST( ext2, mount_invalid_block_device ) {
   result = common_blockdev_unregister_device( "ext2" );
   EXPECT_EQ( result, EOK );
 }
+
+TEST( ext2, mount_valid_block_device ) {
+  // mount test image
+  helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
+  // get block device
+  common_blockdev_t* bdev = common_blockdev_get();
+  EXPECT_TRUE( bdev );
+  // get file system
+  ext_fs_t* fs = ( ext_fs_t* )bdev->fs;
+  EXPECT_TRUE( fs );
+  // assert mount count of root blocks
+  EXPECT_EQ( fs->superblock.s_mnt_count, 1 );
+  // unmount test image
+  helper_unmount_ext_test_image( "ext2", "/ext2/" );
+}

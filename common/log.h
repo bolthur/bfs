@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file fat/log.h */
+/** @file common/log.h */
 
-#ifndef _FAT_LOG_H
-#define _FAT_LOG_H
+#ifndef _COMMON_LOG_H
+#define _COMMON_LOG_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,13 +27,13 @@ extern "C" {
 #if defined( _BFS_COMPILING )
 
 #if 1 != CONFIG_ENABLE_LOGGING
-#define fat_log( ... ) {}
+#define common_log( ... ) {}
 #else
 #if defined(__bolthur__)
 #include <sys/bolthur.h>
-#define fat_log EARLY_STARTUP_PRINT
+#define common_log EARLY_STARTUP_PRINT
 #else
-void fat_log( const char* msg, ... );
+void common_log( const char* msg, ... );
 #endif
 #endif
 

@@ -18,11 +18,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <fat/log.h>
-#include <fat/bfsfat_export.h>
+#include <common/log.h>
+#include <common/bfscommon_export.h>
 
 #if ! defined(__bolthur__) && 1 == CONFIG_ENABLE_LOGGING
-BFSFAT_NO_EXPORT __attribute__( ( format( printf, 1, 2 ) ) ) void fat_log( const char* msg, ... ) {
+BFSCOMMON_NO_EXPORT __attribute__( ( format( printf, 1, 2 ) ) ) void common_log( const char* msg, ... ) {
   // va list pointer
   va_list ptr;
   // start arguments

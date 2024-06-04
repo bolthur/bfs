@@ -23,13 +23,13 @@
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <common/mountpoint.h>
+#include <common/log.h>
 #include <fat/type.h>
 #include <fat/fs.h>
 #include <fat/block.h>
 #include <fat/cluster.h>
 #include <fat/rootdir.h>
 #include <fat/structure.h>
-#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 
 /**
@@ -121,7 +121,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
       // clear out block
       memset( file->block.data, 0, ( size_t )block_size );
     }
-    fat_log( "Loading block %#"PRIx64"\r\n", ( rootdir_offset + current_block ) );
+    common_log( "Loading block %#"PRIx64"\r\n", ( rootdir_offset + current_block ) );
     // read bytes from device
     result = common_blockdev_bytes_read(
       bdev,
@@ -157,7 +157,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     if ( EOK != result ) {
       return result;
     }
-    fat_log( "Loading block %#"PRIx64"\r\n", lba );
+    common_log( "Loading block %#"PRIx64"\r\n", lba );
     // read bytes from device
     result = common_blockdev_bytes_read(
       bdev,
