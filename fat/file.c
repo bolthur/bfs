@@ -602,7 +602,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       // clear out
       memset( file->block.data, 0, ( size_t )cluster_size );
       // write back
-      result = fat_block_write( file, cluster_size );
+      result = fat_block_write( file );
       if ( EOK != result ) {
         common_transaction_rollback( fs->bdev );
         return result;
@@ -629,7 +629,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
     // set new space to 0
     memset( file->block.data + file->fsize, 0, ( size_t )( size - file->fsize ) );
     // write back
-    result = fat_block_write( file, cluster_size );
+    result = fat_block_write( file );
     if ( EOK != result ) {
       common_transaction_rollback( fs->bdev );
       return result;
@@ -758,7 +758,7 @@ BFSFAT_EXPORT int fat_file_write(
       ( size_t )copy_size
     );
     // write back block
-    result = fat_block_write( file, cluster_size );
+    result = fat_block_write( file );
     if ( EOK != result ) {
       common_transaction_rollback( fs->bdev );
       file->fpos = fpos;
@@ -1108,29 +1108,6 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   memcpy( dentry, source.entry, sizeof( *dentry ) );
   // remove old entry
   result = fat_directory_dentry_remove( &source, source.entry, source.entry_pos );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
-  // reload cluster
-  result = fat_block_load_directory( &source, true );
-  if ( EOK != result ) {
-    free( dentry );
-    fat_directory_close( &target );
-    fat_directory_close( &source );
-    free( base_dup_new_path );
-    free( dir_dup_new_path );
-    free( base_dup_old_path );
-    free( dir_dup_old_path );
-    return result;
-  }
-  result = fat_block_load_directory( &target, true );
   if ( EOK != result ) {
     free( dentry );
     fat_directory_close( &target );

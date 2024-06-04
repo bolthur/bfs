@@ -90,10 +90,6 @@ typedef struct fat_directory {
   uint64_t entry_size;
   /** @brief Current fat directory data */
   fat_directory_data_t* data;
-  /** @brief list of all directory blocks */
-  fat_block_t* blocks;
-  /** @brief count of loaded blocks */
-  uint64_t block_count;
 } fat_directory_t;
 
 #if defined( _BFS_COMPILING )

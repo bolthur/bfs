@@ -31,10 +31,7 @@ extern "C" {
 #if defined( _BFS_COMPILING )
   int fat_block_load( fat_file_t* file, uint64_t size );
   int fat_block_unload( fat_file_t* file );
-  int fat_block_load_directory( fat_directory_t* dir, bool reload );
-  int fat_block_unload_directory( fat_directory_t* dir );
-  int fat_block_write( fat_file_t* file, uint64_t size );
-  int fat_block_write_directory( fat_directory_t* dir );
+  int fat_block_write( fat_file_t* file );
 #endif
 
 #ifdef __cplusplus

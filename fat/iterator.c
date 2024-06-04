@@ -151,14 +151,20 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_structure_directory_entry_t* entry = NULL;
   // skip all invalid entries
   while ( true ) {
-    // cache block size
-    uint64_t next_block = pos / cluster_size;
+    // calculate offset in block
     uint64_t offset_within_block = pos % cluster_size;
     // update iterator position
     it->reference->file.fpos = pos;
+    // load block
+    result = fat_block_load( &it->reference->file, cluster_size );
+    if ( EOK != result ) {
+      free( it->data );
+      it->data = NULL;
+      return result;
+    }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->reference->blocks[ next_block ].data + offset_within_block
+      it->reference->file.block.data + offset_within_block
     );
     // valid flag
     bool is_valid;
@@ -194,14 +200,20 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_structure_directory_entry_long_t* entry_long = NULL;
   // get correct entry
   while ( true ) {
-    // cache block size
-    uint64_t next_block = pos / cluster_size;
+    // calculate offset in block
     uint64_t offset_within_block = pos % cluster_size;
     // update iterator position
     it->reference->file.fpos = pos;
+    // load block
+    result = fat_block_load( &it->reference->file, cluster_size );
+    if ( EOK != result ) {
+      free( it->data );
+      it->data = NULL;
+      return result;
+    }
     // get directory entry
     entry = ( fat_structure_directory_entry_t* )(
-      it->reference->blocks[ next_block ].data + offset_within_block
+      it->reference->file.block.data + offset_within_block
     );
     // push filename with extension to data
     if ( FAT_DIRECTORY_FILE_ATTRIBUTE_LONG_FILE_NAME == entry->attributes ) {

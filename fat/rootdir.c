@@ -69,12 +69,6 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   dir->file.fpos = 0;
   dir->file.fsize = FAT_FAT32 == fs->type
     ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
-  // load blocks
-  fat_log( "Loading directory blocks!\r\n" );
-  result = fat_block_load_directory( dir, false );
-  if ( EOK != result ) {
-    return result;
-  }
   // return success
   return EOK;
 }
@@ -196,15 +190,25 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     if ( ! entry ) {
       return ENOMEM;
     }
-    // copy over data
+    // reset file position
+    dir->file.fpos = 0;
     uint64_t copy_pos = 0;
-    for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+      // load block
+      result = fat_block_load( &dir->file, block_size );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
+      // copy over
       memcpy(
         ( uint8_t* )entry + copy_pos,
-        dir->blocks[ idx ].data,
-        ( size_t )dir->blocks[ idx ].data_size
+        dir->file.block.data,
+        ( size_t )block_size
       );
-      copy_pos += dir->blocks[ idx ].data_size;
+      // adjust copy pos
+      copy_pos += block_size;
+      dir->file.fpos += block_size;
     }
     // loop through root directory and try to find a entry
     fat_structure_directory_entry_t* current = entry;
@@ -245,20 +249,31 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     }
     // copy over changes
     memcpy( start, buffer, ( size_t )size );
-    // write back data
+    // reset file position
+    dir->file.fpos = 0;
     copy_pos = 0;
-    for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+      // load block
+      result = fat_block_load( &dir->file, block_size );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
+      // copy over
       memcpy(
-        dir->blocks[ idx ].data,
+        dir->file.block.data,
         ( uint8_t* )entry + copy_pos,
-        ( size_t )dir->blocks[ idx ].data_size
+        ( size_t )block_size
       );
-      copy_pos += dir->blocks[ idx ].data_size;
-    }
-    result = fat_block_write_directory( dir );
-    if ( EOK != result ) {
-      free( entry );
-      return result;
+      // write back again
+      result = fat_block_write( &dir->file );
+      if ( EOK != result ) {
+        free( entry );
+        return result;
+      }
+      // adjust copy pos
+      copy_pos += block_size;
+      dir->file.fpos += block_size;
     }
     // free entry and return success
     free( entry );
@@ -323,16 +338,29 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   if ( ! entry ) {
     return ENOMEM;
   }
-  // copy over data
+  // clear out entry
+  memset( entry, 0, ( size_t )( rootdir_size * block_size ) );
+  // reset file position
+  dir->file.fpos = 0;
   uint64_t copy_pos = 0;
-  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+    // load block
+    int result = fat_block_load( &dir->file, block_size );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
+    }
+    // copy over
     memcpy(
       ( uint8_t* )entry + copy_pos,
-      dir->blocks[ idx ].data,
-      ( size_t )dir->blocks[ idx ].data_size
+      dir->file.block.data,
+      ( size_t )block_size
     );
-    copy_pos += dir->blocks[ idx ].data_size;
+    // adjust copy pos
+    copy_pos += block_size;
+    dir->file.fpos += block_size;
   }
+  // set start and current
   fat_structure_directory_entry_t* start = entry;
   fat_structure_directory_entry_t* current = ( fat_structure_directory_entry_t* )(
     ( uint8_t* )entry + pos
@@ -372,20 +400,31 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     // mark as deleted
     current2->order = FAT_DIRECTORY_ENTRY_ERASED_AVAILABLE;
   }
-  // write back data
+  // reset file position
+  dir->file.fpos = 0;
   copy_pos = 0;
-  for ( uint64_t idx = 0; idx < dir->block_count; idx++ ) {
+  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+    // load block
+    int result = fat_block_load( &dir->file, block_size );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
+    }
+    // copy over
     memcpy(
-      dir->blocks[ idx ].data,
+      dir->file.block.data,
       ( uint8_t* )entry + copy_pos,
-      ( size_t )dir->blocks[ idx ].data_size
+      ( size_t )block_size
     );
-    copy_pos += dir->blocks[ idx ].data_size;
-  }
-  int result = fat_block_write_directory( dir );
-  if ( EOK != result ) {
-    free( entry );
-    return result;
+    // write back again
+    result = fat_block_write( &dir->file );
+    if ( EOK != result ) {
+      free( entry );
+      return result;
+    }
+    // adjust copy pos
+    copy_pos += block_size;
+    dir->file.fpos += block_size;
   }
   free( entry );
   return EOK;
