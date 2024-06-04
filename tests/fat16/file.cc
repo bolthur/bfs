@@ -551,11 +551,13 @@ TEST( fat16, file_ftruncate_extend_cluster ) {
   EXPECT_EQ( result, EOK );
   uint64_t cluster_count = 1;
   uint64_t current_cluster = file.cluster;
+  uint64_t previous_sector = 0;
+  uint8_t* buffer = NULL;
   // check cluster chain
   while ( true ) {
     // read cluster
     uint64_t next_cluster;
-    result = fat_cluster_next( fs, current_cluster, &next_cluster );
+    result = fat_cluster_next( fs, current_cluster, &previous_sector, &buffer, &next_cluster );
     EXPECT_EQ( result, EOK );
     // handle end reached
     if ( next_cluster >= end_value ) {
@@ -565,6 +567,9 @@ TEST( fat16, file_ftruncate_extend_cluster ) {
     cluster_count++;
   }
   EXPECT_EQ( cluster_count, new_count );
+  if ( buffer ) {
+    free( buffer );
+  }
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
@@ -619,11 +624,13 @@ TEST( fat16, file_ftruncate_extend_cluster_times_n ) {
     EXPECT_EQ( result, EOK );
     uint64_t cluster_count = 1;
     uint64_t current_cluster = file.cluster;
+    uint64_t previous_sector = 0;
+    uint8_t* buffer = NULL;
     // check cluster chain
     while ( true ) {
       // read cluster
       uint64_t next_cluster;
-      result = fat_cluster_next( fs, current_cluster, &next_cluster );
+      result = fat_cluster_next( fs, current_cluster, &previous_sector, &buffer, &next_cluster );
       EXPECT_EQ( result, EOK );
       // handle end reached
       if ( next_cluster >= end_value ) {
@@ -633,6 +640,9 @@ TEST( fat16, file_ftruncate_extend_cluster_times_n ) {
       cluster_count++;
     }
     EXPECT_EQ( cluster_count, new_count );
+    if ( buffer ) {
+      free( buffer );
+    }
     // close file again
     result = fat_file_close( &file );
     EXPECT_EQ( result, EOK );
@@ -674,11 +684,13 @@ TEST( fat16, file_ftruncate_shrink_cluster ) {
   EXPECT_EQ( result, EOK );
   uint64_t cluster_count = 1;
   uint64_t current_cluster = file.cluster;
+  uint64_t previous_sector = 0;
+  uint8_t* buffer = NULL;
   // check cluster chain
   while ( true ) {
     // read cluster
     uint64_t next_cluster;
-    result = fat_cluster_next( fs, current_cluster, &next_cluster );
+    result = fat_cluster_next( fs, current_cluster, &previous_sector, &buffer, &next_cluster );
     EXPECT_EQ( result, EOK );
     // handle end reached
     if ( next_cluster >= end_value ) {
@@ -688,6 +700,9 @@ TEST( fat16, file_ftruncate_shrink_cluster ) {
     cluster_count++;
   }
   EXPECT_EQ( cluster_count, old_count );
+  if ( buffer ) {
+    free( buffer );
+  }
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );

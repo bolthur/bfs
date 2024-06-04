@@ -35,6 +35,7 @@
 #include <fat/block.h>
 #include <fat/fs.h>
 #include <fat/file.h>
+#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 #include <bfsconfig.h>
 
@@ -681,6 +682,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
     return ENOENT;
   }
   // open root folder
+  fat_log( "Opening root directory\r\n" );
   int result = fat_rootdir_open( mp, dir );
   if ( EOK != result ) {
     return result;

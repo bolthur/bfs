@@ -152,11 +152,6 @@ BFSFAT_NO_EXPORT int fat_block_load_directory( fat_directory_t* dir, bool reload
     dir->block_count = 0;
     // load cluster by cluster
     for ( uint64_t i = 0; i < dir->file.chain_size; i++ ) {
-      // unload first
-      result = fat_block_unload( &dir->file );
-      if ( EOK != result ) {
-        return result;
-      }
       dir->file.fpos = i * cluster_size;
       // load block
       result = fat_block_load( &dir->file, cluster_size );

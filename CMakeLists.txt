@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.25.1)
+cmake_minimum_required(VERSION 3.29.4)
 project(
   bfs
   VERSION 0.1.0
@@ -18,6 +18,14 @@ set(CMAKE_C_STANDARD 17)
 if(${TEST_ACTIVE})
   set(CMAKE_CXX_CPPCHECK "cppcheck")
   set(CMAKE_C_CPPCHECK "cppcheck")
+endif()
+
+# set check level for cppcheck
+if (CMAKE_CXX_CPPCHECK)
+  list(APPEND CMAKE_CXX_CPPCHECK "--check-level=exhaustive")
+endif()
+if (CMAKE_C_CPPCHECK)
+  list(APPEND CMAKE_C_CPPCHECK "--check-level=exhaustive")
 endif()
 
 # necessary when building with windows

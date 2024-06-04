@@ -31,10 +31,11 @@
 #include <fat/file.h>
 #include <fat/structure.h>
 #include <fat/block.h>
+#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 
 /**
- * @brief Method to open root directory
+ * @brief Method to open root directory, shorthand for loading directory blocks
  *
  * @param mp
  * @param dir
@@ -53,7 +54,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   // variables for root dir size
   uint64_t rootdir_size;
   uint64_t rootdir_offset;
-  // query root dir size and offset
+  // query root dir size and
+  fat_log( "Querying root directory offset and size!\r\n" );
   int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
   if ( EOK != result ) {
     dir->file.mp = NULL;
@@ -68,6 +70,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   dir->file.fsize = FAT_FAT32 == fs->type
     ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
   // load blocks
+  fat_log( "Loading directory blocks!\r\n" );
   result = fat_block_load_directory( dir, false );
   if ( EOK != result ) {
     return result;

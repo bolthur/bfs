@@ -28,6 +28,7 @@
 #include <fat/directory.h>
 #include <fat/structure.h>
 #include <fat/type.h>
+#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 #include <bfsconfig.h>
 
@@ -85,6 +86,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
   // open directory
   fat_directory_t dir;
   memset( &dir, 0, sizeof( dir ) );
+  fat_log( "Opening directory %s\r\n", open_path );
   int result = fat_directory_open( &dir, open_path );
   if ( EOK != result ) {
     free( open_path );

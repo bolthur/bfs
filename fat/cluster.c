@@ -18,12 +18,15 @@
 // IWYU pragma: no_include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <inttypes.h>
+#include <string.h>
 #include <common/blockdev.h>
 #include <common/errno.h>
 #include <fat/cluster.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
 #include <fat/type.h>
+#include <fat/log.h>
 #include <fat/bfsfat_export.h>
 
 #define SECTOR_BITS (512 * 8)
@@ -48,15 +51,19 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
   // cache cluster
   uint64_t cluster = file->cluster;
   uint64_t sector_count = 0;
+  uint64_t previous_sector = 0;
+  uint8_t* buffer = NULL;
   while ( true ) {
     // increase sector count
     sector_count++;
     // get next cluster
     uint64_t next;
-    int result = fat_cluster_next( fs, cluster, &next );
+    int result = fat_cluster_next( fs, cluster, &previous_sector, &buffer, &next );
     if ( EOK != result ) {
       return result;
     }
+    // debug logging
+    fat_log( "cluster = %#"PRIx64", next = %#"PRIx64"\r\n", cluster, next );
     // allocate / reallocate chain
     uint64_t* tmp = NULL;
     if ( file->chain )
@@ -93,6 +100,9 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     // overwrite cluster
     cluster = next;
   }
+  if ( buffer ) {
+    free( buffer );
+  }
   // return success
   return EOK;
 }
@@ -126,19 +136,18 @@ BFSFAT_NO_EXPORT int fat_cluster_to_lba(
  *
  * @param fs
  * @param current
+ * @param previous_sector
+ * @param buffer
  * @param next
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_cluster_next(
   fat_fs_t* fs,
   uint64_t current,
+  uint64_t* previous_sector,
+  uint8_t** buffer,
   uint64_t* next
 ) {
-  // allocate buffer
-  uint8_t* buffer = malloc( fs->superblock.bytes_per_sector );
-  if ( ! buffer ) {
-    return ENOMEM;
-  }
   // bunch of variables
   uint64_t fat_sector;
   uint64_t fat_index;
@@ -163,23 +172,39 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
       + fs->first_fat_sector;
     fat_index = ( current * sizeof( uint32_t ) ) % cluster_size;
   } else {
-    free( buffer );
     return ENOTSUP;
   }
-  // read sector to memory
-  int result = common_blockdev_bytes_read(
-    fs->bdev,
-    fat_sector * fs->bdev->bdif->block_size,
-    buffer,
-    fs->superblock.bytes_per_sector
-  );
-  if ( EOK != result ) {
-    free( buffer );
-    return result;
+  if ( *previous_sector != fat_sector || ! *buffer ) {
+    // allocate buffer if necessary
+    if ( ! *buffer ) {
+      // allocate buffer
+      *buffer = malloc( fs->superblock.bytes_per_sector );
+      if ( ! *buffer ) {
+        return ENOMEM;
+      }
+    }
+    // clear out buffer
+    memset( *buffer, 0, fs->superblock.bytes_per_sector );
+    // log output
+    fat_log( "Loading sector %#"PRIx64"\r\n", fat_sector );
+    // read sector to memory
+    int result = common_blockdev_bytes_read(
+      fs->bdev,
+      fat_sector * fs->bdev->bdif->block_size,
+      *buffer,
+      fs->superblock.bytes_per_sector
+    );
+    if ( EOK != result ) {
+      free( *buffer );
+      *buffer = NULL;
+      return result;
+    }
+    // overwrite previous sector
+    *previous_sector = fat_sector;
   }
   if ( FAT_FAT12 == fs->type ) {
     // read fat entry
-    uint16_t value = *( uint16_t* )&buffer[ fat_index ];
+    uint16_t value = *( uint16_t* )&(*buffer)[ fat_index ];
     // adjust value if necessary
     if ( 0 == ( fat_bit_offset & 7 ) ) {
       value = value & 0x0FFF;
@@ -194,7 +219,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     }
   } else if ( FAT_FAT16 == fs->type ) {
     // read fat entry
-    uint16_t value = *( uint16_t* )&buffer[ fat_index ];
+    uint16_t value = *( uint16_t* )&(*buffer)[ fat_index ];
     // push to target
     if ( 0xfff5 < value ) {
       *next = ( uint64_t )value | 0xffff0000;
@@ -203,7 +228,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     }
   } else if ( FAT_FAT32 == fs->type ) {
     // read fat entry
-    uint32_t value = *( uint32_t* )&buffer[ fat_index ];
+    uint32_t value = *( uint32_t* )&(*buffer)[ fat_index ];
     // cap value
     if ( 0xffffff5 < value ) {
       value |= 0xf0000000;
@@ -211,11 +236,9 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     // push to target
     *next = value;
   } else {
-    free( buffer );
     return ENOTSUP;
   }
   // return success
-  free( buffer );
   return EOK;
 }
 
@@ -228,11 +251,13 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
  */
 BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
   uint64_t index;
+  uint64_t previous_sector = 0;
+  uint8_t* buffer = NULL;
   // loop through data sectors and look for a free one
   for ( index = 0; index < fs->data_sectors; index++ ) {
     uint64_t internal_cluster;
     // get next cluster
-    int result = fat_cluster_next( fs, index, &internal_cluster );
+    int result = fat_cluster_next( fs, index, &previous_sector, &buffer, &internal_cluster );
     if ( EOK != result ) {
       return result;
     }
@@ -240,6 +265,9 @@ BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
     if ( FAT_CLUSTER_UNUSED == internal_cluster ) {
       break;
     }
+  }
+  if ( buffer ) {
+    free( buffer );
   }
   // handle no free found
   if ( index >= fs->data_sectors ) {
@@ -377,6 +405,8 @@ BFSFAT_NO_EXPORT int fat_cluster_get_by_num(
   if ( EOK != result ) {
     return result;
   }
+  uint64_t previous_sector = 0;
+  uint8_t* buffer = NULL;
   // walk the chain until index
   uint64_t current = 0;
   for ( uint64_t index = 0; index < num; index++ ) {
@@ -388,17 +418,23 @@ BFSFAT_NO_EXPORT int fat_cluster_get_by_num(
     // variable for next
     uint64_t next;
     // fetch next cluster
-    result = fat_cluster_next( fs, current, &next );
+    result = fat_cluster_next( fs, current, &previous_sector, &buffer, &next );
     // handle error
     if ( EOK != result ) {
       return result;
     }
     // handle chain end reached
     if ( next >= end_value ) {
+      if ( buffer ) {
+        free( buffer );
+      }
       return ENXIO;
     }
     // overwrite current with next
     current = next;
+  }
+  if ( buffer ) {
+    free( buffer );
   }
   // set target
   *target = current;
