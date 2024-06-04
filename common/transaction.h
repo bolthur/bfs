@@ -1,4 +1,4 @@
-// Copyright (C) 2022 - 2023 bolthur project.
+// Copyright (C) 2022 - 2024 bolthur project.
 //
 // This file is part of bolthur/bfs.
 //

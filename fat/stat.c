@@ -1,4 +1,4 @@
-// Copyright (C) 2022 - 2023 bolthur project.
+// Copyright (C) 2022 - 2024 bolthur project.
 //
 // This file is part of bolthur/bfs.
 //
@@ -32,6 +32,12 @@
 #include <fat/bfsfat_export.h>
 #include <bfsconfig.h>
 
+/**
+ * @brief fat stat query
+ * @param path path to query stats for
+ * @param st stat structure to fill
+ * @return int
+ */
 BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
   if ( ! path || ! st ) {
     return EINVAL;
