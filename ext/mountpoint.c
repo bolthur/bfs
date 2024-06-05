@@ -26,6 +26,7 @@
 #include <ext/fs.h>
 #include <ext/mountpoint.h>
 #include <ext/bfsext_export.h>
+#include <ext/superblock.h>
 #include <bfsconfig.h>
 
 /**
@@ -94,8 +95,16 @@ BFSEXT_EXPORT int ext_mountpoint_mount(
   }
   // set fs property of blockdevice
   bdev->fs = fs;
-  // return success
-  return EOK;
+  // increase mount points
+  fs->superblock.s_mnt_count++;
+  // handle check
+  if ( fs->superblock.s_mnt_count >= fs->superblock.s_max_mnt_count ) {
+    /// FIXME: PERFORM FULL CHECK
+    // reset mount count
+    fs->superblock.s_mnt_count = 0;
+  }
+  // return write result
+  return ext_superblock_write( fs, &fs->superblock );
 }
 
 /**

@@ -68,7 +68,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
     ? ( uint32_t )rootdir_offset : 0;
   dir->file.fpos = 0;
   dir->file.fsize = FAT_FAT32 == fs->type
-    ? rootdir_size : rootdir_size * fs->bdev->bdif->block_size;
+    ? rootdir_size : rootdir_size * fs->superblock.bytes_per_sector;
   // return success
   return EOK;
 }
@@ -122,7 +122,6 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
   fat_fs_t* fs = dir->file.mp->fs;
   uint64_t rootdir_offset;
   uint64_t rootdir_size;
-  uint64_t block_size = fs->bdev->bdif->block_size;
   // handle different types
   if ( FAT_FAT12 == fs->type || FAT_FAT16 == fs->type ) {
     // FAT12 and FAT16 have fixed offset and root directory size
@@ -133,8 +132,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
     rootdir_size = (
       fs->superblock.root_entry_count
         * sizeof( fat_structure_directory_entry_t )
-        + ( block_size - 1 )
-    ) / block_size;
+        + ( fs->superblock.bytes_per_sector - 1 )
+    ) / fs->superblock.bytes_per_sector;
   } else if ( FAT_FAT32 == fs->type ) {
     // root dir in fat32 is stored within data section
     dir->file.cluster = fs->superblock.extended.fat32.root_cluster;
@@ -175,7 +174,6 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
   if ( fs->read_only ) {
     return EROFS;
   }
-  uint64_t block_size = fs->bdev->bdif->block_size;
   uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
   // root dir of fat12 and 16 fixed sized
   if ( FAT_FAT12 == fs->type || FAT_FAT16 == fs->type ) {
@@ -183,19 +181,19 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     uint64_t rootdir_size = (
       fs->superblock.root_entry_count
         * sizeof( fat_structure_directory_entry_t )
-        + ( block_size - 1 )
-    ) / block_size;
+        + ( fs->superblock.bytes_per_sector - 1 )
+    ) / fs->superblock.bytes_per_sector;
     fat_structure_directory_entry_t* entry = malloc(
-      ( size_t )( rootdir_size * block_size ) );
+      ( size_t )( rootdir_size * fs->superblock.bytes_per_sector ) );
     if ( ! entry ) {
       return ENOMEM;
     }
     // reset file position
     dir->file.fpos = 0;
     uint64_t copy_pos = 0;
-    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += fs->superblock.bytes_per_sector ) {
       // load block
-      result = fat_block_load( &dir->file, block_size );
+      result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
       if ( EOK != result ) {
         free( entry );
         return result;
@@ -204,16 +202,16 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
       memcpy(
         ( uint8_t* )entry + copy_pos,
         dir->file.block.data,
-        ( size_t )block_size
+        ( size_t )fs->superblock.bytes_per_sector
       );
       // adjust copy pos
-      copy_pos += block_size;
-      dir->file.fpos += block_size;
+      copy_pos += fs->superblock.bytes_per_sector;
+      dir->file.fpos += fs->superblock.bytes_per_sector;
     }
     // loop through root directory and try to find a entry
     fat_structure_directory_entry_t* current = entry;
     fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
-      ( uint8_t* )entry + rootdir_size * block_size
+      ( uint8_t* )entry + rootdir_size * fs->superblock.bytes_per_sector
     );
     fat_structure_directory_entry_t* start = NULL;
     uint64_t found_size = 0;
@@ -252,9 +250,9 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     // reset file position
     dir->file.fpos = 0;
     copy_pos = 0;
-    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+    for ( uint64_t idx = 0; idx < dir->file.fsize; idx += fs->superblock.bytes_per_sector ) {
       // load block
-      result = fat_block_load( &dir->file, block_size );
+      result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
       if ( EOK != result ) {
         free( entry );
         return result;
@@ -263,7 +261,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
       memcpy(
         dir->file.block.data,
         ( uint8_t* )entry + copy_pos,
-        ( size_t )block_size
+        ( size_t )fs->superblock.bytes_per_sector
       );
       // write back again
       result = fat_block_write( &dir->file );
@@ -272,8 +270,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
         return result;
       }
       // adjust copy pos
-      copy_pos += block_size;
-      dir->file.fpos += block_size;
+      copy_pos += fs->superblock.bytes_per_sector;
+      dir->file.fpos += fs->superblock.bytes_per_sector;
     }
     // free entry and return success
     free( entry );
@@ -343,9 +341,9 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   // reset file position
   dir->file.fpos = 0;
   uint64_t copy_pos = 0;
-  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += fs->superblock.bytes_per_sector ) {
     // load block
-    int result = fat_block_load( &dir->file, block_size );
+    int result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
     if ( EOK != result ) {
       free( entry );
       return result;
@@ -354,11 +352,11 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     memcpy(
       ( uint8_t* )entry + copy_pos,
       dir->file.block.data,
-      ( size_t )block_size
+      ( size_t )fs->superblock.bytes_per_sector
     );
     // adjust copy pos
-    copy_pos += block_size;
-    dir->file.fpos += block_size;
+    copy_pos += fs->superblock.bytes_per_sector;
+    dir->file.fpos += fs->superblock.bytes_per_sector;
   }
   // set start and current
   fat_structure_directory_entry_t* start = entry;
@@ -403,9 +401,9 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   // reset file position
   dir->file.fpos = 0;
   copy_pos = 0;
-  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += block_size ) {
+  for ( uint64_t idx = 0; idx < dir->file.fsize; idx += fs->superblock.bytes_per_sector ) {
     // load block
-    int result = fat_block_load( &dir->file, block_size );
+    int result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
     if ( EOK != result ) {
       free( entry );
       return result;
@@ -414,7 +412,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     memcpy(
       dir->file.block.data,
       ( uint8_t* )entry + copy_pos,
-      ( size_t )block_size
+      ( size_t )fs->superblock.bytes_per_sector
     );
     // write back again
     result = fat_block_write( &dir->file );
@@ -423,8 +421,8 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
       return result;
     }
     // adjust copy pos
-    copy_pos += block_size;
-    dir->file.fpos += block_size;
+    copy_pos += fs->superblock.bytes_per_sector;
+    dir->file.fpos += fs->superblock.bytes_per_sector;
   }
   free( entry );
   return EOK;

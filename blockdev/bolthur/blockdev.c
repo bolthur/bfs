@@ -155,7 +155,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   }
   // calculate size and offset
   size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
-  off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
+  off_t offset = ( off_t )( blk_id * bdev->bdif->block_size );
   // read from device
   ssize_t result = pwrite( blockdev_get_handle( bdev ), buf, size, offset );
   // handle error

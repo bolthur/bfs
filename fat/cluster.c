@@ -190,7 +190,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     // read sector to memory
     int result = common_blockdev_bytes_read(
       fs->bdev,
-      fat_sector * fs->bdev->bdif->block_size,
+      fat_sector * fs->superblock.bytes_per_sector,
       *buffer,
       fs->superblock.bytes_per_sector
     );
@@ -327,9 +327,9 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
   // read sector to memory
   int result = common_blockdev_bytes_read(
     fs->bdev,
-    fat_sector * fs->bdev->bdif->block_size,
+    fat_sector * fs->superblock.bytes_per_sector,
     buffer,
-    fs->bdev->bdif->block_size
+    fs->superblock.bytes_per_sector
   );
   if ( EOK != result ) {
     free( buffer );
@@ -362,9 +362,9 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
   // write sector to memory
   result = common_blockdev_bytes_write(
     fs->bdev,
-    fat_sector * fs->bdev->bdif->block_size,
+    fat_sector * fs->superblock.bytes_per_sector,
     buffer,
-    fs->bdev->bdif->block_size
+    fs->superblock.bytes_per_sector
   );
   // handle error
   if ( EOK != result ) {

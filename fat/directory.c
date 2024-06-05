@@ -1231,7 +1231,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     memcpy(
       dir->file.block.data,
       ( uint8_t* )entry + copy_pos,
-      ( size_t )dir->file.block.data_size
+      ( size_t )cluster_size
     );
     // write block
     result = fat_block_write( &dir->file );

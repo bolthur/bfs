@@ -75,8 +75,19 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   // calculate current block
   uint64_t block_size = fs->bdev->bdif->block_size;
   uint64_t current_block = file->fpos / block_size;
-  if ( 0 != file->cluster ) {
-    current_block = file->fpos / size;
+  // cap by size if size is smaller
+  if ( size < block_size ) {
+    block_size = size;
+    current_block = file->fpos / block_size;
+  }
+  // adjust current block for root cluster
+  if (
+    0 == file->cluster
+    && block_size != fs->superblock.bytes_per_sector
+    && current_block > 0
+  ) {
+    // calculate correct current block for root dir
+    current_block = current_block * block_size / fs->superblock.bytes_per_sector;
   }
   // handle block already loaded
   if ( file->block.data && file->block.block == current_block ) {
@@ -125,7 +136,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     // read bytes from device
     result = common_blockdev_bytes_read(
       bdev,
-      ( rootdir_offset + current_block ) * block_size,
+      ( rootdir_offset + current_block ) * fs->superblock.bytes_per_sector,
       file->block.data,
       block_size
     );
@@ -161,9 +172,9 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     // read bytes from device
     result = common_blockdev_bytes_read(
       bdev,
-      lba * block_size,
+      lba * fs->superblock.bytes_per_sector,
       file->block.data,
-      size
+      block_size
     );
     // handle error
     if ( EOK != result ) {
@@ -172,7 +183,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     file->block.sector = lba;
     file->block.cluster = cluster;
     file->block.block = current_block;
-    file->block.data_size = size;
+    file->block.data_size = block_size;
   }
   // return success
   return EOK;
@@ -196,7 +207,7 @@ BFSFAT_NO_EXPORT int fat_block_write( fat_file_t* file ) {
   // write cluster
   return common_blockdev_bytes_write(
     fs->bdev,
-    lba * fs->bdev->bdif->block_size,
+    lba * fs->superblock.bytes_per_sector,
     file->block.data,
     block_size
   );

@@ -41,6 +41,8 @@ extern "C" {
   int ext_superblock_start( ext_fs_t* fs, uint64_t* value );
   int ext_superblock_inode_size( ext_fs_t* fs, uint64_t* value );
   int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* value );
+
+  void ext_superblock_dump( ext_structure_superblock_t* sb );
 #endif
 
 #ifdef __cplusplus

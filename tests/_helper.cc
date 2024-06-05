@@ -86,6 +86,8 @@ void helper_unmount_fat_test_image( const char* device, const char* path ) {
   EXPECT_EQ( result, EOK );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
+  // free resized block buffer
+  free( bdev->bdif->block_buffer );
   // unregister device
   result = common_blockdev_unregister_device( device );
   EXPECT_EQ( result, EOK );
@@ -139,6 +141,8 @@ void helper_unmount_ext_test_image( const char* device, const char* path ) {
   EXPECT_EQ( result, EOK );
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
+  // free resized non static buffer
+  free( bdev->bdif->block_buffer );
   // unregister device
   result = common_blockdev_unregister_device( device );
   EXPECT_EQ( result, EOK );

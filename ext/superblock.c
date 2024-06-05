@@ -20,8 +20,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <common/blockdev.h>
 #include <common/errno.h> // IWYU pragma: keep
+#include <common/log.h>
 #include <ext/blockgroup.h>
 #include <ext/superblock.h>
 #include <ext/fs.h>
@@ -39,12 +41,21 @@ BFSEXT_NO_EXPORT int ext_superblock_read(
   ext_fs_t* fs,
   ext_structure_superblock_t* superblock
 ) {
-  return common_blockdev_bytes_read(
+  // read bytes
+  int result = common_blockdev_bytes_read(
     fs->bdev,
     1024,
     superblock,
     sizeof( ext_structure_superblock_t )
   );
+  // handle error
+  if ( EOK != result ) {
+    return result;
+  }
+  // debug dump superblock
+  ext_superblock_dump( superblock );
+  // return success
+  return EOK;
 }
 
 /**
@@ -61,18 +72,21 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
   if ( ! fs || ! superblock ) {
     return EINVAL;
   }
+  common_log( "Fetching group count!\r\n" );
   // get group count
   uint64_t group_count;
   int result = ext_superblock_blockgroup_count( fs, &group_count );
   if ( EOK != result ) {
     return result;
   }
+  common_log( "Fetching block size!\r\n" );
   // get block size
   uint64_t block_size;
   result = ext_superblock_block_size( fs, &block_size );
   if ( EOK != result ) {
     return result;
   }
+  common_log( "Fetching allocate buffer with size of %#"PRIx64"!\r\n", block_size );
   // allocate buffer
   uint8_t* buffer = malloc( ( size_t )block_size );
   if ( ! buffer ) {
@@ -80,6 +94,7 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
   }
   // loop through groups
   for ( uint64_t idx = 0; idx < group_count; idx++ ) {
+    common_log( "Checking whether %"PRIu64" has a super block!\r\n", idx );
     // check for block group
     bool has_superblock;
     result = ext_blockgroup_has_superblock( fs, idx, &has_superblock );
@@ -95,24 +110,28 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
     uint64_t start = 0 == idx
       ? 1024
       : ( fs->superblock.s_first_data_block + idx * fs->superblock.s_blocks_per_group ) * block_size;
+    common_log( "Determined following start for write: %#"PRIx64"\r\n", start );
+    common_log( "fs->superblock.s_first_data_block = %#"PRIx32"\r\n", fs->superblock.s_first_data_block );
+    common_log( "idx * fs->superblock.s_blocks_per_group = %#"PRIx64"\r\n", idx * fs->superblock.s_blocks_per_group );
     // read block
     result = common_blockdev_bytes_read( fs->bdev, start, buffer, block_size );
     if ( EOK != result ) {
       free( buffer );
       return result;
     }
+    common_log( "idx = %"PRIu64", block_size = %"PRIu64", sizeof( *superblock ) = %d\r\n", idx, block_size, sizeof( *superblock ) );
     // update superblock
-    if ( 0 == idx && 1024 < block_size ) {
-      memcpy( buffer + 1024, superblock, sizeof( *superblock ) );
-    } else {
-      memcpy( buffer, superblock, sizeof( *superblock ) );
-    }
+    ext_superblock_dump( ( ext_structure_superblock_t* )buffer );
+    memcpy( buffer, superblock, sizeof( *superblock ) );
+    ext_superblock_dump( ( ext_structure_superblock_t* )buffer );
+    common_log( "Writing back buffer start!\r\n" );
     // write back
     result = common_blockdev_bytes_write( fs->bdev, start, buffer, block_size );
     if ( EOK != result ) {
       free( buffer );
       return result;
     }
+    common_log( "Writing back buffer end!\r\n" );
   }
   // free buffer
   free( buffer );
@@ -324,4 +343,28 @@ BFSEXT_NO_EXPORT int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* va
   *value = ( sb->s_blocks_count - sb->s_first_data_block + ( sb->s_blocks_per_group - 1 ) ) /
     sb->s_blocks_per_group;
   return EOK;
+}
+
+/**
+ * @brief Debug method to dump superblock
+ *
+ * @param sb superblock to dump
+ */
+BFSEXT_NO_EXPORT void ext_superblock_dump( ext_structure_superblock_t* sb ) {
+  ( void )sb;
+  common_log("sb->s_inodes_count = %"PRId32"\r\n", sb->s_inodes_count );
+  common_log("sb->s_blocks_count = %"PRId32"\r\n", sb->s_blocks_count );
+  common_log("sb->s_free_blocks_count = %"PRId32"\r\n", sb->s_free_blocks_count );
+  common_log("sb->s_free_inodes_count = %"PRId32"\r\n", sb->s_free_inodes_count );
+  common_log("sb->s_first_data_block = %"PRId32"\r\n", sb->s_first_data_block );
+  common_log("sb->s_log_block_size = %"PRId32"\r\n", sb->s_log_block_size );
+  common_log("sb->s_blocks_per_group = %"PRId32"\r\n", sb->s_blocks_per_group );
+  common_log("sb->s_inodes_per_group = %"PRId32"\r\n", sb->s_inodes_per_group );
+  common_log("sb->s_magic = %"PRId16"\r\n", sb->s_magic );
+  common_log("sb->s_rev_level = %"PRId32"\r\n", sb->s_rev_level );
+  common_log("sb->s_inode_size = %"PRId16"\r\n", sb->s_inode_size );
+  common_log("sb->s_feature_compat = %"PRId32"\r\n", sb->s_feature_compat );
+  common_log("sb->s_feature_incompat = %"PRId32"\r\n", sb->s_feature_incompat );
+  common_log("sb->s_feature_ro_compat = %"PRId32"\r\n", sb->s_feature_ro_compat );
+  common_log("sb->s_mnt_count = %"PRId16"\r\n", sb->s_mnt_count );
 }

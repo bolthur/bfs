@@ -18,6 +18,7 @@
 // IWYU pragma: no_include <errno.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <blockdev/bfsblockdev_export.h>
@@ -185,8 +186,15 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
  * @private
  */
 int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
-  ( void )bdev;
-  ( void )block_size;
+  // allocate new buffer
+  uint8_t* block_buffer = malloc( sizeof( char ) * ( size_t )block_size );
+  if ( ! block_buffer ) {
+    return ENOMEM;
+  }
+  // overwrite block size and buffer
+  bdev->bdif->block_size = block_size;
+  bdev->bdif->block_buffer = block_buffer;
+  // return success
   return EOK;
 }
 

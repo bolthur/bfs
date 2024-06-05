@@ -63,14 +63,15 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
       partitionSubtract = blockSizeImage
     of "fat32":
       useMtools = true
-      imageMegaSize = 64
-      command = "mkfs.vfat -F32 " & partitionImage & " --mbr=yes"
+      let clusterSize: int = 2
+      imageMegaSize = ( 64 * clusterSize ).toFloat
+      command = "mkfs.vfat -s " & intToStr( clusterSize ) & " -F32 " & partitionImage & " --mbr=yes"
       partitionType = "0c"
       partitionSubtract = blockSizeImage
     of "ext2":
       useMtools = false
-      imageMegaSize = 32
-      command = "mke2fs -t ext2 -d " & joinPath( contentFolder, "test" ) & " -r 1 -N 0 -m 5 " & partitionImage & " " & intToStr( imageMegaSize.toInt ) & "M"
+      imageMegaSize = 768
+      command = "mke2fs -b 4096 -t ext2 -d " & joinPath( contentFolder, "test" ) & " -r 1 -N 0 -m 5 " & partitionImage & " " & intToStr( imageMegaSize.toInt ) & "M"
     else:
       echo "Unsupported image type passed"
       quit( 1 )

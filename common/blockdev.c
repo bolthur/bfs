@@ -21,12 +21,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <thirdparty/queue.h>
 #include <common/errno.h>
 #include <common/blockdev.h>
 #include <common/bfscommon_export.h>
 #include <common/constant.h>
 #include <common/transaction.h>
+#include <common/log.h>
 
 static LIST_HEAD( common_blockdev_list, common_blockdev_entry ) device_list;
 
@@ -249,14 +251,18 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   uint64_t block_index = ( off + bdev->part_offset ) / bdev->bdif->block_size;
   uint8_t* buffer = buf;
   int result;
+  common_log( "off + bdev->part_offset = %#"PRIx64"\r\n", off + bdev->part_offset );
   // check whether start is misaligned block
   uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
+    common_log( "unaligned write, unaligned = %#"PRIx64"\r\n", unaligned );
     // determine read length
     size_t wlen = ( size_t )len;
+    common_log( "writing %#zx bytes\r\n", wlen );
     if ( len > bdev->bdif->block_size - unaligned ) {
       wlen = ( size_t )( bdev->bdif->block_size - unaligned );
     }
+    common_log( "writing %#zx bytes\r\n", wlen );
     // read whole block index
     result = common_blockdev_if_bytes_read(
       bdev, bdev->bdif->block_buffer, block_index, 1
@@ -278,9 +284,11 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
     len -= wlen;
     block_index++;
   }
+  common_log( "remaining %#"PRIx64" bytes\r\n", len );
   // continue with aligned data
   uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
+    common_log( "normal write, blen = %#"PRIx64"\r\n", blen );
     // read block index
     result = common_blockdev_if_bytes_write(
       bdev, buffer, block_index, blen
@@ -296,6 +304,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   }
   // remaining data
   if ( len ) {
+    common_log( "rest write, len = %#"PRIx64"\r\n", len );
     // read remaining block
     result = common_blockdev_if_bytes_read(
       bdev, bdev->bdif->block_buffer, block_index, 1
@@ -351,11 +360,13 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   // check whether start is misaligned block
   uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
+    common_log( "unaligned read, unaligned = %#"PRIx64"\r\n", unaligned );
     // determine read length
     size_t rlen = ( size_t )len;
     if ( len > bdev->bdif->block_size - unaligned ) {
       rlen = ( size_t )( bdev->bdif->block_size - unaligned );
     }
+    common_log( "reading %#zx bytes\r\n", rlen );
     // read whole block index
     result = common_blockdev_if_bytes_read(
       bdev, bdev->bdif->block_buffer, block_index, 1
@@ -373,6 +384,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   // continue with aligned data
   uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
+    common_log( "normal read, blen = %#"PRIx64"\r\n", blen );
     // read block index
     result = common_blockdev_if_bytes_read(
       bdev, buffer, block_index, blen
@@ -388,6 +400,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   }
   // remaining data
   if ( len ) {
+    common_log( "rest read, len = %#"PRIx64"\r\n", len );
     // read remaining block
     result = common_blockdev_if_bytes_read(
       bdev, bdev->bdif->block_buffer, block_index, 1
@@ -559,7 +572,7 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   // just write it
   common_blockdev_if_lock( bdev );
   result = bdev->bdif->write( bdev, buf, block_id, block_count );
-  bdev->bdif->read_counter++;
+  bdev->bdif->write_counter++;
   common_blockdev_if_unlock( bdev );
   return result;
 }

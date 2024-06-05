@@ -107,10 +107,6 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   // cache block size
   uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
-  // different cluster size for root directory for non fat32
-  if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
-    cluster_size = fs->superblock.bytes_per_sector;
-  }
   // update iterator position
   it->reference->file.fpos = pos;
   // return result of iterator set
@@ -134,11 +130,6 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   }
   uint64_t pos = it->reference->file.fpos;
   int result;
-  // different cluster size for root directory for non fat32
-  fat_fs_t* fs = it->reference->file.mp->fs;
-  if ( it->reference->file.cluster == 0 && FAT_FAT32 != fs->type ) {
-    cluster_size = fs->superblock.bytes_per_sector;
-  }
   // allocate and fill data stuff
   if ( ! it->data ) {
     it->data = malloc( sizeof( fat_directory_data_t ) );
