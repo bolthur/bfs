@@ -43,7 +43,7 @@ TEST( ext2, transaction_nested_commit ) {
   ext_fs_t* fs = ( ext_fs_t* )mp->fs;
   EXPECT_TRUE( fs );
   // start transaction
-  /*int result = common_transaction_begin( fs->bdev );
+  int result = common_transaction_begin( fs->bdev );
   EXPECT_EQ( result, EOK );
   // fetch transaction
   common_transaction_t* t = transaction_get( fs->bdev );
@@ -68,7 +68,7 @@ TEST( ext2, transaction_nested_commit ) {
   EXPECT_EQ( result, EOK );
   // fetch transaction again
   t = transaction_get( fs->bdev );
-  EXPECT_FALSE( t );*/
+  EXPECT_FALSE( t );
   // unmount test image again
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
@@ -82,7 +82,7 @@ TEST( ext2, transaction_nested_rollback ) {
   ext_fs_t* fs = ( ext_fs_t* )mp->fs;
   EXPECT_TRUE( fs );
   // start transaction
-  /*int result = common_transaction_begin( fs->bdev );
+  int result = common_transaction_begin( fs->bdev );
   EXPECT_EQ( result, EOK );
   // fetch transaction
   common_transaction_t* t = transaction_get( fs->bdev );
@@ -100,7 +100,7 @@ TEST( ext2, transaction_nested_rollback ) {
   EXPECT_EQ( result, EOK );
   // fetch transaction again
   t = transaction_get( fs->bdev );
-  EXPECT_FALSE( t );*/
+  EXPECT_FALSE( t );
   // unmount test image again
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }

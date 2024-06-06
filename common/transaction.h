@@ -28,6 +28,10 @@
 #ifndef _COMMON_TRANSACTION_H
 #define _COMMON_TRANSACTION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined( _BFS_COMPILING )
   #define TRANSACTION_DEFINE_TREE( name, type, field, cmp, attr ) \
     SPLAY_HEAD( name, type ); \
@@ -128,5 +132,9 @@
 int common_transaction_begin( common_blockdev_t* bdev );
 int common_transaction_commit( common_blockdev_t* bdev );
 int common_transaction_rollback( common_blockdev_t* bdev );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

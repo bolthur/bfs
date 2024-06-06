@@ -44,7 +44,7 @@ TEST( fat32, transaction_nested_commit ) {
   fat_fs_t* fs = ( fat_fs_t* )mp->fs;
   EXPECT_TRUE( fs );
   // start transaction
-  /*int result = common_transaction_begin( fs->bdev );
+  int result = common_transaction_begin( fs->bdev );
   EXPECT_EQ( result, EOK );
   // fetch transaction
   common_transaction_t* t = transaction_get( fs->bdev );
@@ -69,7 +69,7 @@ TEST( fat32, transaction_nested_commit ) {
   EXPECT_EQ( result, EOK );
   // fetch transaction again
   t = transaction_get( fs->bdev );
-  EXPECT_FALSE( t );*/
+  EXPECT_FALSE( t );
   // unmount test image again
   helper_unmount_fat_test_image( "fat32", "/fat32/" );
 }
@@ -83,7 +83,7 @@ TEST( fat32, transaction_nested_rollback ) {
   fat_fs_t* fs = ( fat_fs_t* )mp->fs;
   EXPECT_TRUE( fs );
   // start transaction
-  /*int result = common_transaction_begin( fs->bdev );
+  int result = common_transaction_begin( fs->bdev );
   EXPECT_EQ( result, EOK );
   // fetch transaction
   common_transaction_t* t = transaction_get( fs->bdev );
@@ -101,7 +101,7 @@ TEST( fat32, transaction_nested_rollback ) {
   EXPECT_EQ( result, EOK );
   // fetch transaction again
   t = transaction_get( fs->bdev );
-  EXPECT_FALSE( t );*/
+  EXPECT_FALSE( t );
   // unmount test image again
   helper_unmount_fat_test_image( "fat32", "/fat32/" );
 }
