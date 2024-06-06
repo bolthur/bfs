@@ -27,7 +27,7 @@
 #include <bfsconfig.h>
 
 // define tree
-PARTITION_TREE_DEFINE(
+TRANSACTION_DEFINE_TREE(
   transaction_tree,
   common_transaction,
   node,
@@ -98,12 +98,15 @@ BFSCOMMON_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
   if ( ! bdev ) {
     return EINVAL;
   }
+  // check for existing
+  common_transaction_t* current = transaction_get( bdev );
   // handle already ongoing
-  if ( transaction_get( bdev ) ) {
-    return EALREADY;
+  if ( current ) {
+    current->counter++;
+    return EOK;
   }
   // allocate current transaction
-  common_transaction_t* current = malloc( sizeof( *current ) );
+  current = malloc( sizeof( *current ) );
   if ( ! current ) {
     return ENOMEM;
   }
@@ -114,6 +117,7 @@ BFSCOMMON_EXPORT int common_transaction_begin( common_blockdev_t* bdev ) {
   // push write entry
   current->write_entry = common_transaction_write;
   current->bdev = bdev;
+  current->counter = 1;
   // insert into tree
   if ( common_transaction_tree_insert( &management_tree, current ) ) {
     free( current );
@@ -142,6 +146,12 @@ BFSCOMMON_EXPORT int common_transaction_commit( common_blockdev_t* bdev ) {
   // handle no transaction ongoing
   if ( ! t ) {
     return EINVAL;
+  }
+  // decrement counter
+  t->counter--;
+  // handle nested
+  if ( t->counter != 0 ) {
+    return EOK;
   }
   common_transaction_entry_t* e;
   // loop through list and write

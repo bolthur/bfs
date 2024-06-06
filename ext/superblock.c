@@ -350,8 +350,7 @@ BFSEXT_NO_EXPORT int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* va
  *
  * @param sb superblock to dump
  */
-BFSEXT_NO_EXPORT void ext_superblock_dump( ext_structure_superblock_t* sb ) {
-  ( void )sb;
+BFSEXT_NO_EXPORT void ext_superblock_dump( [[maybe_unused]] ext_structure_superblock_t* sb ) {
   common_log("sb->s_inodes_count = %"PRId32"\r\n", sb->s_inodes_count );
   common_log("sb->s_blocks_count = %"PRId32"\r\n", sb->s_blocks_count );
   common_log("sb->s_free_blocks_count = %"PRId32"\r\n", sb->s_free_blocks_count );

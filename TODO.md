@@ -37,7 +37,7 @@
 - [x] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions
 - [ ] ~~Optimizations~~
-  - [ ] ~~Cache open directory data blocks in memory for faster reading~~
+  - [ ] ~~Introduce some sort of read/write cache instead of transactions caching blocks until drain / flush~~
 - [ ] Cleanup
   - [ ] Check written code and simplify it once everything works
   - [ ] Check code and deduplicate similar code like file move or folder move

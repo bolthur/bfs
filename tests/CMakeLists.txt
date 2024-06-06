@@ -57,6 +57,11 @@ add_executable(bfs_check
   ${fat12_file}
   ${fat16_file}
   ${fat32_file} )
+set_target_properties(bfs_check
+  PROPERTIES
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED 23
+)
 if(${BFS_BUILD_WITH_COVERAGE} AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
   target_link_libraries(bfs_check GTest::gtest_main gcov bfsfat bfsext bfsblockdev bfscommon)
 else()

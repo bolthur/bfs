@@ -29,7 +29,7 @@
 #define _COMMON_TRANSACTION_H
 
 #if defined( _BFS_COMPILING )
-  #define PARTITION_TREE_DEFINE( name, type, field, cmp, attr ) \
+  #define TRANSACTION_DEFINE_TREE( name, type, field, cmp, attr ) \
     SPLAY_HEAD( name, type ); \
     SPLAY_PROTOTYPE( name, type, field, cmp ) \
     SPLAY_GENERATE( name, type, field, cmp ) \
@@ -58,20 +58,20 @@
       return SPLAY_NEXT( name, t, e ); \
     } \
     attr void type##_tree_apply( struct name* t, void( *cb )( struct type* ) ) { \
-      partition_tree_each( t, type, e, cb( e ) ); \
+      transaction_tree_each( t, type, e, cb( e ) ); \
     } \
     attr void type##_tree_destroy( struct name* t, void( *free_cb )( struct type* ) ) { \
-      partition_tree_each_safe( t, type, e, free_cb( type##_tree_remove( t, e ) ) ); \
+      transaction_tree_each_safe( t, type, e, free_cb( type##_tree_remove( t, e ) ) ); \
     }
 
-  #define partition_tree_each( t, type, e, block ) { \
+  #define transaction_tree_each( t, type, e, block ) { \
       struct type* e; \
       for ( e = type##_tree_min( t ); e; e = type##_tree_next( t, e ) ) { \
         block; \
       }\
     }
 
-  #define partition_tree_each_safe( t, type, e, block ) { \
+  #define transaction_tree_each_safe( t, type, e, block ) { \
       struct type* e; \
       struct type* __tmp; \
       for ( \
@@ -102,6 +102,8 @@
   typedef struct common_transaction {
     /** @brief Construct a new list head object */
     LIST_HEAD( transaction_list, common_transaction_entry ) list;
+    /** @brief transaction counter */
+    uint32_t counter;
     /**
      * @brief Write transaction entr
      * @param entry entry to write

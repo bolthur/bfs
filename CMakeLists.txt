@@ -11,9 +11,6 @@ if(${TEST_ACTIVE})
   enable_language(CXX)
 endif()
 
-# set standards
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_C_STANDARD 17)
 # cppcheck
 if(${TEST_ACTIVE})
   set(CMAKE_CXX_CPPCHECK "cppcheck")
