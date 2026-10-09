@@ -39,9 +39,9 @@
  * @brief Helper to mount test image
  *
  * @param read_only
- * @param bdev_fname
+ * @param fname
+ * @param device
  * @param path
- * @param mountpoint
  * @param type
  */
 void helper_mount_fat_test_image(
@@ -76,6 +76,8 @@ void helper_mount_fat_test_image(
 
 /**
  * @brief Helper to unmount test image
+ * @param device
+ * @param path
  */
 void helper_unmount_fat_test_image( const char* device, const char* path ) {
   // get block device
@@ -97,9 +99,9 @@ void helper_unmount_fat_test_image( const char* device, const char* path ) {
  * @brief Helper to mount test image
  *
  * @param read_only
- * @param bdev_fname
+ * @param fname
+ * @param device
  * @param path
- * @param mountpoint
  */
 void helper_mount_ext_test_image(
   bool read_only,
@@ -131,6 +133,8 @@ void helper_mount_ext_test_image(
 
 /**
  * @brief Helper to unmount test image
+ * @param device
+ * @param path
  */
 void helper_unmount_ext_test_image( const char* device, const char* path ) {
   // get block device
