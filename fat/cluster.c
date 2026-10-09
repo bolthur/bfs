@@ -52,7 +52,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
   uint64_t cluster = file->cluster;
   uint64_t sector_count = 0;
   uint64_t previous_sector = 0;
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   while ( true ) {
     // increase sector count
     sector_count++;
@@ -65,7 +65,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     // debug logging
     common_log( "cluster = %#"PRIx64", next = %#"PRIx64"\r\n", cluster, next );
     // allocate / reallocate chain
-    uint64_t* tmp = NULL;
+    uint64_t* tmp = nullptr;
     if ( file->chain )
     {
       tmp = realloc( file->chain, ( size_t )sector_count * sizeof( uint64_t ) );
@@ -79,7 +79,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
       // free possible chain
       if ( file->chain ) {
         free( file->chain );
-        file->chain = NULL;
+        file->chain = nullptr;
       }
       // return error
       return ENOMEM;
@@ -196,7 +196,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     );
     if ( EOK != result ) {
       free( *buffer );
-      *buffer = NULL;
+      *buffer = nullptr;
       return result;
     }
     // overwrite previous sector
@@ -252,7 +252,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
 BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
   uint64_t index;
   uint64_t previous_sector = 0;
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   // loop through data sectors and look for a free one
   for ( index = 0; index < fs->data_sectors; index++ ) {
     uint64_t internal_cluster;
@@ -406,7 +406,7 @@ BFSFAT_NO_EXPORT int fat_cluster_get_by_num(
     return result;
   }
   uint64_t previous_sector = 0;
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   // walk the chain until index
   uint64_t current = 0;
   for ( uint64_t index = 0; index < num; index++ ) {

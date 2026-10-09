@@ -50,11 +50,11 @@ BFSCOMMON_NO_EXPORT void common_blockdev_destructor( void ) {
 /**
  * @brief Get blockdev by device name
  *
- * @param device
+ * @param device_name
  * @return common_blockdev_t*
  */
 BFSCOMMON_NO_EXPORT common_blockdev_t* common_blockdev_get_by_device_name( const char* device_name ) {
-  size_t device_name_length = strlen( device_name );
+  const size_t device_name_length = strlen( device_name );
   // loop through list and check if device name already exists
   common_blockdev_entry_t* entry;
   LIST_FOREACH( entry, &device_list, list ) {
@@ -66,7 +66,7 @@ BFSCOMMON_NO_EXPORT common_blockdev_t* common_blockdev_get_by_device_name( const
     }
   }
   // not found, so return null
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -178,7 +178,7 @@ BFSCOMMON_EXPORT int common_blockdev_init( common_blockdev_t* bdev ) {
     return EOK;
   }
   // open via lowlevel blockdevice
-  int result = bdev->bdif->open( bdev );
+  const int result = bdev->bdif->open( bdev );
   if ( result != EOK ) {
     return result;
   }
@@ -231,7 +231,7 @@ BFSCOMMON_EXPORT int common_blockdev_fini( common_blockdev_t* bdev ) {
  */
 BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   common_blockdev_t* bdev,
-  uint64_t off,
+  const uint64_t off,
   void* buf,
   uint64_t len
 ) {
@@ -337,7 +337,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
  */
 BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   common_blockdev_t* bdev,
-  uint64_t off,
+  const uint64_t off,
   void* buf,
   uint64_t len
 ) {
@@ -358,7 +358,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   uint8_t* buffer = buf;
   int result;
   // check whether start is misaligned block
-  uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
+  const uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
     common_log( "unaligned read, unaligned = %#"PRIx64"\r\n", unaligned );
     // determine read length
@@ -382,7 +382,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
     block_index++;
   }
   // continue with aligned data
-  uint64_t blen = len / bdev->bdif->block_size;
+  const uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
     common_log( "normal read, blen = %#"PRIx64"\r\n", blen );
     // read block index
@@ -393,7 +393,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
       return result;
     }
     // increment buffer and decrement length
-    uint64_t read_length = bdev->bdif->block_size * blen;
+    const uint64_t read_length = bdev->bdif->block_size * blen;
     buffer += read_length;
     len -= read_length;
     block_index += blen;
@@ -451,8 +451,8 @@ BFSCOMMON_NO_EXPORT void common_blockdev_if_unlock( common_blockdev_t* bdev ) {
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
   common_blockdev_t* bdev,
   void* buf,
-  uint64_t block_id,
-  uint64_t block_count
+  const uint64_t block_id,
+  const uint64_t block_count
 ) {
   // get info whether transaction is running
   bool running;
@@ -551,8 +551,8 @@ BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_read(
 BFSCOMMON_NO_EXPORT int common_blockdev_if_bytes_write(
   common_blockdev_t* bdev,
   void* buf,
-  uint64_t block_id,
-  uint64_t block_count
+  const uint64_t block_id,
+  const uint64_t block_count
 ) {
   bool running;
   int result = common_transaction_running( bdev, &running );

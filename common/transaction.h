@@ -113,7 +113,7 @@ extern "C" {
      * @param entry entry to write
      * @return int
      */
-    int ( *write_entry )( common_transaction_entry_t* entry );
+    int ( *write_entry )( const common_transaction_entry_t* entry );
     /** @brief block device transaction is bound to */
     common_blockdev_t* bdev;
     /** @brief node for tree */
@@ -126,7 +126,7 @@ extern "C" {
   int common_transaction_update( common_blockdev_t* bdev, void* data, uint64_t index, uint64_t size, uint64_t block_count );
   int common_transaction_extend( common_blockdev_t* bdev, void* data, common_transaction_entry_t* entry, uint64_t size, uint64_t block_count );
   int common_transaction_get( uint64_t index, common_blockdev_t* bdev, common_transaction_entry_t** entry );
-  int common_transaction_write( common_transaction_entry_t* entry );
+  int common_transaction_write( const common_transaction_entry_t* entry );
   int common_transaction_running(  common_blockdev_t* bdev, bool* running );
 #endif
 int common_transaction_begin( common_blockdev_t* bdev );

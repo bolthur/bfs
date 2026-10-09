@@ -51,7 +51,7 @@ BFSCOMMON_NO_EXPORT common_transaction_t* transaction_get(
   common_transaction_t* node = malloc( sizeof( *node ) );
   // handle error
   if ( ! node ) {
-    return NULL;
+    return nullptr;
   }
   // clear out node
   memset( node, 0, sizeof( *node ) );
@@ -293,9 +293,9 @@ BFSCOMMON_NO_EXPORT int common_transaction_push(
 BFSCOMMON_NO_EXPORT int common_transaction_update(
   common_blockdev_t* bdev,
   void* data,
-  uint64_t index,
-  uint64_t size,
-  uint64_t block_count
+  const uint64_t index,
+  const uint64_t size,
+  const uint64_t block_count
 ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
@@ -334,13 +334,13 @@ BFSCOMMON_NO_EXPORT int common_transaction_update(
  * @return int
  */
 BFSCOMMON_NO_EXPORT int common_transaction_get(
-  uint64_t index,
+  const uint64_t index,
   common_blockdev_t* bdev,
   common_transaction_entry_t** entry
 ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
-    *entry = NULL;
+    *entry = nullptr;
     return EOK;
   #endif
   // validate parameter
@@ -348,7 +348,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_get(
     return EINVAL;
   }
   // setup entry
-  *entry = NULL;
+  *entry = nullptr;
   // get transaction
   common_transaction_t* t = transaction_get( bdev );
   // handle no transaction ongoing
@@ -375,14 +375,14 @@ BFSCOMMON_NO_EXPORT int common_transaction_get(
  * @return int
  */
 BFSCOMMON_NO_EXPORT int common_transaction_write(
-  common_transaction_entry_t* entry
+  const common_transaction_entry_t* entry
 ) {
   // disable transaction
   #if 1 != CONFIG_USE_TRANSACTION
     return EOK;
   #endif
   common_blockdev_if_lock( entry->bdev );
-  int result = entry->bdev->bdif->write(
+  const int result = entry->bdev->bdif->write(
     entry->bdev,
     entry->data,
     entry->index,
@@ -408,7 +408,7 @@ BFSCOMMON_NO_EXPORT int common_transaction_running(
     return EINVAL;
   }
   // get transaction
-  common_transaction_t* t = transaction_get( bdev );
+  const common_transaction_t* t = transaction_get( bdev );
   *running = t;
   return EOK;
 }
@@ -427,8 +427,8 @@ BFSCOMMON_NO_EXPORT int common_transaction_extend(
   common_blockdev_t* bdev,
   void* data,
   common_transaction_entry_t* entry,
-  uint64_t size,
-  uint64_t block_count
+  const uint64_t size,
+  const uint64_t block_count
 ) {
   // validate parameter
   if (

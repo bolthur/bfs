@@ -616,7 +616,7 @@ BFSEXT_EXPORT int ext_file_close( ext_file_t* file ) {
       return result;
     }
     free( file->dir );
-    file->dir = NULL;
+    file->dir = nullptr;
   }
   // overwrite everything with 0
   memset( file, 0, sizeof( ext_file_t ) );

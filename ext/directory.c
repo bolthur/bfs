@@ -533,8 +533,8 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   ext_directory_t newdir = {
     .inode = inode,
     .inode_number = number,
-    .data = NULL,
-    .entry = NULL,
+    .data = nullptr,
+    .entry = nullptr,
     .pos = 0,
     .entry_size = 0,
     .mp = mp,
@@ -644,7 +644,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   char* p = duppath;
 
   p = strtok( p, CONFIG_PATH_SEPARATOR_STRING );
-  while ( p != NULL ) {
+  while ( p != nullptr ) {
     // only valid when there is something
     if ( strlen( p ) ) {
       // read inode
@@ -652,7 +652,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       if ( EOK != result ) {
         if ( dir->data ) {
           free( dir->data );
-          dir->data = NULL;
+          dir->data = nullptr;
         }
         free( duppath );
         return result;
@@ -663,7 +663,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       if ( EOK != result ) {
         if ( dir->data ) {
           free( dir->data );
-          dir->data = NULL;
+          dir->data = nullptr;
         }
         free( duppath );
         return result;
@@ -673,7 +673,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       if ( EOK != result ) {
         if ( dir->data ) {
           free( dir->data );
-          dir->data = NULL;
+          dir->data = nullptr;
         }
         free( dirent.data );
         free( duppath );
@@ -684,7 +684,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       // handle already allocated
       if ( dir->data ) {
         free( dir->data );
-        dir->data = NULL;
+        dir->data = nullptr;
       }
       // copy over data
       dir->data = malloc( dirent.inode.i_size );
@@ -700,7 +700,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
       free( dirent.data );
     }
     // get next one
-    p = strtok( NULL, CONFIG_PATH_SEPARATOR_STRING );
+    p = strtok( nullptr, CONFIG_PATH_SEPARATOR_STRING );
   }
   // free duplicate
   free( duppath );
@@ -710,7 +710,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   if ( EOK != result ) {
     if ( dir->data ) {
       free( dir->data );
-      dir->data = NULL;
+      dir->data = nullptr;
     }
     return result;
   }
@@ -718,7 +718,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   if ( ! ( parent.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
     if ( dir->data ) {
       free( dir->data );
-      dir->data = NULL;
+      dir->data = nullptr;
     }
     return ENOTDIR;
   }
@@ -728,14 +728,14 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   if ( EOK != result ) {
     if ( dir->data ) {
       free( dir->data );
-      dir->data = NULL;
+      dir->data = nullptr;
     }
     return result;
   }
   // handle already allocated
   if ( dir->data ) {
     free( dir->data );
-    dir->data = NULL;
+    dir->data = nullptr;
   }
   // copy over data
   dir->data = malloc( dirent.inode.i_size );
@@ -798,10 +798,10 @@ BFSEXT_EXPORT int ext_directory_close( ext_directory_t* dir ) {
   }
   if ( dir->data ) {
     free( dir->data );
-    dir->data = NULL;
+    dir->data = nullptr;
   }
   if ( dir->entry ) {
-    dir->entry = NULL;
+    dir->entry = nullptr;
   }
   return EOK;
 }
@@ -817,7 +817,7 @@ BFSEXT_EXPORT int ext_directory_next_entry( ext_directory_t* dir ) {
   if ( dir->pos >= dir->inode.i_size ) {
     // reset entry
     if ( dir->entry ) {
-      dir->entry = NULL;
+      dir->entry = nullptr;
     }
     // return success
     return EOK;
@@ -844,7 +844,7 @@ BFSEXT_EXPORT int ext_directory_next_entry( ext_directory_t* dir ) {
     }
   }
   // set entry and position
-  dir->entry = NULL;
+  dir->entry = nullptr;
   dir->pos = dir->inode.i_size;
   if ( it->entry ) {
     dir->entry = it->entry;
@@ -871,7 +871,7 @@ BFSEXT_EXPORT int ext_directory_rewind( ext_directory_t* dir ) {
   // reset offset information
   dir->pos = 0;
   if ( dir->entry ) {
-    dir->entry = NULL;
+    dir->entry = nullptr;
   }
   // return success
   return EOK;

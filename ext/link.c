@@ -208,8 +208,8 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
   if ( ! dir->data ) {
     return EINVAL;
   }
-  ext_structure_directory_entry_t* prev = NULL;
-  ext_structure_directory_entry_t* next = NULL;
+  ext_structure_directory_entry_t* prev = nullptr;
+  ext_structure_directory_entry_t* next = nullptr;
   // loop through data
   while ( dir->inode.i_size && pos < dir->inode.i_size ) {
     // get entry

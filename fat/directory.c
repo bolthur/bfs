@@ -678,7 +678,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
 
   // parse sub directories
   p = strtok( p, CONFIG_PATH_SEPARATOR_STRING );
-  while ( p != NULL ) {
+  while ( p != nullptr ) {
     // search by name
     result = fat_directory_entry_by_name( dir, p );
     if ( EOK != result ) {
@@ -725,7 +725,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
     // calculate total size
     dir->file.fsize = size;
     // get next one
-    p = strtok( NULL, CONFIG_PATH_SEPARATOR_STRING );
+    p = strtok( nullptr, CONFIG_PATH_SEPARATOR_STRING );
   }
   // free iterator and path duplicate
   free( duppath );
@@ -802,12 +802,12 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     // free up data
     if ( dir->data ) {
       free( dir->data );
-      dir->data = NULL;
+      dir->data = nullptr;
     }
     // free up entry
     if ( dir->entry ) {
       free( dir->entry );
-      dir->entry = NULL;
+      dir->entry = nullptr;
     }
     // return success
     return EOK;
@@ -845,7 +845,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // free up data
   if ( dir->data && ! it->data ) {
     free( dir->data );
-    dir->data = NULL;
+    dir->data = nullptr;
   }
   // clear data
   if ( dir->data && it->data ) {
@@ -857,7 +857,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
     if ( ! dir->entry ) {
       free( it );
       free( dir->data );
-      dir->data = NULL;
+      dir->data = nullptr;
       return ENOMEM;
     }
     memset( dir->entry, 0, sizeof( fat_structure_directory_entry_t ) );
@@ -865,7 +865,7 @@ BFSFAT_EXPORT int fat_directory_next_entry( fat_directory_t* dir ) {
   // free up data
   if ( dir->entry && ! it->entry ) {
     free( dir->entry );
-    dir->entry = NULL;
+    dir->entry = nullptr;
   }
   // update position offset
   dir->file.fpos = it->entry ? it->reference->file.fpos : dir->file.fsize;
@@ -901,11 +901,11 @@ BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* dir ) {
   // free data and entry
   if ( dir->data ) {
     free( dir->data );
-    dir->data = NULL;
+    dir->data = nullptr;
   }
   if ( dir->entry ) {
     free( dir->entry );
-    dir->entry = NULL;
+    dir->entry = nullptr;
   }
   // unload cached block
   int result = fat_block_unload( &dir->file );
@@ -1149,7 +1149,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
     ( uint8_t* )entry + dir->file.fsize
   );
-  fat_structure_directory_entry_t* start = NULL;
+  fat_structure_directory_entry_t* start = nullptr;
   uint64_t found_size = 0;
   while ( current < end ) {
     // handle found enough space
@@ -1162,7 +1162,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
     // handle non free
     if ( ! is_free ) {
       found_size = 0;
-      start = NULL;
+      start = nullptr;
     // handle free block
     } else if ( is_free ) {
       if ( ! start ) {
@@ -1305,7 +1305,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     return EINVAL;
   }
   uint64_t entry_size;
-  void* entry_data = NULL;
+  void* entry_data = nullptr;
   size_t extension_length = 0;
   const char* ext = strchr( name, '.' );
   const char* dot = ext;

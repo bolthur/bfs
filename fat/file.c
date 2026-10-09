@@ -380,15 +380,15 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
   // free up block
   if ( file->block.data ) {
     free( file->block.data );
-    file->block.data = NULL;
+    file->block.data = nullptr;
   }
   if ( file->dentry ) {
     free( file->dentry );
-    file->dentry = NULL;
+    file->dentry = nullptr;
   }
   if ( file->chain ) {
     free( file->chain );
-    file->chain = NULL;
+    file->chain = nullptr;
     file->chain_size = 0;
   }
   if ( file->dir ) {
@@ -397,7 +397,7 @@ BFSFAT_EXPORT int fat_file_close( fat_file_t* file ) {
       return result;
     }
     free( file->dir );
-    file->dir = NULL;
+    file->dir = nullptr;
   }
   // overwrite everything with 0
   memset( file, 0, sizeof( fat_file_t ) );
@@ -562,7 +562,7 @@ BFSFAT_EXPORT int fat_file_truncate( fat_file_t* file, uint64_t size ) {
       file->cluster = 0;
       if ( file->chain ) {
         free( file->chain );
-        file->chain = NULL;
+        file->chain = nullptr;
         file->chain_size = 0;
       }
     } else {
@@ -888,7 +888,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
   free( dir );
   if ( 0 < start_cluster ) {
     // allocate space for cluster list
-    uint64_t* cluster_list = NULL;
+    uint64_t* cluster_list = nullptr;
     // load complete cluster list
     uint64_t max_index = 0;
     while ( true ) {
@@ -907,7 +907,7 @@ BFSFAT_EXPORT int fat_file_remove( const char* path ) {
         common_transaction_rollback( fs->bdev );
         return result;
       }
-      uint64_t* new_list = NULL;
+      uint64_t* new_list = nullptr;
       // allocate list
       if ( ! cluster_list ) {
         new_list = malloc( ( size_t )( ( max_index + 1 ) * sizeof( uint64_t ) ) );

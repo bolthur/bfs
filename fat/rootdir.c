@@ -58,7 +58,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   common_log( "Querying root directory offset and size!\r\n" );
   int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
   if ( EOK != result ) {
-    dir->file.mp = NULL;
+    dir->file.mp = nullptr;
     return result;
   }
   // cache block size
@@ -213,7 +213,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
       ( uint8_t* )entry + rootdir_size * fs->superblock.bytes_per_sector
     );
-    fat_structure_directory_entry_t* start = NULL;
+    fat_structure_directory_entry_t* start = nullptr;
     uint64_t found_size = 0;
     while ( current < end ) {
       // handle found enough space
@@ -229,7 +229,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
       // handle non free
       if ( ! is_free ) {
         found_size = 0;
-        start = NULL;
+        start = nullptr;
       // handle free block
       } else if ( is_free ) {
         if ( ! start ) {

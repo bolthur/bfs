@@ -62,7 +62,7 @@ BFSCOMMON_EXPORT common_mountpoint_t* common_mountpoint_by_mountpoint(
       return entry;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -82,7 +82,7 @@ BFSCOMMON_EXPORT common_mountpoint_t* common_mountpoint_find( const char* path )
       return entry;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /**

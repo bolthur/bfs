@@ -220,7 +220,7 @@ int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
   // free existing buffer
   if ( bdev->bdif->block_buffer ) {
     free( bdev->bdif->block_buffer );
-    bdev->bdif->block_buffer = NULL;
+    bdev->bdif->block_buffer = nullptr;
   }
   // allocate new buffer
   uint8_t* block_buffer = malloc( sizeof( char ) * ( size_t )block_size );
@@ -247,14 +247,14 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
   common_blockdev_t* bdev = malloc( sizeof( *bdev ) );
   // handle error
   if ( ! bdev ) {
-    return NULL;
+    return nullptr;
   }
   // allocate substructure
   common_blockdev_iface_t* bdif = malloc( sizeof( *bdif ) );
   // handle error
   if ( ! bdif ) {
     free( bdev );
-    return NULL;
+    return nullptr;
   }
   // allocate buffer
   uint8_t* buffer = malloc( sizeof( *buffer ) * 512 );
@@ -262,7 +262,7 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
   if ( ! buffer ) {
     free( bdif );
     free( bdev );
-    return NULL;
+    return nullptr;
   }
   // allocate space for user data
   void* p_user = malloc( sizeof( int ) );
@@ -270,7 +270,7 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
     free( buffer );
     free( bdif );
     free( bdev );
-    return NULL;
+    return nullptr;
   }
   // duplicate name into temporary
   const char* tmp_filename = strdup( filename );
@@ -280,7 +280,7 @@ BFSBLOCKDEV_EXPORT common_blockdev_t* common_blockdev_get( const char* filename 
     free( buffer );
     free( bdif );
     free( bdev );
-    return NULL;
+    return nullptr;
   }
   // clear memory
   memset( bdev, 0, sizeof( *bdev ) );

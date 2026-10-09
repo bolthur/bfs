@@ -82,7 +82,7 @@ BFSFAT_EXPORT int fat_mountpoint_mount( const char* device_name, const char* mou
     return result;
   }
   // add mountpoint
-  result = common_mountpoint_add( mountpoint, fs, true, NULL );
+  result = common_mountpoint_add( mountpoint, fs, true, nullptr );
   if ( EOK != result ) {
     free( fs );
     common_blockdev_fini( bdev );
@@ -115,8 +115,8 @@ BFSFAT_EXPORT int fat_mountpoint_umount( const char* mountpoint ) {
   }
   // set mounted to false
   entry->mounted = false;
-  entry->fs = NULL;
-  fs->bdev->fs = NULL;
+  entry->fs = nullptr;
+  fs->bdev->fs = nullptr;
   // cleanup
   result = common_mountpoint_remove( mountpoint );
   if ( EOK != result ) {

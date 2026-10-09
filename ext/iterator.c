@@ -80,13 +80,13 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
   if ( pos >= it->reference->inode.i_size ) {
     // set fpos to position
     it->pos = it->reference->inode.i_size;
-    it->entry = NULL;
+    it->entry = nullptr;
     // return no entry
     return EOK;
   }
   // set iterator data
   it->pos = pos;
-  it->entry = NULL;
+  it->entry = nullptr;
   // loop through data and try to find entry
   while ( pos < it->reference->inode.i_size ) {
     // get entry
@@ -112,7 +112,7 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
   if ( ! it->entry ) {
     // set fpos to position
     it->pos = it->reference->inode.i_size;
-    it->entry = NULL;
+    it->entry = nullptr;
   }
   // return success
   return EOK;
@@ -129,8 +129,8 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_fini( ext_iterator_directory_t* it )
   if ( ! it ) {
     return EINVAL;
   }
-  it->entry = NULL;
-  it->reference = NULL;
+  it->entry = nullptr;
+  it->reference = nullptr;
   // return success
   return EOK;
 }

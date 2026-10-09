@@ -47,7 +47,7 @@ BFSFAT_NO_EXPORT int fat_block_unload( fat_file_t* file ) {
   if ( file->block.data ) {
     free( file->block.data );
     // reset sector to 0 and data
-    file->block.data = NULL;
+    file->block.data = nullptr;
     file->block.sector = 0;
     file->block.cluster = 0;
     file->block.block = 0;
