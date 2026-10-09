@@ -65,6 +65,9 @@ TEST( fat32, drain_create_write ) {
   result = fat_directory_entry_by_name( &dir, "drain.txt" );
   EXPECT_EQ( result, EOK );
   EXPECT_STREQ( dir.data->name, "drain.txt" );
+  // close directory again
+  result = fat_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
   // umount
   helper_unmount_fat_test_image( "fat32", "/fat32/" );
 }

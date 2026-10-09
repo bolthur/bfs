@@ -87,14 +87,14 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
 BFSBLOCKDEV_NO_EXPORT int blockdev_read(
   common_blockdev_t *bdev,
   void *buf,
-  uint64_t blk_id,
-  uint64_t blk_cnt
+  const uint64_t blk_id,
+  const uint64_t blk_cnt
 ) {
   if ( ! blk_cnt ) {
     return EOK;
   }
-  size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
-  off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
+  const size_t size = ( size_t )( bdev->bdif->block_size * blk_cnt );
+  const off_t offset = ( off_t )blk_id * ( off_t )bdev->bdif->block_size;
   if ( fseeko( fp, offset, SEEK_SET ) ) {
     return EIO;
   }
@@ -118,8 +118,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_read(
 BFSBLOCKDEV_NO_EXPORT int blockdev_write(
   common_blockdev_t *bdev,
   const void *buf,
-  uint64_t blk_id,
-  uint64_t blk_cnt
+  const uint64_t blk_id,
+  const uint64_t blk_cnt
 ) {
   if ( ! blk_cnt ) {
     return EOK;
@@ -186,7 +186,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
  *
  * @private
  */
-int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
+int blockdev_resize( common_blockdev_t* bdev, const uint64_t block_size ) {
   // allocate new buffer
   uint8_t* block_buffer = malloc( sizeof( char ) * ( size_t )block_size );
   if ( ! block_buffer ) {

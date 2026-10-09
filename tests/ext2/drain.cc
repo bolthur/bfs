@@ -65,6 +65,9 @@ TEST( ext2, drain_create_write ) {
   result = ext_directory_entry_by_name( &dir, "drain.txt" );
   EXPECT_EQ( result, EOK );
   EXPECT_EQ( 0, strncmp( dir.entry->name, "drain.txt", dir.entry->name_len ) );
+  // close directory again
+  result = ext_directory_close( &dir );
+  EXPECT_EQ( result, EOK );
   // umount
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }

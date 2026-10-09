@@ -45,11 +45,11 @@
  * @param type
  */
 void helper_mount_fat_test_image(
-  bool read_only,
+  const bool read_only,
   const char* fname,
   const char* device,
   const char* path,
-  fat_type_t type
+  const fat_type_t type
 ) {
   // get block device
   common_blockdev_t* bdev = common_blockdev_get();
@@ -67,7 +67,7 @@ void helper_mount_fat_test_image(
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 1 );
   // get fs
-  fat_fs_t* fs = ( fat_fs_t* )bdev->fs;
+  auto const fs = static_cast< fat_fs_t* >( bdev->fs );
   // assert fs and fs type
   EXPECT_TRUE( fs );
   EXPECT_EQ( fs->read_only, read_only );
@@ -90,6 +90,8 @@ void helper_unmount_fat_test_image( const char* device, const char* path ) {
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
   // free resized block buffer
   free( bdev->bdif->block_buffer );
+  // reset block width to default
+  bdev->bdif->block_size = 512;
   // unregister device
   result = common_blockdev_unregister_device( device );
   EXPECT_EQ( result, EOK );
@@ -104,7 +106,7 @@ void helper_unmount_fat_test_image( const char* device, const char* path ) {
  * @param path
  */
 void helper_mount_ext_test_image(
-  bool read_only,
+  const bool read_only,
   const char* fname,
   const char* device,
   const char* path
@@ -125,7 +127,7 @@ void helper_mount_ext_test_image(
   // assert count
   EXPECT_EQ( bdev->bdif->reference_counter, 1 );
   // get fs
-  ext_fs_t* fs = ( ext_fs_t* )bdev->fs;
+  auto const fs = static_cast< ext_fs_t* >( bdev->fs );
   // assert fs and fs type
   EXPECT_TRUE( fs );
   EXPECT_EQ( fs->read_only, read_only );
@@ -147,6 +149,8 @@ void helper_unmount_ext_test_image( const char* device, const char* path ) {
   EXPECT_EQ( bdev->bdif->reference_counter, 0U );
   // free resized non static buffer
   free( bdev->bdif->block_buffer );
+  // reset block width to default
+  bdev->bdif->block_size = 512;
   // unregister device
   result = common_blockdev_unregister_device( device );
   EXPECT_EQ( result, EOK );

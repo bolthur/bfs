@@ -22,6 +22,14 @@
 #ifndef _FAT_DRAIN_H
 #define _FAT_DRAIN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void fat_drain( const fat_fs_t* );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_FAT_DRAIN_H

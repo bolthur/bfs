@@ -22,6 +22,14 @@
 #ifndef _EXT_DRAIN_H
 #define _EXT_DRAIN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ext_drain( const ext_fs_t* );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_EXT_DRAIN_H
