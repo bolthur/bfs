@@ -42,6 +42,10 @@ typedef struct common_lru_cache_node {
   struct common_lru_cache_node* next;
   /** @brief pointer to previous element */
   struct common_lru_cache_node* prev;
+  /** @brief pointer to next hash list */
+  struct common_lru_cache_node* hash_next;
+  /** @brief pointer to prev hash list */
+  struct common_lru_cache_node* hash_prev;
 } common_lru_cache_node_t;
 
 /** @brief lru cache */

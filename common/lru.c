@@ -177,10 +177,13 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
   }
   const uint64_t hash = block_number % cache->capacity;
   common_lru_cache_node_t* node = cache->lookup[ hash ];
-  // check for match
-  if ( node && node->block_number == block_number ) {
-    common_lru_move_to_head( cache, node );
-    return node;
+  // check for match including hash collisions
+  while ( node ) {
+    if ( node->block_number == block_number ) {
+      common_lru_move_to_head( cache, node );
+      return node;
+    }
+    node = node->hash_next;
   }
   // cache miss => Handle cache full
   if ( cache->size >= cache->capacity ) {
@@ -199,7 +202,14 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
     }
     // Remove from lookup
     const uint64_t oldest_hash = oldest->block_number % cache->capacity;
-    cache->lookup[ oldest_hash ] = nullptr;
+    if ( oldest->hash_prev ) {
+      oldest->hash_prev->hash_next = oldest->hash_next;
+    } else {
+      cache->lookup[ oldest_hash ] = oldest->hash_next;
+    }
+    if ( oldest->hash_next ) {
+      oldest->hash_next->hash_prev = oldest->hash_prev;
+    }
     // Remove from list and recycle
     common_lru_detach( cache, oldest );
     node = oldest;
@@ -233,6 +243,12 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
   }
   // add to lookup
   node->prev = node->next = nullptr;
+  // add to cache lookup
+  node->hash_next = cache->lookup[ hash ];
+  node->hash_prev = nullptr;
+  if ( node->hash_next ) {
+    node->hash_next->hash_prev = node;
+  }
   common_lru_move_to_head( cache, node );
   cache->lookup[ hash ] = node;
   // return node
