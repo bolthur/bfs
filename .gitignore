@@ -1,4 +1,5 @@
 /build
+/build2
 /cov
 /doc
 /.tools/**/*.img

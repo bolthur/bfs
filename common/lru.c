@@ -219,12 +219,12 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
       return nullptr;
     }
     memset( node, 0, sizeof( common_lru_cache_node_t ) );
-    node->data = malloc( sizeof( uint8_t ) * cache->node_data_size );
+    node->data = malloc( ( size_t )( sizeof( uint8_t ) * cache->node_data_size ) );
     if ( ! node->data ) {
       free( node );
       return nullptr;
     }
-    memset( node->data, 0, sizeof( uint8_t ) * cache->node_data_size );
+    memset( node->data, 0,  ( size_t )( sizeof( uint8_t ) * cache->node_data_size )  );
     cache->size++;
   }
   // load from persistence
@@ -273,7 +273,7 @@ BFSCOMMON_NO_EXPORT int common_lru_write(
   if ( ! node ) {
     return ENODATA;
   }
-  memcpy( node->data, data, cache->node_data_size );
+  memcpy( node->data, data, ( size_t )cache->node_data_size );
   node->dirty = true;
   return EOK;
 }
@@ -297,6 +297,6 @@ BFSCOMMON_NO_EXPORT int common_lru_read(
   if ( ! node ) {
     return ENODATA;
   }
-  memcpy( data, node->data, cache->node_data_size );
+  memcpy( data, node->data, ( size_t )cache->node_data_size );
   return EOK;
 }
