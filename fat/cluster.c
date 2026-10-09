@@ -17,7 +17,6 @@
 
 // IWYU pragma: no_include <errno.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <inttypes.h>
 #include <string.h>
 #include <common/blockdev.h>

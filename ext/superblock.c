@@ -16,7 +16,6 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 // IWYU pragma: no_include <errno.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>

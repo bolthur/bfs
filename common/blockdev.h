@@ -32,11 +32,14 @@ extern "C" {
 #endif
 
 typedef struct common_blockdev_iface common_blockdev_iface_t;
+typedef struct common_lru_cache common_lru_cache_t;
 
 /** @brief Common block device structure */
 typedef struct {
   /** @brief Block device interface */
   common_blockdev_iface_t* bdif;
+  /** @brief lru cache */
+  common_lru_cache_t* lru;
   /** @brief Partition offset */
   uint64_t part_offset;
   /** @brief Total partition size */

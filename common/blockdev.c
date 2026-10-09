@@ -20,7 +20,6 @@
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <inttypes.h>
 #include <thirdparty/queue.h>
 #include <common/errno.h>
@@ -29,6 +28,7 @@
 #include <common/constant.h>
 #include <common/transaction.h>
 #include <common/log.h>
+#include <common/lru.h>
 
 static LIST_HEAD( common_blockdev_list, common_blockdev_entry ) device_list;
 
@@ -116,7 +116,7 @@ BFSCOMMON_EXPORT int common_blockdev_unregister_device( const char* device_name 
   if ( ! device_name ) {
     return EINVAL;
   }
-  size_t device_name_length = strlen( device_name );
+  const size_t device_name_length = strlen( device_name );
   // loop through list try to find entry
   common_blockdev_entry_t* entry;
   LIST_FOREACH( entry, &device_list, list ) {
@@ -184,6 +184,11 @@ BFSCOMMON_EXPORT int common_blockdev_init( common_blockdev_t* bdev ) {
   }
   // initialize reference counter
   bdev->bdif->reference_counter = 1;
+  // initialize lru
+  bdev->lru = common_lru_setup( bdev, bdev->bdif->block_size );
+  if ( ! bdev->lru ) {
+    return ENOMEM;
+  }
   // return success
   return EOK;
 }
@@ -215,6 +220,10 @@ BFSCOMMON_EXPORT int common_blockdev_fini( common_blockdev_t* bdev ) {
   // stop if there is still something running
   if ( bdev->bdif->reference_counter ) {
     return EOK;
+  }
+  // destroy lru
+  if ( bdev->lru ) {
+    common_lru_destroy( bdev->lru );
   }
   // close via lowlevel blockdevice
   return bdev->bdif->close( bdev );
@@ -253,7 +262,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   int result;
   common_log( "off + bdev->part_offset = %#"PRIx64"\r\n", off + bdev->part_offset );
   // check whether start is misaligned block
-  uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
+  const uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
     common_log( "unaligned write, unaligned = %#"PRIx64"\r\n", unaligned );
     // determine read length
@@ -264,18 +273,14 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
     }
     common_log( "writing %#zx bytes\r\n", wlen );
     // read whole block index
-    result = common_blockdev_if_bytes_read(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_read( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }
     // copy over partially
     memcpy( bdev->bdif->block_buffer + unaligned, buffer, wlen );
     // write whole block index
-    result = common_blockdev_if_bytes_write(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_write( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }
@@ -286,19 +291,20 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   }
   common_log( "remaining %#"PRIx64" bytes\r\n", len );
   // continue with aligned data
-  uint64_t blen = len / bdev->bdif->block_size;
+  const uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
     common_log( "normal write, blen = %#"PRIx64"\r\n", blen );
-    // read block index
-    result = common_blockdev_if_bytes_write(
-      bdev, buffer, block_index, blen
-    );
-    if ( EOK != result ) {
-      return result;
+    // write block index
+    uint64_t iter_len = blen;
+    while ( iter_len-- ) {
+      result = common_lru_write( bdev->lru, block_index, buffer );
+      if ( EOK != result ) {
+        return result;
+      }
+      buffer += bdev->bdif->block_size;
     }
     // increment buffer and decrement length
-    uint64_t read_length = bdev->bdif->block_size * blen;
-    buffer += read_length;
+    const uint64_t read_length = bdev->bdif->block_size * blen;
     len -= read_length;
     block_index += blen;
   }
@@ -306,18 +312,14 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
   if ( len ) {
     common_log( "rest write, len = %#"PRIx64"\r\n", len );
     // read remaining block
-    result = common_blockdev_if_bytes_read(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_read( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }
     // copy over content
     memcpy( bdev->bdif->block_buffer, buffer, ( size_t )len );
     // write whole block index
-    result = common_blockdev_if_bytes_write(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_write( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }
@@ -368,9 +370,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
     }
     common_log( "reading %#zx bytes\r\n", rlen );
     // read whole block index
-    result = common_blockdev_if_bytes_read(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_read( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }
@@ -385,16 +385,17 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   const uint64_t blen = len / bdev->bdif->block_size;
   if ( blen ) {
     common_log( "normal read, blen = %#"PRIx64"\r\n", blen );
-    // read block index
-    result = common_blockdev_if_bytes_read(
-      bdev, buffer, block_index, blen
-    );
-    if ( EOK != result ) {
-      return result;
+    uint64_t iter_len = blen;
+    while ( iter_len-- ) {
+      // read block index
+      result = common_lru_read( bdev->lru, block_index, buffer );
+      if ( EOK != result ) {
+        return result;
+      }
+      buffer += bdev->bdif->block_size;
     }
     // increment buffer and decrement length
     const uint64_t read_length = bdev->bdif->block_size * blen;
-    buffer += read_length;
     len -= read_length;
     block_index += blen;
   }
@@ -402,9 +403,7 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   if ( len ) {
     common_log( "rest read, len = %#"PRIx64"\r\n", len );
     // read remaining block
-    result = common_blockdev_if_bytes_read(
-      bdev, bdev->bdif->block_buffer, block_index, 1
-    );
+    result = common_lru_read( bdev->lru, block_index, bdev->bdif->block_buffer );
     if ( EOK != result ) {
       return result;
     }

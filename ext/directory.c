@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <libgen.h>
-#include <stdbool.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <common/transaction.h>
 #include <common/mountpoint.h>

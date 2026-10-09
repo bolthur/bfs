@@ -21,7 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <time.h>
 #include <common/stdio.h> // IWYU pragma: keep
 #include <common/errno.h>

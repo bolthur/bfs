@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <common/errno.h>
 #include <common/blockdev.h>
+#include <common/lru.h>
 #include <blockdev/bfsblockdev_export.h>
 #include "blockdev.h"
 
@@ -194,6 +195,10 @@ int blockdev_resize( common_blockdev_t* bdev, uint64_t block_size ) {
   // overwrite block size and buffer
   bdev->bdif->block_size = block_size;
   bdev->bdif->block_buffer = block_buffer;
+  // drain lru cache
+  common_lru_drain( bdev->lru );
+  // set new block size
+  bdev->lru->node_data_size = block_size;
   // return success
   return EOK;
 }

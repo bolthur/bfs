@@ -40,14 +40,14 @@
 BFSEXT_EXPORT int ext_mountpoint_mount(
   const char* device_name,
   const char* mountpoint,
-  bool read_only
+  const bool read_only
 ) {
   // check parameter
   if ( ! device_name || ! mountpoint ) {
     return EINVAL;
   }
   // get mountpoint length
-  size_t mountpoint_length = strlen( mountpoint );
+  const size_t mountpoint_length = strlen( mountpoint );
   // validate size
   if ( mountpoint_length > PATH_MAX ) {
     return EINVAL;
@@ -57,7 +57,7 @@ BFSEXT_EXPORT int ext_mountpoint_mount(
     return ENOTSUP;
   }
   // loop through list try to find already mounted entry
-  common_mountpoint_t* entry = common_mountpoint_by_mountpoint( mountpoint );
+  const common_mountpoint_t* entry = common_mountpoint_by_mountpoint( mountpoint );
   if ( entry ) {
     return EOK;
   }
