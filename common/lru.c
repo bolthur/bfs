@@ -43,7 +43,7 @@ BFSCOMMON_NO_EXPORT void common_lru_destructor( void ) {
  */
 BFSCOMMON_NO_EXPORT common_lru_cache_t* common_lru_setup(
   common_blockdev_t* bdev,
-  const size_t block_size
+  const uint64_t block_size
 ) {
   // handle already set up
   if ( ! block_size ) {

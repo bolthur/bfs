@@ -55,7 +55,7 @@ typedef struct common_lru_cache {
   /** @brief cache size */
   size_t size;
   /** @brief node size */
-  size_t node_data_size;
+  uint64_t node_data_size;
   /** @brief block device */
   common_blockdev_t* bdev;
   /** @brief pointer to head */
@@ -69,7 +69,7 @@ typedef struct common_lru_cache {
 #if defined( _BFS_COMPILING )
   void common_lru_destructor( void );
 
-  common_lru_cache_t* common_lru_setup( common_blockdev_t*, size_t );
+  common_lru_cache_t* common_lru_setup( common_blockdev_t*, uint64_t );
   void common_lru_destroy( common_lru_cache_t* );
   void common_lru_drain( common_lru_cache_t* );
   void common_lru_detach( common_lru_cache_t*, common_lru_cache_node_t* );
