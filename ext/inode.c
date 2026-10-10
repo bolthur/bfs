@@ -60,8 +60,6 @@ BFSEXT_NO_EXPORT int ext_inode_get_local_inode(
  * @param number
  * @param inode
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_inode(
   ext_fs_t* fs,
@@ -104,8 +102,6 @@ BFSEXT_NO_EXPORT int ext_inode_write_inode(
  * @param offset
  * @param allocate
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
   ext_fs_t* fs,
@@ -198,8 +194,6 @@ BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
  * @param buffer
  * @param count
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_block(
   ext_fs_t* fs,
@@ -258,8 +252,6 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
  * @param length
  * @param buffer
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_data(
   ext_fs_t* fs,
@@ -346,8 +338,6 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
  * @param buffer
  * @param count
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_block(
   ext_fs_t* fs,
@@ -395,8 +385,6 @@ BFSEXT_NO_EXPORT int ext_inode_write_block(
  * @param length
  * @param buffer
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_data(
   ext_fs_t* fs,
@@ -499,8 +487,6 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
  * @param inode
  * @param inode_number
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_allocate(
   ext_fs_t* fs,
@@ -611,8 +597,6 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
  * @param table_block
  * @param level
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
   ext_fs_t* fs,
@@ -678,8 +662,6 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
  * @param inode
  * @param number
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_deallocate(
   ext_fs_t* fs,

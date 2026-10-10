@@ -29,6 +29,8 @@ extern "C" {
 
 /** @brief direntry hash size */
 #define EXT_CACHE_DENTRY_HASH_SIZE 2048
+/** @brief direntry hash mask */
+#define EXT_CACHE_DENTRY_HASH_MASK 2047
 /** @brief inode hash size */
 #define EXT_CACHE_INODE_HASH_SIZE 2048
 /** @brief inode hash mask */
@@ -75,11 +77,15 @@ typedef struct ext_cache_inode {
 /** @brief dentry cache */
 typedef struct ext_cache_directory_entry_node {
   /** @brief name */
-  char* name;
+  char name[ 256 ];
   /** @brief pointer to parent dir */
   struct ext_cache_directory_entry_node* parent;
-  /** @brief inode cache */
+  /** @brief inode number */
+  uint64_t inode_number;
+  /** @brief inode reference */
   ext_cache_inode_node_t* inode;
+  /** @brief reference count */
+  int reference_count;
   /** @brief lru previous */
   struct ext_cache_directory_entry_node* lru_prev;
   /** @brief lru next */
@@ -109,7 +115,7 @@ typedef struct ext_cache_directory_entry {
 
 #if defined( _BFS_COMPILING )
   // helper functions
-  uint32_t ext_cache_hash_directory_entry( ext_cache_directory_entry_node_t*, const char* );
+  uint64_t ext_cache_hash_directory_entry( ext_cache_directory_entry_node_t*, const char* );
   uint64_t ext_cache_hash_inode( ext_fs_t*, uint64_t );
 
   // regular directory cache functions
@@ -118,6 +124,11 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_directory_entry_detach( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_move_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_drain( ext_cache_directory_entry_t* );
+  ext_cache_directory_entry_node_t* ext_cache_directory_entry_get( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t*, const char* );
+  ext_cache_directory_entry_node_t* ext_cache_directory_entry_lookup( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t*, const char* );
+  void ext_cache_directory_entry_insert( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
+  void ext_cache_directory_entry_hash_remove( ext_cache_directory_entry_t*, const ext_cache_directory_entry_node_t* );
+  ext_cache_directory_entry_node_t* ext_cache_directory_entry_allocate_or_evict( ext_cache_directory_entry_t* );
 
   // regular inode cache functions
   ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* );

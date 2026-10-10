@@ -47,7 +47,7 @@
 BFSEXT_NO_EXPORT int ext_file_get(
   ext_file_t* file,
   const char* path,
-  int flags
+  const int flags
 ) {
   // validate parameter
   if ( ! file || ! path ) {
@@ -584,14 +584,14 @@ BFSEXT_EXPORT int ext_file_open(
 BFSEXT_EXPORT int ext_file_open2(
   ext_file_t* file,
   const char* path,
-  int flags
+  const int flags
 ) {
   // validate parameter
   if ( ! file || ! path ) {
     return EINVAL;
   }
   // get file
-  int result = ext_file_get( file, path, flags );
+  const int result = ext_file_get( file, path, flags );
   if ( EOK != result ) {
     return result;
   }
@@ -675,7 +675,7 @@ BFSEXT_EXPORT int ext_file_read(
     return EPERM;
   }
   // cache mountpoint and fs
-  common_mountpoint_t*mp = file->mp;
+  auto const mp = file->mp;
   ext_fs_t* fs = mp->fs;
   // ensure that fs is valid
   if ( ! fs ) {
@@ -687,7 +687,7 @@ BFSEXT_EXPORT int ext_file_read(
   } else if ( file->fpos + size > file->fsize ) {
     size -= ( file->fpos + size - file->fsize );
   }
-  int result = ext_inode_read_data(
+  const int result = ext_inode_read_data(
     fs, &file->inode, file->fpos, size, buffer );
   if ( EOK != result ) {
     return result;
@@ -710,7 +710,7 @@ BFSEXT_EXPORT int ext_file_read(
 BFSEXT_EXPORT int ext_file_write(
   ext_file_t* file,
   void* buffer,
-  uint64_t size,
+  const uint64_t size,
   uint64_t* write_count
 ) {
   // validate parameter
@@ -719,7 +719,6 @@ BFSEXT_EXPORT int ext_file_write(
   }
   common_mountpoint_t* mp = file->mp;
   ext_fs_t* fs = mp->fs;
-  int result;
   // handle read only
   if ( fs->read_only ) {
     return EROFS;
@@ -733,7 +732,7 @@ BFSEXT_EXPORT int ext_file_write(
     return EOK;
   }
   // start transaction
-  result = common_transaction_begin( fs->bdev );
+  int result = common_transaction_begin(fs->bdev);
   if ( EOK != result ) {
     return result;
   }
@@ -768,8 +767,8 @@ BFSEXT_EXPORT int ext_file_write(
  */
 BFSEXT_EXPORT int ext_file_seek(
   ext_file_t* file,
-  int64_t offset,
-  uint32_t whence
+  const int64_t offset,
+  const uint32_t whence
 ) {
   // validate parameter
   if ( ! file ) {
