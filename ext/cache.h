@@ -37,7 +37,7 @@ extern "C" {
 #define EXT_CACHE_GOLDEN_RATIO 2654435761U
 
 /** @brief inode cache entry */
-typedef struct cache_inode {
+typedef struct ext_cache_inode_node {
   /** @brief inode number */
   uint32_t inode_number;
   /** @brief size */
@@ -51,32 +51,74 @@ typedef struct cache_inode {
   /** @brief dirty flag */
   bool dirty;
   /** @brief lru previous */
-  struct cache_inode *lru_prev;
+  struct ext_cache_inode_node *lru_prev;
   /** @brief lru next */
-  struct cache_inode *lru_next;
+  struct ext_cache_inode_node *lru_next;
   /** @brief hash next */
-  struct cache_inode *hash_next;
-} cache_inode_t;
+  struct ext_cache_inode_node *hash_next;
+} ext_cache_inode_node_t;
+
+/** @brief inode cache structure */
+typedef struct ext_cache_inode {
+  /** @brief cache capacity */
+  size_t capacity;
+  /** @brief cache size */
+  size_t size;
+  /** @brief pointer to head */
+  ext_cache_inode_node_t* head;
+  /** @brief pointer to tail */
+  ext_cache_inode_node_t* tail;
+  /** @brief hash lookup table */
+  ext_cache_inode_node_t* lookup[ EXT_CACHE_INODE_HASH_SIZE ];
+} ext_cache_inode_t;
 
 /** @brief dentry cache */
-typedef struct directory_entry_cache {
+typedef struct ext_cache_directory_entry_node {
   /** @brief name */
   char* name;
   /** @brief pointer to parent dir */
-  struct directory_entry_cache* parent;
+  struct ext_cache_directory_entry_node* parent;
   /** @brief inode cache */
-  cache_inode_t* inode;
+  ext_cache_inode_node_t* inode;
   /** @brief lru previous */
-  struct directory_entry_cache* lru_prev;
+  struct ext_cache_directory_entry_node* lru_prev;
   /** @brief lru next */
-  struct directory_entry_cache* lru_next;
+  struct ext_cache_directory_entry_node* lru_next;
   /** @brief hash next */
-  struct directory_entry_cache* hash_next;
-} directory_entry_cache_t;
+  struct ext_cache_directory_entry_node* hash_next;
+} ext_cache_directory_entry_node_t;
+
+/** @brief directory entry cache structure */
+typedef struct ext_cache_directory_entry {
+  /** @brief cache capacity */
+  size_t capacity;
+  /** @brief cache size */
+  size_t size;
+  /** @brief pointer to head */
+  ext_cache_directory_entry_node_t* head;
+  /** @brief pointer to tail */
+  ext_cache_directory_entry_node_t* tail;
+  /** @brief hash lookup table */
+  ext_cache_directory_entry_node_t* lookup[ EXT_CACHE_DENTRY_HASH_SIZE ];
+} ext_cache_directory_entry_t;
+
 
 #if defined( _BFS_COMPILING )
-  uint32_t ext_cache_hash_dentry( directory_entry_cache_t*, const char* );
+  // helper functions
+  uint32_t ext_cache_hash_dentry( ext_cache_directory_entry_node_t*, const char* );
   uint32_t ext_cache_hash_inode( ext_fs_t*, uint32_t );
+
+  // regular directory cache functions
+  ext_cache_directory_entry_t* ext_cache_directory_entry_setup( void );
+  void ext_cache_directory_entry_destroy( ext_cache_directory_entry_t* );
+  void ext_cache_directory_entry_detach( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
+  void ext_cache_directory_entry_mode_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
+
+  // regular inode cache functions
+  ext_cache_inode_t* ext_cache_inode_setup( void );
+  void ext_cache_inode_destroy( ext_cache_inode_t* );
+  void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
+  void ext_cache_inode_mode_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
 #endif
 
 #ifdef __cplusplus
