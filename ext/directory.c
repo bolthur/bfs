@@ -37,7 +37,6 @@
 
 /**
  * @brief Load ext directory data
- *
  * @param fs
  * @param dir
  * @param inode
@@ -77,9 +76,9 @@ BFSEXT_NO_EXPORT int ext_directory_load(
 
 /**
  * @brief Remove directory
- *
  * @param path
  * @return int
+ * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
   // validate parameter
@@ -236,12 +235,11 @@ BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
 
 /**
  * @brief Move directory
- *
  * @param old_path
  * @param new_path
  * @return int
- *
  * @todo add transaction
+ * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path ) {
   // validate parameter
@@ -445,9 +443,9 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
 
 /**
  * @brief Create directory
- *
  * @param path
  * @return int
+ * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   // validate parameter
@@ -615,7 +613,6 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
 
 /**
  * @brief Open a directory
- *
  * @param dir
  * @param path
  * @return int
@@ -681,7 +678,8 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     return result;
   }
   memcpy( &dir->inode, &directory->inode->inode, sizeof( ext_structure_inode_t ) );
-  dir->inode_number = directory->parent->inode_number;
+  dir->inode_number = directory->inode_number;
+  dir->cache = directory;
   // copy over mountpoint
   dir->mp = mp;
   // rewind
@@ -720,7 +718,6 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
 
 /**
  * @brief Close opened directory
- *
  * @param dir
  * @return int
  */
@@ -735,12 +732,15 @@ BFSEXT_EXPORT int ext_directory_close( ext_directory_t* dir ) {
   if ( dir->entry ) {
     dir->entry = nullptr;
   }
+  if ( dir->cache ) {
+    ext_cache_directory_entry_put( dir->cache );
+    dir->cache = nullptr;
+  }
   return EOK;
 }
 
 /**
  * @brief Get next entry
- *
  * @param dir
  * @return int
  */
@@ -791,7 +791,6 @@ BFSEXT_EXPORT int ext_directory_next_entry( ext_directory_t* dir ) {
 
 /**
  * @brief Rewind directory
- *
  * @param dir
  * @return int
  */
@@ -811,7 +810,6 @@ BFSEXT_EXPORT int ext_directory_rewind( ext_directory_t* dir ) {
 
 /**
  * @brief Get directory entry by name
- *
  * @param dir
  * @param name
  * @return int
@@ -846,13 +844,12 @@ BFSEXT_EXPORT int ext_directory_entry_by_name( ext_directory_t* dir, const char*
 
 /**
  * @brief calculate directory entry size
- *
  * @param name_length
  * @param value
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_directory_entry_size(
-  uint64_t name_length,
+  const uint64_t name_length,
   uint64_t* value
 ) {
   // validate

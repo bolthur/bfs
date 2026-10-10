@@ -129,6 +129,7 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_directory_entry_insert( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_hash_remove( ext_cache_directory_entry_t*, const ext_cache_directory_entry_node_t* );
   ext_cache_directory_entry_node_t* ext_cache_directory_entry_allocate_or_evict( ext_cache_directory_entry_t* );
+  void ext_cache_directory_entry_put( ext_cache_directory_entry_node_t* );
 
   // regular inode cache functions
   ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* );

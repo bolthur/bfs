@@ -428,6 +428,17 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_all
 }
 
 /**
+ * Dereference a node up to it's parent
+ * @param node
+ */
+BFSEXT_NO_EXPORT void ext_cache_directory_entry_put( ext_cache_directory_entry_node_t* node ) {
+  while ( node ) {
+    node->reference_count--;
+    node = node->parent;
+  }
+}
+
+/**
  * Setup inode cache
  * @param fs file system object
  * @return
