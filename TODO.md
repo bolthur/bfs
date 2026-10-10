@@ -36,8 +36,10 @@
 - [x] Something in the implementation destroys the fat image
 - [x] Add write transaction instead of direct writing with some sort of cache accessed
 - [ ] Add proper locking to library functions
-- [x] Optimizations
+- [ ] Optimizations
   - [x] Introduce some sort of read/write cache instead of transactions caching blocks until drain / flush
+  - [ ] Add ext directory entry level cache
+  - [ ] Add ext inode entry level cache
 - [ ] Cleanup
   - [ ] Check written code and simplify it once everything works
   - [ ] Check code and deduplicate similar code like file move or folder move

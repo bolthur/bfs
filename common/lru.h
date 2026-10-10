@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+/** @brief lru cache capacity */
 #define LRU_CACHE_CAPACITY 1024
 
 /** @brief common lru cache block */
