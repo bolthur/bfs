@@ -28,6 +28,9 @@
 extern "C" {
 #endif
 
+typedef struct ext_cache_inode  ext_cache_inode_t;
+typedef struct ext_cache_directory_entry ext_cache_directory_entry_t;
+
 /** @brief Fat file system object */
 typedef struct {
   /** @brief Flag indicating access is read only or not */
@@ -36,6 +39,10 @@ typedef struct {
   common_blockdev_t* bdev;
   /** @brief super block information */
   ext_structure_superblock_t superblock;
+  /** @brief inode cache */
+  ext_cache_inode_t* inode;
+  /** @brief directory entry cache */
+  ext_cache_directory_entry_t* directory;
 } ext_fs_t;
 
 

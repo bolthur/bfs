@@ -119,6 +119,7 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_inode_destroy( ext_cache_inode_t* );
   void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_mode_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
+  void ext_cache_inode_drain( ext_cache_inode_t* );
 #endif
 
 #ifdef __cplusplus

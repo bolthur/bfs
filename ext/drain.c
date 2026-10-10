@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <ext/drain.h>
 #include <common/lru.h>
-#include <common/constant.h>
+#include <ext/cache.h>
+#include <ext/drain.h>
 
 /**
  * Drain fs caches
@@ -25,4 +25,5 @@
  */
 void ext_drain( const ext_fs_t* fs ) {
   common_lru_drain( fs->bdev->lru );
+  ext_cache_inode_drain( fs->inode );
 }

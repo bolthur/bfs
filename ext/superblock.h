@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #if defined( _BFS_COMPILING )
-  int ext_superblock_read( ext_fs_t* fs, ext_structure_superblock_t* superblock );
+  int ext_superblock_read( const ext_fs_t* fs, ext_structure_superblock_t* superblock );
   int ext_superblock_write( ext_fs_t* fs, ext_structure_superblock_t* superblock );
   int ext_superblock_check( ext_fs_t* fs );
   int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_size );

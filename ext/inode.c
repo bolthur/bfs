@@ -62,7 +62,7 @@ BFSEXT_NO_EXPORT int ext_inode_get_local_inode(
  */
 BFSEXT_NO_EXPORT int ext_inode_read_inode(
   ext_fs_t* fs,
-  uint64_t number,
+  const uint64_t number,
   ext_structure_inode_t* inode
 ) {
   // validate
@@ -94,7 +94,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
     return result;
   }
   // calculate offset
-  uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
+  const uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
   // read data
   result = common_blockdev_bytes_read(
     fs->bdev,
@@ -118,7 +118,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
  */
 BFSEXT_NO_EXPORT int ext_inode_write_inode(
   ext_fs_t* fs,
-  uint64_t number,
+  const uint64_t number,
   ext_structure_inode_t* inode
 ) {
   // validate
@@ -150,7 +150,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_inode(
     return result;
   }
   // calculate offset
-  uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
+  const uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
   // read data
   result = common_blockdev_bytes_write(
     fs->bdev,
@@ -177,9 +177,9 @@ BFSEXT_NO_EXPORT int ext_inode_write_inode(
 BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t block_no,
+  const uint64_t block_no,
   uint64_t* offset,
-  inode_allocate_t allocate
+  const inode_allocate_t allocate
 ) {
   // validate parameter
   if ( ! fs || ! inode || ! offset ) {
@@ -270,9 +270,9 @@ BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
 BFSEXT_NO_EXPORT int ext_inode_read_block(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t block_no,
+  const uint64_t block_no,
   uint8_t* buffer,
-  uint64_t count
+  const uint64_t count
 ) {
   // validate
   if ( ! fs || ! inode || ! buffer ) {
@@ -329,7 +329,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
 BFSEXT_NO_EXPORT int ext_inode_read_data(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t start,
+  const uint64_t start,
   uint64_t length,
   uint8_t* buffer
 ) {
@@ -416,9 +416,9 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
 BFSEXT_NO_EXPORT int ext_inode_write_block(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t block_no,
+  const uint64_t block_no,
   uint8_t* buffer,
-  uint64_t count
+  const uint64_t count
 ) {
   // validate
   if ( ! fs || ! inode || ! buffer ) {
@@ -464,7 +464,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_block(
 BFSEXT_NO_EXPORT int ext_inode_write_data(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t start,
+  const uint64_t start,
   uint64_t length,
   uint8_t* buffer
 ) {
@@ -482,7 +482,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
   // determine start and end block
   uint64_t start_block = start / block_size;
   uint64_t end_block = ( start + length - 1 ) / block_size;
-  uint64_t req_length = length;
+  const uint64_t req_length = length;
   // allocate a local buffer
   uint8_t* local_buffer = malloc( ( size_t )block_size );
   if ( ! local_buffer ) {
@@ -575,7 +575,6 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
   }
 
   uint64_t number = 0;
-  uint64_t bgnumber;
   uint64_t bgcount;
   // get block size
   uint64_t block_size;
@@ -594,10 +593,9 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
     return ENOMEM;
   }
 
-  for ( bgnumber = 0; bgnumber < bgcount && 0 == number; bgnumber++ ) {
+  for ( uint64_t bgnumber = 0; bgnumber < bgcount && 0 == number; bgnumber++ ) {
     // read block group descriptor
-    ext_structure_block_group_descriptor_t bgd;
-    memset( &bgd, 0, sizeof( bgd ) );
+    ext_structure_block_group_descriptor_t bgd = {0};
     result = ext_blockgroup_read( fs, bgnumber, &bgd );
     if ( EOK != result ) {
       free( bitmap );
@@ -679,8 +677,8 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
  */
 BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
   ext_fs_t* fs,
-  uint64_t table_block,
-  uint64_t level
+  const uint64_t table_block,
+  const uint64_t level
 ) {
   if ( ! fs ) {
     return EINVAL;
@@ -746,7 +744,7 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
 BFSEXT_NO_EXPORT int ext_inode_deallocate(
   ext_fs_t* fs,
   ext_structure_inode_t* inode,
-  uint64_t number
+  const uint64_t number
 ) {
   // handle invalid data
   if ( ! fs || ! inode || ! number ) {
@@ -767,8 +765,8 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate(
     return result;
   }
   // read block group number
-  uint64_t bgnum = local_inode_number / fs->superblock.s_inodes_per_group;
-  uint64_t num = local_inode_number % fs->superblock.s_inodes_per_group;
+  const uint64_t bgnum = local_inode_number / fs->superblock.s_inodes_per_group;
+  const uint64_t num = local_inode_number % fs->superblock.s_inodes_per_group;
   // read block group descriptor
   ext_structure_block_group_descriptor_t bgd;
   result = ext_blockgroup_read( fs, bgnum, &bgd );

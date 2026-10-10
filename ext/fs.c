@@ -23,6 +23,7 @@
 #include <ext/fs.h>
 #include <ext/superblock.h>
 #include <ext/bfsext_export.h>
+#include <ext/cache.h>
 
 /**
  * @brief Init ext fs
@@ -35,7 +36,7 @@
 BFSEXT_NO_EXPORT int ext_fs_init(
   ext_fs_t* fs,
   common_blockdev_t* bdev,
-  bool read_only
+  const bool read_only
 ) {
   // validate
   if ( ! fs || ! bdev ) {
@@ -44,6 +45,16 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   // populate fs information
   fs->bdev = bdev;
   fs->read_only = read_only;
+  // populate caches
+  fs->inode = ext_cache_inode_setup();
+  if ( ! fs->inode ) {
+    return ENOMEM;
+  }
+  fs->directory = ext_cache_directory_entry_setup();
+  if ( ! fs->directory ) {
+    free( fs->inode );
+    return ENOMEM;
+  }
   // read superblock into structure
   int result = ext_superblock_read( fs, &fs->superblock );
   if ( EOK != result ) {
@@ -77,6 +88,16 @@ BFSEXT_NO_EXPORT int ext_fs_init(
  */
 BFSEXT_NO_EXPORT int ext_fs_fini( ext_fs_t* fs ) {
   if ( fs ) {
+    // drain and destroy inode cache
+    if ( fs->inode ) {
+      ext_cache_inode_drain( fs->inode );
+      ext_cache_inode_destroy( fs->inode );
+    }
+    // destroy directory cache
+    if ( fs->directory ) {
+      ext_cache_directory_entry_destroy( fs->directory );
+    }
+    // free fs
     free( fs );
   }
   return EOK;

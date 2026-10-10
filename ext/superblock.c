@@ -32,16 +32,16 @@
 /**
  * @brief Read superblock
  *
- * @param bdev
+ * @param fs
  * @param superblock
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_superblock_read(
-  ext_fs_t* fs,
+  const ext_fs_t* fs,
   ext_structure_superblock_t* superblock
 ) {
   // read bytes
-  int result = common_blockdev_bytes_read(
+  const int result = common_blockdev_bytes_read(
     fs->bdev,
     1024,
     superblock,
@@ -180,12 +180,12 @@ BFSEXT_NO_EXPORT int ext_superblock_check( ext_fs_t* fs ) {
   }
   // get block size
   uint64_t bsize;
-  int result = ext_superblock_block_size( fs, &bsize );
+  const int result = ext_superblock_block_size( fs, &bsize );
   if ( EOK != result ) {
     return result;
   }
   // validate inode size for dynamic revision
-  uint64_t inode_size = fs->superblock.s_inode_size;
+  const uint64_t inode_size = fs->superblock.s_inode_size;
   if (
     EXT_DYNAMIC_REV == fs->superblock.s_rev_level
     && (

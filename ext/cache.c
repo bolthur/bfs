@@ -208,3 +208,11 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_mode_to_head(
     cache->tail = node;
   }
 }
+
+/**
+ * Drain inode cache
+ * @param cache cache to drain
+ * @todo implement properly
+ */
+BFSCOMMON_NO_EXPORT void ext_cache_inode_drain( [[maybe_unused]] ext_cache_inode_t* cache ) {
+}
