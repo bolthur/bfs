@@ -580,13 +580,15 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
   if ( 0 == number ) {
     return EINVAL;
   }
+  // push number to output
+  *inode_number = number + 1;
   // read inode
-  result = ext_inode_read_inode( fs, number + 1, inode );
+  result = ext_inode_read_inode( fs, *inode_number, inode );
   if ( EOK != result ) {
     return result;
   }
-  memset( inode, 0, sizeof( ext_structure_inode_t ) );
-  *inode_number = number;
+  // remove from cache
+  ext_cache_inode_put( fs->inode, *inode_number );
   // return success
   return EOK;
 }

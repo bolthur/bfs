@@ -102,7 +102,7 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   // calculate blocks to read
   const uint64_t blocks_to_read = ( total_bytes + bsize - 1 ) / bsize;
   // allocate space for groups
-  fs->groups = malloc( blocks_to_read * bsize );
+  fs->groups = malloc( ( size_t )( blocks_to_read * bsize ) );
   // handle error
   if ( ! fs->groups ) {
     ext_cache_directory_entry_destroy( fs->directory );
@@ -110,7 +110,7 @@ BFSEXT_NO_EXPORT int ext_fs_init(
     return ENOMEM;
   }
   // clear out
-  memset( fs->groups, 0, blocks_to_read * bsize );
+  memset( fs->groups, 0, ( size_t )( blocks_to_read * bsize ) );
   // read groups into array
   result = common_blockdev_bytes_read(
     fs->bdev,

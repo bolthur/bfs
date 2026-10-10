@@ -667,7 +667,7 @@ TEST( ext2, directory_move_dir_rw_short_name_success ) {
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
   // get by name
-  result = ext_directory_entry_by_name( &dir, "MOVE" );
+  result = ext_directory_entry_by_name( &dir, "move" );
   EXPECT_EQ( result, ENOENT );
   // get by name
   result = ext_directory_entry_by_name( &dir, "move2" );
@@ -682,7 +682,7 @@ TEST( ext2, directory_move_dir_rw_short_name_success ) {
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
   // get by name
-  result = ext_directory_entry_by_name( &dir, "MOVE" );
+  result = ext_directory_entry_by_name( &dir, "move" );
   EXPECT_EQ( result, EOK );
   // get by name
   result = ext_directory_entry_by_name( &dir, "move2" );

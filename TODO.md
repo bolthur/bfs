@@ -38,8 +38,9 @@
 - [ ] Add proper locking to library functions
 - [ ] Optimizations
   - [x] Introduce some sort of read/write cache instead of transactions caching blocks until drain / flush
-  - [ ] Add ext directory entry level cache
-  - [ ] Add ext inode entry level cache
+  - [x] Add ext directory entry level cache
+  - [x] Add ext inode entry level cache
+  - [ ] Rework inode cache to prevent memory leaks
 - [ ] Cleanup
   - [ ] Check written code and simplify it once everything works
   - [ ] Check code and deduplicate similar code like file move or folder move

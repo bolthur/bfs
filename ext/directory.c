@@ -33,6 +33,7 @@
 #include <ext/fs.h>
 #include <ext/structure.h>
 #include <ext/cache.h>
+#include <ext/drain.h>
 #include <bfsconfig.h>
 
 /**
@@ -429,6 +430,10 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
   if ( EOK != result ) {
     return result;
   }
+  // drain cache after close
+  /// FIXME: DRAIN ONLY INVALID ENTRIES
+  ext_drain( fs_old );
+  ext_drain( fs_new );
   // return success
   return EOK;
 }
@@ -542,7 +547,14 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   entry_cache->parent = dir.cache;
   strcpy( entry_cache->name, base );
   entry_cache->reference_count = 1;
+  entry_cache->lru_next = entry_cache->lru_prev = nullptr;
+  entry_cache->hash_next = entry_cache->hash_prev = nullptr;
   ext_cache_directory_entry_insert( fs->directory, entry_cache );
+  auto parent = entry_cache->parent;
+  while ( parent ) {
+    parent->reference_count++;
+    parent = parent->parent;
+  }
   // temporary new directory
   ext_directory_t newdir = {
     .cache = entry_cache,

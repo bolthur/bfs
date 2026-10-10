@@ -843,7 +843,10 @@ BFSEXT_NO_EXPORT void ext_cache_inode_flush( ext_cache_inode_t* cache, ext_cache
  * @param cache cache to operate on
  * @param inode_number inode number
  */
-BFSEXT_NO_EXPORT void ext_cache_inode_put( ext_cache_inode_t* cache, uint64_t inode_number ) {
+BFSEXT_NO_EXPORT void ext_cache_inode_put(
+  ext_cache_inode_t* cache,
+  const uint64_t inode_number
+) {
   // lookup via hash
   ext_cache_inode_node_t* node = ext_cache_inode_lookup( cache, inode_number );
   // handle found
