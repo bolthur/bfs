@@ -24,6 +24,10 @@
  * @param fs fs to train caches for
  */
 void ext_drain( const ext_fs_t* fs ) {
-  common_lru_drain( fs->bdev->lru );
+  // drain directory cache
+  ext_cache_directory_entry_drain( fs->directory );
+  // drain inode cache
   ext_cache_inode_drain( fs->inode );
+  // drain common lru
+  common_lru_drain( fs->bdev->lru );
 }

@@ -31,20 +31,20 @@
 
 /**
  * @brief Link directory
- *
+ * @param fs
  * @param dir
  * @param inode
  * @param number
  * @param path
  * @return int
- *
  * @todo evaluate type by mode
+ * @todo use direntry cache
  */
 BFSEXT_NO_EXPORT int ext_link_link(
   ext_fs_t* fs,
   ext_directory_t* dir,
   ext_structure_inode_t* inode,
-  uint64_t number,
+  const uint64_t number,
   const char* path
 ) {
   // validate
@@ -75,7 +75,6 @@ BFSEXT_NO_EXPORT int ext_link_link(
         break;
     }
   }
-  uint64_t pos = 0;
   uint64_t new_entry_length;
   // get new entry size
   result = ext_directory_entry_size( strlen( path ) + 1, &new_entry_length );
@@ -84,6 +83,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
   }
   // handle existing
   if ( dir->inode.i_size ) {
+    uint64_t pos = 0;
     // handle no data
     if ( ! dir->data ) {
       return EINVAL;
@@ -91,8 +91,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
     // loop through data
     while ( dir->inode.i_size && pos < dir->inode.i_size ) {
       // get entry
-      ext_structure_directory_entry_t* entry = ( ext_structure_directory_entry_t* )
-        &dir->data[ pos ];
+      auto const entry = ( ext_structure_directory_entry_t* )&dir->data[ pos ];
       // calculate real entry size
       uint64_t entry_length;
       result = ext_directory_entry_size( entry->name_len, &entry_length );
@@ -105,7 +104,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
       }
       // check if there is enough space
       if ( entry->rec_len - entry_length >= new_entry_length ) {
-        ext_structure_directory_entry_t* new_entry = ( ext_structure_directory_entry_t* )
+        auto const new_entry = ( ext_structure_directory_entry_t* )
           &dir->data[ pos + entry_length ];
         // create new entry
         new_entry->name_len = ( uint8_t )strlen( path );
@@ -146,7 +145,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
     return ENOMEM;
   }
   memset( buffer, 0, ( size_t )block_size );
-  ext_structure_directory_entry_t* new_entry = ( ext_structure_directory_entry_t* )buffer;
+  auto const new_entry = ( ext_structure_directory_entry_t* )buffer;
   // create new entry
   new_entry->name_len = ( uint8_t )strlen( path );
   memcpy( new_entry->name, path, new_entry->name_len + 1 );
@@ -182,10 +181,11 @@ BFSEXT_NO_EXPORT int ext_link_link(
 
 /**
  * @brief Unlink
- *
- * @param dir
- * @param path
+ * @param fs filesystem to operate on
+ * @param dir directory
+ * @param path path
  * @return int
+ * @todo use direntry cache
  */
 BFSEXT_NO_EXPORT int ext_link_unlink(
   ext_fs_t* fs,
@@ -209,11 +209,11 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
     return EINVAL;
   }
   ext_structure_directory_entry_t* prev = nullptr;
-  ext_structure_directory_entry_t* next = nullptr;
+  const ext_structure_directory_entry_t* next = nullptr;
   // loop through data
   while ( dir->inode.i_size && pos < dir->inode.i_size ) {
     // get entry
-    ext_structure_directory_entry_t* entry = ( ext_structure_directory_entry_t* )
+    auto const entry = ( ext_structure_directory_entry_t* )
       &dir->data[ pos ];
     if ( pos + entry->rec_len < dir->inode.i_size ) {
       next = ( ext_structure_directory_entry_t* )
@@ -242,16 +242,16 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
           if ( EOK != result ) {
             return result;
           }
-          uint64_t bgnumber = local_inode_number / fs->superblock.s_inodes_per_group;
+          const uint64_t group_number = local_inode_number / fs->superblock.s_inodes_per_group;
           // read block group
           ext_structure_block_group_descriptor_t bgd;
-          result = ext_blockgroup_read( fs, bgnumber, &bgd );
+          result = ext_blockgroup_read( fs, group_number, &bgd );
           if ( EOK != result ) {
             return result;
           }
           // increment directories
           bgd.bg_used_dirs_count--;
-          result = ext_blockgroup_write( fs, bgnumber, &bgd );
+          result = ext_blockgroup_write( fs, group_number, &bgd );
           if ( EOK != result ) {
             return result;
           }
@@ -274,7 +274,7 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
         prev->rec_len += entry->rec_len;
       // try to merge with next one
       } else if ( next ) {
-        uint16_t entry_length = entry->rec_len;
+        const uint16_t entry_length = entry->rec_len;
         memcpy( entry, next, next->rec_len );
         entry->rec_len += entry_length;
       }
