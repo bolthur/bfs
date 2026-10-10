@@ -192,7 +192,7 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
     if ( oldest->dirty ) {
       const int result = common_blockdev_if_bytes_write(
         cache->bdev,
-        node->data,
+        oldest->data,
         block_number,
         1
       );

@@ -190,7 +190,7 @@ BFSEXT_NO_EXPORT int ext_block_allocate( ext_fs_t* fs, uint64_t* value ) {
           free( bitmap );
           return result;
         }
-        uint64_t block_number = fs->superblock.s_blocks_per_group * ( uint64_t )blockgroup
+        const uint64_t block_number = fs->superblock.s_blocks_per_group * ( uint64_t )blockgroup
           + ( i * 32 + j ) + fs->superblock.s_first_data_block;
         // allocate space and fill new block with 0
         uint8_t* new_block = malloc( ( size_t )block_size );
