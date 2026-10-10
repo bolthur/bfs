@@ -39,13 +39,9 @@ extern "C" {
 /** @brief inode cache entry */
 typedef struct ext_cache_inode_node {
   /** @brief inode number */
-  uint32_t inode_number;
-  /** @brief size */
-  uint32_t size;
-  /** @brief mode */
-  uint16_t mode;
-  /** @brief block pointers */
-  uint32_t block_pointer[ 15 ];
+  uint64_t inode_number;
+  /** @brief inode structure */
+  ext_structure_inode_t inode;
   /** @brief reference count */
   int reference_count;
   /** @brief dirty flag */
@@ -114,7 +110,7 @@ typedef struct ext_cache_directory_entry {
 #if defined( _BFS_COMPILING )
   // helper functions
   uint32_t ext_cache_hash_directory_entry( ext_cache_directory_entry_node_t*, const char* );
-  uint32_t ext_cache_hash_inode( ext_fs_t*, uint32_t );
+  uint64_t ext_cache_hash_inode( ext_fs_t*, uint64_t );
 
   // regular directory cache functions
   ext_cache_directory_entry_t* ext_cache_directory_entry_setup( ext_fs_t* );
@@ -129,14 +125,15 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_move_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_drain( ext_cache_inode_t* );
-  ext_cache_inode_node_t* ext_cache_inode_get( ext_cache_inode_t*, uint32_t );
-  int ext_cache_inode_write( ext_cache_inode_t*, uint32_t, const uint8_t* );
-  int ext_cache_inode_read( ext_cache_inode_t*, uint32_t, uint8_t* );
-  ext_cache_inode_node_t* ext_cache_inode_lookup( ext_cache_inode_t*, uint32_t );
+  ext_cache_inode_node_t* ext_cache_inode_get( ext_cache_inode_t*, uint64_t );
+  int ext_cache_inode_write( ext_cache_inode_t*, uint64_t, const uint8_t* );
+  int ext_cache_inode_read( ext_cache_inode_t*, uint64_t, uint8_t* );
+  ext_cache_inode_node_t* ext_cache_inode_lookup( ext_cache_inode_t*, uint64_t );
   void ext_cache_inode_insert( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_hash_remove( ext_cache_inode_t*, const ext_cache_inode_node_t* );
   ext_cache_inode_node_t* ext_cache_inode_allocate_or_evict( ext_cache_inode_t* );
   void ext_cache_inode_flush( ext_cache_inode_t*, ext_cache_inode_node_t* );
+  void ext_cache_inode_put( ext_cache_inode_t*, uint64_t );
 #endif
 
 #ifdef __cplusplus

@@ -47,12 +47,12 @@ BFSEXT_NO_EXPORT uint32_t ext_cache_hash_directory_entry(
  * @param inode_number inode number
  * @return
  */
-BFSEXT_NO_EXPORT uint32_t ext_cache_hash_inode(
+BFSEXT_NO_EXPORT uint64_t ext_cache_hash_inode(
   ext_fs_t* fs,
-  const uint32_t inode_number
+  const uint64_t inode_number
 ) {
-  const uint32_t mount_id = ( uint32_t )( ( uintptr_t )fs );
-  const uint32_t hash = ( inode_number ^ mount_id ) * EXT_CACHE_GOLDEN_RATIO;
+  const uint64_t mount_id = ( uint64_t )( ( uintptr_t )fs );
+  const uint64_t hash = ( inode_number ^ mount_id ) * EXT_CACHE_GOLDEN_RATIO;
   return hash & EXT_CACHE_INODE_HASH_MASK;
 }
 
@@ -245,7 +245,7 @@ BFSEXT_NO_EXPORT void ext_cache_inode_drain(
  */
 BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
   ext_cache_inode_t* cache,
-  const uint32_t inode_number
+  const uint64_t inode_number
 ) {
   if ( ! cache ) {
     return nullptr;
@@ -281,15 +281,13 @@ BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
     return nullptr;
   }
   // get inode itself
-  auto const inode = ( ext_structure_inode_t* )lru->data + offset;
+  auto const inode = ( ext_structure_inode_t* )( lru->data + offset );
   // populate inode structure
   node->inode_number = inode_number;
-  node->size = inode->i_size;
-  node->mode = inode->i_mode;
   node->reference_count = 1;
   node->dirty = false;
-  // copy block pointers
-  memcpy( node->block_pointer, inode->i_block, sizeof( uint32_t ) * 15 );
+  // copy inode data
+  memcpy( &node->inode, inode, sizeof( ext_structure_inode_t ) );
   // insert node
   ext_cache_inode_insert( cache, node );
   // return node
@@ -305,7 +303,7 @@ BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
  */
 BFSEXT_NO_EXPORT int ext_cache_inode_write(
   ext_cache_inode_t* cache,
-  const uint32_t inode_number,
+  const uint64_t inode_number,
   const uint8_t* in
 ) {
   if ( ! cache || ! in ) {
@@ -318,7 +316,9 @@ BFSEXT_NO_EXPORT int ext_cache_inode_write(
   }
   // mark as dirty
   node->dirty = true;
-  //memcpy( node->data, data, ( size_t )cache->node_data_size );
+  // copy content
+  memcpy( &node->inode, in, sizeof( ext_structure_inode_t ) );
+  // return success
   return EOK;
 }
 
@@ -331,17 +331,20 @@ BFSEXT_NO_EXPORT int ext_cache_inode_write(
  */
 BFSEXT_NO_EXPORT int ext_cache_inode_read(
   ext_cache_inode_t* cache,
-  const uint32_t inode_number,
+  const uint64_t inode_number,
   uint8_t* out
 ) {
   if ( ! cache || ! out ) {
     return EINVAL;
   }
+  // get cached inode
   ext_cache_inode_node_t* node = ext_cache_inode_get( cache, inode_number );
   if ( ! node ) {
     return ENODATA;
   }
-  //memcpy( data, node->data, ( size_t )cache->node_data_size );
+  // copy content
+  memcpy( out, &node->inode, sizeof( ext_structure_inode_t ) );
+  // return success
   return EOK;
 }
 
@@ -353,7 +356,7 @@ BFSEXT_NO_EXPORT int ext_cache_inode_read(
  */
 BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_lookup(
   ext_cache_inode_t* cache,
-  const uint32_t inode_number
+  const uint64_t inode_number
 ) {
   if ( ! cache ) {
     return nullptr;
@@ -380,7 +383,7 @@ BFSEXT_NO_EXPORT void ext_cache_inode_insert(
   ext_cache_inode_t* cache,
   ext_cache_inode_node_t* node
 ) {
-  const uint32_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
+  const uint64_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
   // set hash next to lookup
   node->hash_next = cache->lookup[ hash ];
   node->hash_prev = nullptr;
@@ -403,7 +406,7 @@ BFSEXT_NO_EXPORT void ext_cache_inode_hash_remove(
   ext_cache_inode_t* cache,
   const ext_cache_inode_node_t* node
 ) {
-  const uint32_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
+  const uint64_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
   auto current = cache->lookup[ hash ];
   while ( current ) {
     if ( current->inode_number == node->inode_number ) {
@@ -504,12 +507,25 @@ BFSEXT_NO_EXPORT void ext_cache_inode_flush( ext_cache_inode_t* cache, ext_cache
     return;
   }
   // modify from memory
-  auto const inode = ( ext_structure_inode_t* )lru->data + offset;
-  inode->i_size = node->size;
-  inode->i_mode = node->mode;
-  memcpy( inode->i_block, node->block_pointer, sizeof( uint32_t ) * 15 );
+  auto const inode = ( ext_structure_inode_t* )( lru->data + offset );
+  memcpy( inode, &node->inode, sizeof( *inode ) );
   // mark lru node as dirty
   lru->dirty = true;
   // mark inode as sane
   node->dirty = false;
+}
+
+/**
+ * Put inode from cache
+ * @param cache cache to operate on
+ * @param inode_number inode number
+ */
+BFSEXT_NO_EXPORT void ext_cache_inode_put( ext_cache_inode_t* cache, uint64_t inode_number ) {
+  // lookup via hash
+  ext_cache_inode_node_t* node = ext_cache_inode_lookup( cache, inode_number );
+  // handle found
+  if ( node ) {
+    // increment count to prevent drop
+    node->reference_count--;
+  }
 }

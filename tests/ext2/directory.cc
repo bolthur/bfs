@@ -36,14 +36,12 @@
 TEST( ext2, directory_open_sub_directory ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
   int result = ext_directory_open( &dir, "/ext2/foobarlongfolder/foo/bar" );
   EXPECT_EQ( result, EOK );
 
-  ext_iterator_directory_t it;
-  memset( &it, 0, sizeof( it ) );
+  ext_iterator_directory_t it = {};
   result = ext_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );

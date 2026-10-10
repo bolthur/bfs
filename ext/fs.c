@@ -86,6 +86,13 @@ BFSEXT_NO_EXPORT int ext_fs_init(
     ext_cache_inode_destroy( fs->inode );
     return result;
   }
+  // resize blocks
+  result =  bdev->bdif->resize( bdev, bsize );
+  if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
+    return result;
+  }
   /// FIXME: MOVE LOAD OF GROUPS INTO group.c => BEGIN
   // read total block groups
   uint64_t num_groups;
@@ -107,7 +114,7 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   // read groups into array
   result = common_blockdev_bytes_read(
     fs->bdev,
-    bsize == 1024 ? 2 : 1,
+    bsize == 1024 ? 2 : 1 * bsize,
     fs->groups,
     blocks_to_read * bsize
   );
@@ -120,7 +127,7 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   }
   /// FIXME: MOVE LOAD OF GROUPS INTO group.c => END
   // resize block device buffer
-  return bdev->bdif->resize( bdev, bsize );
+  return EOK;
 }
 
 /**

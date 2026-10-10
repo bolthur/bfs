@@ -29,6 +29,8 @@
 #include <ext/structure.h>
 #include <ext/bfsext_export.h>
 
+#include "cache.h"
+
 /**
  * @brief Helper to get local inode index
  *
@@ -70,43 +72,8 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
   if ( ! fs || ! inode ) {
     return EINVAL;
   }
-  // get inode size
-  uint64_t inode_size;
-  int result = ext_superblock_inode_size( fs, &inode_size );
-  if ( EOK != result ) {
-    return result;
-  }
-  // get block size
-  uint64_t block_size;
-  result = ext_superblock_block_size( fs, &block_size );
-  if ( EOK != result ) {
-    return result;
-  }
-  // get internal inode
-  uint64_t number_local;
-  result = ext_inode_get_local_inode( fs, number, &number_local );
-  if ( EOK != result ) {
-    return result;
-  }
-  // read block group descriptor
-  ext_structure_block_group_descriptor_t descriptor;
-  result = ext_blockgroup_read( fs, number_local / fs->superblock.s_inodes_per_group, &descriptor );
-  if ( EOK != result ) {
-    return result;
-  }
-  // calculate offset
-  const uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
-  // read data
-  result = common_blockdev_bytes_read(
-    fs->bdev,
-    descriptor.bg_inode_table * block_size + inode_offset,
-    inode,
-    sizeof( *inode )
-  );
-  if ( EOK != result ) {
-    return result;
-  }
-  return EOK;
+  // load inode from cache
+  return ext_cache_inode_read( fs->inode, number, ( uint8_t* )inode );
 }
 
 /**
@@ -115,8 +82,6 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
  * @param number
  * @param inode
  * @return int
- *
- * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_inode(
   ext_fs_t* fs,
@@ -127,43 +92,8 @@ BFSEXT_NO_EXPORT int ext_inode_write_inode(
   if ( ! fs || ! inode ) {
     return EINVAL;
   }
-  // get inode size
-  uint64_t inode_size;
-  int result = ext_superblock_inode_size( fs, &inode_size );
-  if ( EOK != result ) {
-    return result;
-  }
-  // get block size
-  uint64_t block_size;
-  result = ext_superblock_block_size( fs, &block_size );
-  if ( EOK != result ) {
-    return result;
-  }
-  // get internal inode
-  uint64_t number_local;
-  result = ext_inode_get_local_inode( fs, number, &number_local );
-  if ( EOK != result ) {
-    return result;
-  }
-  // read block group descriptor
-  ext_structure_block_group_descriptor_t descriptor;
-  result = ext_blockgroup_read( fs, number_local / fs->superblock.s_inodes_per_group, &descriptor );
-  if ( EOK != result ) {
-    return result;
-  }
-  // calculate offset
-  const uint64_t inode_offset = inode_size * ( number_local % fs->superblock.s_inodes_per_group );
-  // read data
-  result = common_blockdev_bytes_write(
-    fs->bdev,
-    descriptor.bg_inode_table * block_size + inode_offset,
-    inode,
-    sizeof( *inode )
-  );
-  if ( EOK != result ) {
-    return ENOMEM;
-  }
-  return EOK;
+  // write inode
+  return ext_cache_inode_write( fs->inode, number, ( uint8_t* )inode );
 }
 
 /**
