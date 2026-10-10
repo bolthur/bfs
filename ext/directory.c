@@ -111,7 +111,7 @@ BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
     return ENOMEM;
   }
   // extract base and dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
@@ -263,9 +263,7 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
     return EROFS;
   }
   // variables for source and target dir
-  ext_directory_t source, target;
-  memset( &source, 0, sizeof( source ) );
-  memset( &target, 0, sizeof( target ) );
+  ext_directory_t source = {0}, target = {0};
   // open source directory
   int result = ext_directory_open( &source, old_path );
   if ( EOK != result ) {
@@ -343,8 +341,7 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
     return result;
   }
   // open base directory
-  ext_directory_t new_dir_dir;
-  memset( &new_dir_dir, 0, sizeof( new_dir_dir ) );
+  ext_directory_t new_dir_dir = {0};
   result = ext_directory_open( &new_dir_dir, dir_new_path );
   if ( EOK != result ) {
     free( dup_old_base );
@@ -409,8 +406,7 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
     return result;
   }
   // open old base directory
-  ext_directory_t old_dir_dir;
-  memset( &old_dir_dir, 0, sizeof( old_dir_dir ) );
+  ext_directory_t old_dir_dir = {0};
   result = ext_directory_open( &old_dir_dir, dir_old_path );
   if ( EOK != result ) {
     free( dup_old_base );
@@ -629,10 +625,11 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   }
   const ext_fs_t* fs = mp->fs;
   // load root directory
-  ext_cache_directory_entry_node_t* directory = ext_cache_directory_entry_get(
-    fs->directory, nullptr, "/" );
-  if ( ! directory ) {
-    return ENOENT;
+  ext_cache_directory_entry_node_t* directory;
+  int result = ext_cache_directory_entry_get(
+    fs->directory, nullptr, "/", &directory );
+  if ( EOK != result ) {
+    return result;
   }
   // create path duplicate
   const char* real_path = path + strlen( mp->name ) - 1;
@@ -647,11 +644,12 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     // only valid when there is something
     if ( strlen( p ) ) {
       // load directory
-      directory = ext_cache_directory_entry_get( fs->directory, directory, p );
+      result = ext_cache_directory_entry_get(
+        fs->directory, directory, p, &directory );
       // handle not found
-      if ( ! directory ) {
+      if ( EOK != result ) {
         free( duppath );
-        return ENOENT;
+        return result;
       }
     }
     // get next one
@@ -665,7 +663,7 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     return ENOMEM;
   }
   // load folder data into temporary buffer
-  int result = ext_inode_read_data(
+  result = ext_inode_read_data(
     mp->fs,
     &directory->inode->inode,
     0,

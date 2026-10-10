@@ -174,15 +174,17 @@ BFSEXT_NO_EXPORT void ext_cache_directory_entry_drain(
  * @param cache cache to operate on
  * @param parent parent node
  * @param name folder name
+ * @param out output variable
  * @return
  */
-BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get(
+BFSEXT_NO_EXPORT int ext_cache_directory_entry_get(
   ext_cache_directory_entry_t* cache,
   ext_cache_directory_entry_node_t* parent,
-  const char* name
+  const char* name,
+  ext_cache_directory_entry_node_t** out
 ) {
   if ( ! cache ) {
-    return nullptr;
+    return EINVAL;
   }
   // lookup via hash
   ext_cache_directory_entry_node_t* node = ext_cache_directory_entry_lookup( cache, parent, name );
@@ -191,13 +193,14 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get
     // increment count to prevent drop
     node->reference_count++;
     // return found node
-    return node;
+    *out = node;
+    return EOK;
   }
   // allocate or evict a node
   node = ext_cache_directory_entry_allocate_or_evict( cache );
   // handle nothing
   if ( ! node ) {
-    return nullptr;
+    return ENOMEM;
   }
   // populate parent
   node->parent = parent;
@@ -209,19 +212,19 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get
     node->inode = ext_cache_inode_get( cache->fs->inode, node->inode_number );
     if ( ! node->inode ) {
       free( node );
-      return nullptr;
+      return ENOMEM;
     }
   } else {
     // handle no directory
-    if (  ! ( parent->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    if ( ! ( parent->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
       free( node );
-      return nullptr;
+      return ENOTDIR;
     }
     // allocate temporary space for folder data
     uint8_t* data = malloc( parent->inode->inode.i_size );
     if ( ! data ) {
       free( node );
-      return nullptr;
+      return ENOMEM;
     }
     // load folder data into temporary buffer
     const int result = ext_inode_read_data(
@@ -235,7 +238,7 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get
     if ( EOK != result ) {
       free( data );
       free( node );
-      return nullptr;
+      return result;
     }
     // loop through directory
     uint64_t offset = 0;
@@ -264,7 +267,7 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get
     if ( ! found ) {
       free( data );
       free( node );
-      return nullptr;
+      return ENOENT;
     }
     // populate node
     node->inode_number = found->inode;
@@ -274,13 +277,25 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_get
     // free temporary data again
     free( data );
   }
+  // handle no directory
+  if ( ! ( node->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    // dereference inode
+    ext_cache_inode_put( cache->fs->inode, node->inode_number );
+    // dereference parent
+    ext_cache_directory_entry_put( node->parent );
+    // free node
+    free( node );
+    // return nullptr
+    return ENOTDIR;
+  }
   // copy over name and initialize reference count
   strcpy( node->name, name );
   node->reference_count = 1;
   // insert node
   ext_cache_directory_entry_insert( cache, node );
   // return node
-  return node;
+  *out = node;
+  return EOK;
 }
 
 /**

@@ -124,7 +124,7 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_directory_entry_detach( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_move_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_drain( ext_cache_directory_entry_t* );
-  ext_cache_directory_entry_node_t* ext_cache_directory_entry_get( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t*, const char* );
+  int ext_cache_directory_entry_get( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t*, const char*, ext_cache_directory_entry_node_t** );
   ext_cache_directory_entry_node_t* ext_cache_directory_entry_lookup( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t*, const char* );
   void ext_cache_directory_entry_insert( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_hash_remove( ext_cache_directory_entry_t*, const ext_cache_directory_entry_node_t* );

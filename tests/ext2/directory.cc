@@ -31,6 +31,7 @@
 #include <ext/fs.h>
 #include <ext/file.h>
 #include "../_helper.hh"
+#include "ext/drain.h"
 #include "gtest/gtest.h"
 
 TEST( ext2, directory_open_sub_directory ) {
@@ -643,8 +644,7 @@ TEST( ext2, directory_move_dir_source_not_exist_fail ) {
   int result = ext_directory_move( "/ext2/hello/folder/moveasdf", "/ext2/hello/folder/moveasdf2" );
   EXPECT_EQ( result, ENOENT );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -664,8 +664,7 @@ TEST( ext2, directory_move_dir_rw_short_name_success ) {
   int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/move2" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
@@ -679,7 +678,7 @@ TEST( ext2, directory_move_dir_rw_short_name_success ) {
   result = ext_directory_close( &dir );
   EXPECT_EQ( result, EOK );
   // try to revert directory move
-  result = ext_directory_move( "/ext2/hello/folder/move2", "/ext2/hello/folder/MOVE" );
+  result = ext_directory_move( "/ext2/hello/folder/move2", "/ext2/hello/folder/move" );
   EXPECT_EQ( result, EOK );
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
@@ -703,8 +702,7 @@ TEST( ext2, directory_move_dir_rw_long_name_success ) {
   int result = ext_directory_move( "/ext2/hello/folder/movelongname", "/ext2/hello/folder/movelongname2" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
@@ -739,10 +737,9 @@ TEST( ext2, directory_move_dir_rw_long_name_success ) {
 TEST( ext2, directory_open_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
-  int result = ext_directory_open(
+  const int result = ext_directory_open(
     &dir,
     "/ext2/foobarlongfolder/foo/bar/hello.txt"
   );
