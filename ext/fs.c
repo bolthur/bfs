@@ -18,6 +18,7 @@
 // IWYU pragma: no_include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <common/errno.h> // IWYU pragma: keep
 #include <common/blockdev.h>
 #include <ext/fs.h>
@@ -45,37 +46,79 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   // populate fs information
   fs->bdev = bdev;
   fs->read_only = read_only;
-  // populate caches
+  // populate inode cache
   fs->inode = ext_cache_inode_setup( fs );
   if ( ! fs->inode ) {
     return ENOMEM;
   }
+  // populate directory cache
   fs->directory = ext_cache_directory_entry_setup( fs );
   if ( ! fs->directory ) {
-    free( fs->inode );
+    ext_cache_inode_destroy( fs->inode );
     return ENOMEM;
   }
   // read superblock into structure
   int result = ext_superblock_read( fs, &fs->superblock );
   if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
     return result;
   }
   // check superblock
   result = ext_superblock_check( fs );
   if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
     return result;
   }
   // get block size
   uint64_t bsize;
   result = ext_superblock_block_size( fs, &bsize );
   if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
     return result;
   }
   // check features
   result = ext_fs_check_feature( fs );
   if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
     return result;
   }
+  /// FIXME: MOVE LOAD OF GROUPS INTO group.c => BEGIN
+  // read total block groups
+  uint64_t num_groups;
+  ext_superblock_total_group_by_blocks( fs, &num_groups );
+  // calculate total bytes
+  const uint64_t total_bytes = num_groups * sizeof( ext_structure_block_group_descriptor_t );
+  // calculate blocks to read
+  const uint64_t blocks_to_read = ( total_bytes + bsize - 1 ) / bsize;
+  // allocate space for groups
+  fs->groups = malloc( blocks_to_read * bsize );
+  // handle error
+  if ( ! fs->groups ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
+    return ENOMEM;
+  }
+  // clear out
+  memset( fs->groups, 0, blocks_to_read * bsize );
+  // read groups into array
+  result = common_blockdev_bytes_read(
+    fs->bdev,
+    bsize == 1024 ? 2 : 1,
+    fs->groups,
+    blocks_to_read * bsize
+  );
+  // handle error
+  if ( EOK != result ) {
+    ext_cache_directory_entry_destroy( fs->directory );
+    ext_cache_inode_destroy( fs->inode );
+    free( fs->groups );
+    return result;
+  }
+  /// FIXME: MOVE LOAD OF GROUPS INTO group.c => END
   // resize block device buffer
   return bdev->bdif->resize( bdev, bsize );
 }
@@ -88,14 +131,19 @@ BFSEXT_NO_EXPORT int ext_fs_init(
  */
 BFSEXT_NO_EXPORT int ext_fs_fini( ext_fs_t* fs ) {
   if ( fs ) {
+    // drain and destroy directory cache
+    if ( fs->directory ) {
+      ext_cache_directory_entry_drain( fs->directory );
+      ext_cache_directory_entry_destroy( fs->directory );
+    }
     // drain and destroy inode cache
     if ( fs->inode ) {
       ext_cache_inode_drain( fs->inode );
       ext_cache_inode_destroy( fs->inode );
     }
-    // destroy directory cache
-    if ( fs->directory ) {
-      ext_cache_directory_entry_destroy( fs->directory );
+    // free all groups
+    if ( fs->groups ) {
+      free( fs->groups );
     }
     // free fs
     free( fs );

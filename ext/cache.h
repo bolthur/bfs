@@ -43,7 +43,7 @@ typedef struct ext_cache_inode_node {
   /** @brief size */
   uint32_t size;
   /** @brief mode */
-  uint32_t mode;
+  uint16_t mode;
   /** @brief block pointers */
   uint32_t block_pointer[ 15 ];
   /** @brief reference count */
@@ -54,6 +54,8 @@ typedef struct ext_cache_inode_node {
   struct ext_cache_inode_node *lru_prev;
   /** @brief lru next */
   struct ext_cache_inode_node *lru_next;
+  /** @brief hash previous */
+  struct ext_cache_inode_node *hash_prev;
   /** @brief hash next */
   struct ext_cache_inode_node *hash_next;
 } ext_cache_inode_node_t;
@@ -86,6 +88,8 @@ typedef struct ext_cache_directory_entry_node {
   struct ext_cache_directory_entry_node* lru_prev;
   /** @brief lru next */
   struct ext_cache_directory_entry_node* lru_next;
+  /** @brief hash previous */
+  struct ext_cache_directory_entry_node *hash_prev;
   /** @brief hash next */
   struct ext_cache_directory_entry_node* hash_next;
 } ext_cache_directory_entry_node_t;
@@ -116,17 +120,23 @@ typedef struct ext_cache_directory_entry {
   ext_cache_directory_entry_t* ext_cache_directory_entry_setup( ext_fs_t* );
   void ext_cache_directory_entry_destroy( ext_cache_directory_entry_t* );
   void ext_cache_directory_entry_detach( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
-  void ext_cache_directory_entry_mode_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
+  void ext_cache_directory_entry_move_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
+  void ext_cache_directory_entry_drain( ext_cache_directory_entry_t* );
 
   // regular inode cache functions
   ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* );
   void ext_cache_inode_destroy( ext_cache_inode_t* );
   void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
-  void ext_cache_inode_mode_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
+  void ext_cache_inode_move_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_drain( ext_cache_inode_t* );
-  ext_cache_inode_node_t* ext_cache_inode_get( ext_cache_inode_t*, uint64_t );
-  int ext_cache_inode_write( ext_cache_inode_t*, uint64_t, const uint8_t* );
-  int ext_cache_inode_read( ext_cache_inode_t*, uint64_t, uint8_t* );
+  ext_cache_inode_node_t* ext_cache_inode_get( ext_cache_inode_t*, uint32_t );
+  int ext_cache_inode_write( ext_cache_inode_t*, uint32_t, const uint8_t* );
+  int ext_cache_inode_read( ext_cache_inode_t*, uint32_t, uint8_t* );
+  ext_cache_inode_node_t* ext_cache_inode_lookup( ext_cache_inode_t*, uint32_t );
+  void ext_cache_inode_insert( ext_cache_inode_t*, ext_cache_inode_node_t* );
+  void ext_cache_inode_hash_remove( ext_cache_inode_t*, const ext_cache_inode_node_t* );
+  ext_cache_inode_node_t* ext_cache_inode_allocate_or_evict( ext_cache_inode_t* );
+  void ext_cache_inode_flush( ext_cache_inode_t*, ext_cache_inode_node_t* );
 #endif
 
 #ifdef __cplusplus

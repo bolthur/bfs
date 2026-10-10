@@ -26,15 +26,14 @@
 
 /**
  * @brief Helper to check whether block group contains a superblock
- *
- * @param superblock
+ * @param fs
  * @param blockgroup
  * @param result
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_blockgroup_has_superblock(
   ext_fs_t* fs,
-  uint64_t blockgroup,
+  const uint64_t blockgroup,
   bool* result
 ) {
   // validate parameter
@@ -62,15 +61,14 @@ BFSEXT_NO_EXPORT int ext_blockgroup_has_superblock(
 
 /**
  * @brief Helper to get block group by inode
- *
- * @param superblock
+ * @param fs
  * @param inode
  * @param result
  * @return int
  */
 BFSEXT_NO_EXPORT int ext_blockgroup_get_by_inode(
   ext_fs_t* fs,
-  uint64_t inode,
+  const uint64_t inode,
   uint64_t* result
 ) {
   // validate parameter
@@ -85,7 +83,6 @@ BFSEXT_NO_EXPORT int ext_blockgroup_get_by_inode(
 
 /**
  * @brief Read block group data
- *
  * @param fs
  * @param group
  * @param value
@@ -93,7 +90,7 @@ BFSEXT_NO_EXPORT int ext_blockgroup_get_by_inode(
  */
 BFSEXT_NO_EXPORT int ext_blockgroup_read(
   ext_fs_t* fs,
-  uint64_t group,
+  const uint64_t group,
   ext_structure_block_group_descriptor_t* value
 ) {
   if ( ! fs || ! value ) {
@@ -129,7 +126,6 @@ BFSEXT_NO_EXPORT int ext_blockgroup_read(
 
 /**
  * @brief Write block group descriptor
- *
  * @param fs
  * @param group
  * @param value
@@ -137,7 +133,7 @@ BFSEXT_NO_EXPORT int ext_blockgroup_read(
  */
 BFSEXT_NO_EXPORT int ext_blockgroup_write(
   ext_fs_t* fs,
-  uint64_t group,
+  const uint64_t group,
   ext_structure_block_group_descriptor_t* value
 ) {
   if ( ! fs || ! value ) {

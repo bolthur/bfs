@@ -843,3 +843,51 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate(
   // return success
   return EOK;
 }
+
+/**
+ * Translate inode to block number
+ * @param fs file system to operate on
+ * @param inode_number inode number
+ * @param out_block_number output block number
+ * @param out_block_offset output block offset
+ * @return
+ */
+BFSEXT_NO_EXPORT int ext_inode_calculate_block_number(
+  ext_fs_t* fs,
+  const uint64_t inode_number,
+  uint64_t* out_block_number,
+  uint64_t* out_block_offset
+) {
+  // get inode index
+  uint64_t inode_index;
+  int result = ext_inode_get_local_inode( fs, inode_number, &inode_index );
+  if ( EOK != result ) {
+    return result;
+  }
+  // evaluate block group
+  const uint64_t block_group = inode_index / fs->superblock.s_inodes_per_group;
+  // evaluate index in block group
+  const uint64_t local_inode_index = inode_index % fs->superblock.s_inodes_per_group;
+  // get start block of block group inode table
+  const uint64_t inode_table_start_block = fs->groups[ block_group ].bg_inode_table;
+  // get inode size
+  uint64_t inode_size;
+  result = ext_superblock_inode_size( fs, &inode_size );
+  if ( EOK != result ) {
+    return result;
+  }
+  // get block size size
+  uint64_t bsize;
+  result = ext_superblock_block_size( fs, &bsize );
+  if ( EOK != result ) {
+    return result;
+  }
+  // calculate byte offset of inode
+  const uint64_t byte_offset_in_table = local_inode_index * inode_size;
+  // calculate physical block
+  *out_block_number = inode_table_start_block + ( byte_offset_in_table / bsize );
+  // calculate byte offset in block
+  *out_block_offset = byte_offset_in_table % bsize;
+  // return success
+  return EOK;
+}

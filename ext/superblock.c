@@ -31,7 +31,6 @@
 
 /**
  * @brief Read superblock
- *
  * @param fs
  * @param superblock
  * @return int
@@ -59,7 +58,6 @@ BFSEXT_NO_EXPORT int ext_superblock_read(
 
 /**
  * @brief Write back superblock
- *
  * @param fs
  * @param superblock
  * @return int
@@ -106,7 +104,7 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
       continue;
     }
     // determine start
-    uint64_t start = 0 == idx
+    const uint64_t start = 0 == idx
       ? 1024
       : ( fs->superblock.s_first_data_block + idx * fs->superblock.s_blocks_per_group ) * block_size;
     common_log( "Determined following start for write: %#"PRIx64"\r\n", start );
@@ -139,7 +137,6 @@ BFSEXT_NO_EXPORT int ext_superblock_write(
 
 /**
  * @brief Validate
- *
  * @param fs
  * @return int
  */
@@ -208,7 +205,6 @@ BFSEXT_NO_EXPORT int ext_superblock_check( ext_fs_t* fs ) {
 
 /**
  * @brief Function to get block size
- *
  * @param fs
  * @param block_size
  * @return int
@@ -225,7 +221,6 @@ BFSEXT_NO_EXPORT int ext_superblock_block_size( ext_fs_t* fs, uint64_t* block_si
 
 /**
  * @brief Helper to check if is power of
- *
  * @param a
  * @param b
  * @return int
@@ -245,7 +240,6 @@ BFSEXT_NO_EXPORT int superblock_is_power_of( uint64_t a, uint64_t b )
 
 /**
  * @brief Get fragment size
- *
  * @param fs
  * @param value
  * @return int
@@ -260,7 +254,6 @@ BFSEXT_NO_EXPORT int ext_superblock_frag_size( ext_fs_t* fs, uint64_t* value ) {
 
 /**
  * @brief Get total group by blocks
- *
  * @param fs
  * @param value
  * @return int
@@ -269,14 +262,13 @@ BFSEXT_NO_EXPORT int ext_superblock_total_group_by_blocks( ext_fs_t* fs, uint64_
   if ( ! fs || ! value ) {
     return EINVAL;
   }
-  *value = fs->superblock.s_blocks_count / fs->superblock.s_blocks_per_group +
-    ( fs->superblock.s_blocks_count % fs->superblock.s_blocks_per_group ? 1 : 0 );
+  *value = ( fs->superblock.s_blocks_count + fs->superblock.s_blocks_per_group - 1 ) /
+    fs->superblock.s_blocks_per_group;
   return EOK;
 }
 
 /**
  * @brief Get total group by inode
- *
  * @param fs
  * @param value
  * @return int
@@ -285,14 +277,13 @@ BFSEXT_NO_EXPORT int ext_superblock_total_group_by_inode( ext_fs_t* fs, uint64_t
   if ( ! fs || ! value ) {
     return EINVAL;
   }
-  *value = fs->superblock.s_inodes_count / fs->superblock.s_inodes_per_group +
-    ( fs->superblock.s_inodes_count % fs->superblock.s_inodes_per_group ? 1 : 0 );
+  *value = ( fs->superblock.s_inodes_count + fs->superblock.s_inodes_per_group - 1 ) /
+    fs->superblock.s_inodes_per_group;
   return EOK;
 }
 
 /**
  * @brief Get start
- *
  * @param fs
  * @param value
  * @return int
@@ -303,7 +294,7 @@ BFSEXT_NO_EXPORT int ext_superblock_start( ext_fs_t* fs, uint64_t* value ) {
   }
   // fetch block size
   uint64_t size;
-  int result = ext_superblock_block_size( fs, &size );
+  const int result = ext_superblock_block_size( fs, &size );
   if ( EOK != result ) {
     return result;
   }
@@ -314,7 +305,6 @@ BFSEXT_NO_EXPORT int ext_superblock_start( ext_fs_t* fs, uint64_t* value ) {
 
 /**
  * @brief Get inode size
- *
  * @param fs
  * @param value
  * @return int
@@ -329,7 +319,6 @@ BFSEXT_NO_EXPORT int ext_superblock_inode_size( ext_fs_t* fs, uint64_t* value ) 
 
 /**
  * @brief Get blockgroup count
- *
  * @param fs
  * @param value
  * @return int
@@ -338,7 +327,7 @@ BFSEXT_NO_EXPORT int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* va
   if ( ! fs || ! value ) {
     return EINVAL;
   }
-  ext_structure_superblock_t* sb = &fs->superblock;
+  const ext_structure_superblock_t* sb = &fs->superblock;
   *value = ( sb->s_blocks_count - sb->s_first_data_block + ( sb->s_blocks_per_group - 1 ) ) /
     sb->s_blocks_per_group;
   return EOK;
@@ -346,7 +335,6 @@ BFSEXT_NO_EXPORT int ext_superblock_blockgroup_count( ext_fs_t* fs, uint64_t* va
 
 /**
  * @brief Debug method to dump superblock
- *
  * @param sb superblock to dump
  */
 BFSEXT_NO_EXPORT void ext_superblock_dump( [[maybe_unused]] ext_structure_superblock_t* sb ) {

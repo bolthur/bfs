@@ -17,7 +17,6 @@
 
 /** @file ext/fs.h */
 
-#include <stdbool.h>
 #include <common/blockdev.h>
 #include <ext/structure.h>
 
@@ -43,6 +42,8 @@ typedef struct {
   ext_cache_inode_t* inode;
   /** @brief directory entry cache */
   ext_cache_directory_entry_t* directory;
+  /** @brief array of all groups */
+  ext_structure_block_group_descriptor_t* groups;
 } ext_fs_t;
 
 

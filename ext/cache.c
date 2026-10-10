@@ -17,10 +17,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <common/bfscommon_export.h>
+#include <common/errno.h>
+#include <common/lru.h>
 #include <ext/cache.h>
-
-#include "common/errno.h"
+#include <ext/inode.h>
+#include <ext/bfsext_export.h>
 
 /**
  * Helper to create new dentry hash
@@ -28,7 +29,7 @@
  * @param name dentry name
  * @return
  */
-BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_directory_entry(
+BFSEXT_NO_EXPORT uint32_t ext_cache_hash_directory_entry(
   ext_cache_directory_entry_node_t* parent,
   const char* name
 ) {
@@ -46,7 +47,7 @@ BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_directory_entry(
  * @param inode_number inode number
  * @return
  */
-BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_inode(
+BFSEXT_NO_EXPORT uint32_t ext_cache_hash_inode(
   ext_fs_t* fs,
   const uint32_t inode_number
 ) {
@@ -60,7 +61,7 @@ BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_inode(
  * @param fs file system object
  * @return
  */
-BFSCOMMON_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup(
+BFSEXT_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup(
   ext_fs_t* fs
 ) {
   // allocate
@@ -82,7 +83,7 @@ BFSCOMMON_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup
  * @param cache cache to destroy
  * @todo implement correctly
  */
-BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_destroy(
+BFSEXT_NO_EXPORT void ext_cache_directory_entry_destroy(
   [[maybe_unused]] ext_cache_directory_entry_t* cache
 ) {
 }
@@ -92,7 +93,7 @@ BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_destroy(
  * @param cache cache to operate on
  * @param node node to detach
  */
-BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_detach(
+BFSEXT_NO_EXPORT void ext_cache_directory_entry_detach(
   ext_cache_directory_entry_t* cache,
   ext_cache_directory_entry_node_t* node
 ) {
@@ -119,7 +120,7 @@ BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_detach(
  * @param cache cache to operate on
  * @param node node to move to head
  */
-BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_mode_to_head(
+BFSEXT_NO_EXPORT void ext_cache_directory_entry_move_to_head(
   ext_cache_directory_entry_t* cache,
   ext_cache_directory_entry_node_t* node
 ) {
@@ -138,11 +139,20 @@ BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_mode_to_head(
 }
 
 /**
+ * Drain directory cache
+ * @param cache cache to drain
+ */
+BFSEXT_NO_EXPORT void ext_cache_directory_entry_drain(
+  [[maybe_unused]] ext_cache_directory_entry_t* cache
+) {
+}
+
+/**
  * Setup inode cache
  * @param fs file system object
  * @return
  */
-BFSCOMMON_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* fs ) {
+BFSEXT_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* fs ) {
   // allocate
   ext_cache_inode_t* lru = malloc( sizeof( *lru ) );
   if ( ! lru ) {
@@ -162,7 +172,7 @@ BFSCOMMON_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* fs ) {
  * @param cache cache to destroy
  * @todo implement correctly
  */
-BFSCOMMON_NO_EXPORT void ext_cache_inode_destroy(
+BFSEXT_NO_EXPORT void ext_cache_inode_destroy(
   [[maybe_unused]] ext_cache_inode_t* cache
 ) {
 }
@@ -172,7 +182,7 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_destroy(
  * @param cache cache to operate on
  * @param node node to detach
  */
-BFSCOMMON_NO_EXPORT void ext_cache_inode_detach(
+BFSEXT_NO_EXPORT void ext_cache_inode_detach(
   ext_cache_inode_t* cache,
   ext_cache_inode_node_t* node
 ) {
@@ -199,7 +209,7 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_detach(
  * @param cache cache to operate on
  * @param node node to move to head
  */
-BFSCOMMON_NO_EXPORT void ext_cache_inode_mode_to_head(
+BFSEXT_NO_EXPORT void ext_cache_inode_move_to_head(
   ext_cache_inode_t* cache,
   ext_cache_inode_node_t* node
 ) {
@@ -222,7 +232,7 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_mode_to_head(
  * @param cache cache to drain
  * @todo implement properly
  */
-BFSCOMMON_NO_EXPORT void ext_cache_inode_drain(
+BFSEXT_NO_EXPORT void ext_cache_inode_drain(
   [[maybe_unused]] ext_cache_inode_t* cache
 ) {
 }
@@ -230,116 +240,83 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_drain(
 /**
  * Helper to get inode from cache
  * @param cache cache to operate on
- * @param value
+ * @param inode_number
  * @return
  */
-BFSCOMMON_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
-  [[maybe_unused]] ext_cache_inode_t* cache,
-  [[maybe_unused]] uint64_t value
-) {/*
+BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
+  ext_cache_inode_t* cache,
+  const uint32_t inode_number
+) {
   if ( ! cache ) {
     return nullptr;
   }
-  const uint64_t hash = block_number % cache->capacity;
-  common_lru_cache_node_t* node = cache->lookup[ hash ];
-  // check for match including hash collisions
-  while ( node ) {
-    if ( node->block_number == block_number ) {
-      common_lru_move_to_head( cache, node );
-      return node;
-    }
-    node = node->hash_next;
+  // lookup via hash
+  ext_cache_inode_node_t* node = ext_cache_inode_lookup( cache, inode_number );
+  // handle found
+  if ( node ) {
+    // increment count to prevent drop
+    node->reference_count++;
+    // return found node
+    return node;
   }
-  // cache miss => Handle cache full
-  if ( cache->size >= cache->capacity ) {
-    common_lru_cache_node_t* oldest = cache->tail;
-    // handle dirty
-    if ( oldest->dirty ) {
-      const int result = common_blockdev_if_bytes_write(
-        cache->bdev,
-        oldest->data,
-        block_number,
-        1
-      );
-      if ( result != 0 ) {
-        return nullptr;
-      }
-    }
-    // Remove from lookup
-    const uint64_t oldest_hash = oldest->block_number % cache->capacity;
-    if ( oldest->hash_prev ) {
-      oldest->hash_prev->hash_next = oldest->hash_next;
-    } else {
-      cache->lookup[ oldest_hash ] = oldest->hash_next;
-    }
-    if ( oldest->hash_next ) {
-      oldest->hash_next->hash_prev = oldest->hash_prev;
-    }
-    // Remove from list and recycle
-    common_lru_detach( cache, oldest );
-    node = oldest;
-  } else {
-    node = malloc( sizeof( common_lru_cache_node_t ) );
-    if ( ! node ) {
-      return nullptr;
-    }
-    memset( node, 0, sizeof( common_lru_cache_node_t ) );
-    node->data = malloc( ( size_t )( sizeof( uint8_t ) * cache->node_data_size ) );
-    if ( ! node->data ) {
-      free( node );
-      return nullptr;
-    }
-    memset( node->data, 0,  ( size_t )( sizeof( uint8_t ) * cache->node_data_size )  );
-    cache->size++;
+  // allocate or evict a node
+  node = ext_cache_inode_allocate_or_evict( cache );
+  // handle nothing
+  if ( ! node ) {
+    return nullptr;
   }
-  // load from persistence
-  node->block_number = block_number;
-  node->dirty = false;
-  const int result = common_blockdev_if_bytes_read(
-    cache->bdev,
-    node->data,
-    block_number,
-    1
-  );
-  if ( result != 0 ) {
-    free( node->data );
+  // evaluate where inode is located
+  uint64_t block;
+  uint64_t offset;
+  const int result = ext_inode_calculate_block_number(
+    cache->fs, inode_number, &block, &offset );
+  if ( EOK != result ) {
     free( node );
     return nullptr;
   }
-  // add to lookup
-  node->prev = node->next = nullptr;
-  // add to cache lookup
-  node->hash_next = cache->lookup[ hash ];
-  node->hash_prev = nullptr;
-  if ( node->hash_next ) {
-    node->hash_next->hash_prev = node;
+  // load cache via lru
+  common_lru_cache_node_t* lru = common_lru_get( cache->fs->bdev->lru, block );
+  if ( ! lru ) {
+    free( node );
+    return nullptr;
   }
-  common_lru_move_to_head( cache, node );
-  cache->lookup[ hash ] = node;
+  // get inode itself
+  auto const inode = ( ext_structure_inode_t* )lru->data + offset;
+  // populate inode structure
+  node->inode_number = inode_number;
+  node->size = inode->i_size;
+  node->mode = inode->i_mode;
+  node->reference_count = 1;
+  node->dirty = false;
+  // copy block pointers
+  memcpy( node->block_pointer, inode->i_block, sizeof( uint32_t ) * 15 );
+  // insert node
+  ext_cache_inode_insert( cache, node );
   // return node
-  return node;*/
-  return nullptr;
+  return node;
 }
 
 /**
  * Write inode
  * @param cache cache to operate on
- * @param value
+ * @param inode_number
  * @param in input buffer
  * @return
  */
-BFSCOMMON_NO_EXPORT int ext_cache_inode_write(
+BFSEXT_NO_EXPORT int ext_cache_inode_write(
   ext_cache_inode_t* cache,
-  const uint64_t value,
+  const uint32_t inode_number,
   const uint8_t* in
 ) {
   if ( ! cache || ! in ) {
     return EINVAL;
   }
-  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, value );
+  // get cached inode
+  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, inode_number );
   if ( ! node ) {
     return ENODATA;
   }
+  // mark as dirty
   node->dirty = true;
   //memcpy( node->data, data, ( size_t )cache->node_data_size );
   return EOK;
@@ -348,22 +325,191 @@ BFSCOMMON_NO_EXPORT int ext_cache_inode_write(
 /**
  * Read inode
  * @param cache cache to operate on
- * @param value
+ * @param inode_number
  * @param out output buffer
  * @return
  */
-BFSCOMMON_NO_EXPORT int ext_cache_inode_read(
+BFSEXT_NO_EXPORT int ext_cache_inode_read(
   ext_cache_inode_t* cache,
-  const uint64_t value,
+  const uint32_t inode_number,
   uint8_t* out
 ) {
   if ( ! cache || ! out ) {
     return EINVAL;
   }
-  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, value );
+  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, inode_number );
   if ( ! node ) {
     return ENODATA;
   }
   //memcpy( data, node->data, ( size_t )cache->node_data_size );
   return EOK;
+}
+
+/**
+ * Inode cache lookup helper
+ * @param cache cache to operate on
+ * @param inode_number inode number
+ * @return
+ */
+BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_lookup(
+  ext_cache_inode_t* cache,
+  const uint32_t inode_number
+) {
+  if ( ! cache ) {
+    return nullptr;
+  }
+  const uint64_t hash = ext_cache_hash_inode( cache->fs, inode_number );
+  ext_cache_inode_node_t* node = cache->lookup[ hash ];
+  // check for match including hash collisions
+  while ( node ) {
+    if ( node->inode_number == inode_number ) {
+      ext_cache_inode_move_to_head( cache, node );
+      return node;
+    }
+    node = node->hash_next;
+  }
+  return nullptr;
+}
+
+/**
+ * Insert inode into cache
+ * @param cache cache to operate on
+ * @param node node to insert
+ */
+BFSEXT_NO_EXPORT void ext_cache_inode_insert(
+  ext_cache_inode_t* cache,
+  ext_cache_inode_node_t* node
+) {
+  const uint32_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
+  // set hash next to lookup
+  node->hash_next = cache->lookup[ hash ];
+  node->hash_prev = nullptr;
+  // set previous of next
+  if ( node->hash_next ) {
+    node->hash_next->hash_prev = node;
+  }
+  // overwrite lookup
+  cache->lookup[ hash ] = node;
+  // enqueue in lru list
+  ext_cache_inode_move_to_head( cache, node );
+}
+
+/**
+ * Helper to remove inode from hash lookup
+ * @param cache
+ * @param node
+ */
+BFSEXT_NO_EXPORT void ext_cache_inode_hash_remove(
+  ext_cache_inode_t* cache,
+  const ext_cache_inode_node_t* node
+) {
+  const uint32_t hash = ext_cache_hash_inode( cache->fs, node->inode_number );
+  auto current = cache->lookup[ hash ];
+  while ( current ) {
+    if ( current->inode_number == node->inode_number ) {
+      if ( current->hash_prev ) {
+        current->hash_prev->hash_next = current->hash_next;
+      } else {
+        cache->lookup[ hash ] = current->hash_next;
+      }
+      if ( current->hash_next ) {
+        current->hash_next->hash_prev = current->hash_prev;
+      }
+    }
+    current = current->hash_next;
+  }
+}
+
+/**
+ * Allocate new node or evict existing one
+ * @param cache cache to operate on
+ * @return
+ */
+BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_allocate_or_evict(
+  ext_cache_inode_t* cache
+) {
+  // handle space left
+  if ( cache->size < cache->capacity ) {
+    // allocate new node
+    ext_cache_inode_node_t* node = malloc( sizeof( *node ) );
+    // handle error
+    if ( ! node ) {
+      return nullptr;
+    }
+    // clear out
+    memset( node, 0, sizeof( *node ) );
+    // increment cache size
+    cache->size++;
+    // return new node
+    return node;
+  }
+  // Handle cache full
+  ext_cache_inode_node_t* oldest = cache->tail;
+  while ( oldest ) {
+    // found one with no reference, so break
+    if ( ! oldest->reference_count ) {
+      break;
+    }
+    // go to next
+    oldest = oldest->lru_next;
+  }
+  // handle nothing found
+  if ( ! oldest ) {
+    return nullptr;
+  }
+  // write to disk if dirty
+  if ( oldest->dirty ) {
+    ext_cache_inode_flush( cache, oldest );
+  }
+  // remove from hash table
+  ext_cache_inode_hash_remove( cache, oldest );
+  // remove from list
+  if ( oldest->lru_prev ) {
+    oldest->lru_prev->lru_next = oldest->lru_next;
+  }
+  if ( oldest->lru_next ) {
+    oldest->lru_next->lru_prev = oldest->lru_prev;
+  }
+  if ( cache->head == oldest ) {
+    cache->head = oldest->lru_next;
+  }
+  if ( cache->tail == oldest ) {
+    cache->tail = oldest->lru_prev;
+  }
+  // clear out data
+  memset( oldest, 0, sizeof( *oldest ) );
+  // finally return oldest
+  return oldest;
+}
+
+/**
+ * flush inode to persistence
+ * @param cache cache to operate on
+ * @param node node to flush
+ */
+BFSEXT_NO_EXPORT void ext_cache_inode_flush( ext_cache_inode_t* cache, ext_cache_inode_node_t* node ) {
+  if ( ! cache || ! node->dirty ) {
+    return;
+  }
+  // get block and offset
+  uint64_t block;
+  uint64_t offset;
+  const int result = ext_inode_calculate_block_number( cache->fs, node->inode_number, &block, &offset );
+  if ( EOK != result ) {
+    return;
+  }
+  // get cache node from lru
+  common_lru_cache_node_t* lru = common_lru_get( cache->fs->bdev->lru, block );
+  if ( ! lru ) {
+    return;
+  }
+  // modify from memory
+  auto const inode = ( ext_structure_inode_t* )lru->data + offset;
+  inode->i_size = node->size;
+  inode->i_mode = node->mode;
+  memcpy( inode->i_block, node->block_pointer, sizeof( uint32_t ) * 15 );
+  // mark lru node as dirty
+  lru->dirty = true;
+  // mark inode as sane
+  node->dirty = false;
 }

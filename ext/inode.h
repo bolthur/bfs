@@ -45,6 +45,7 @@ typedef enum {
   int ext_inode_allocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t* inode_number );
   int ext_inode_deallocate_block_recursive( ext_fs_t* fs, uint64_t table_block, uint64_t level );
   int ext_inode_deallocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t number );
+  int ext_inode_calculate_block_number( ext_fs_t* fs, uint64_t inode_number, uint64_t* out_block_number, uint64_t* out_block_offset );
 #endif
 
 #ifdef __cplusplus
