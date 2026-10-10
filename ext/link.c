@@ -82,14 +82,14 @@ BFSEXT_NO_EXPORT int ext_link_link(
     return result;
   }
   // handle existing
-  if ( dir->inode.i_size ) {
+  if ( dir->cache->inode->inode.i_size ) {
     uint64_t pos = 0;
     // handle no data
     if ( ! dir->data ) {
       return EINVAL;
     }
     // loop through data
-    while ( dir->inode.i_size && pos < dir->inode.i_size ) {
+    while ( dir->cache->inode->inode.i_size && pos < dir->cache->inode->inode.i_size ) {
       // get entry
       auto const entry = ( ext_structure_directory_entry_t* )&dir->data[ pos ];
       // calculate real entry size
@@ -115,7 +115,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
         // shorten old entry
         entry->rec_len = ( uint16_t )entry_length;
         // write back data
-        result = ext_inode_write_data( fs, &dir->inode, 0, dir->inode.i_size, dir->data );
+        result = ext_inode_write_data( fs, &dir->cache->inode->inode, 0, dir->cache->inode->inode.i_size, dir->data );
         if ( EOK != result ) {
           return result;
         }
@@ -153,7 +153,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
   new_entry->rec_len = ( uint16_t )block_size;
   new_entry->file_type = file_type;
   // write back data
-  result = ext_inode_write_data( fs, &dir->inode, 0, block_size, buffer );
+  result = ext_inode_write_data( fs, &dir->cache->inode->inode, 0, block_size, buffer );
   if ( EOK != result ) {
     free( buffer );
     return result;
@@ -162,7 +162,7 @@ BFSEXT_NO_EXPORT int ext_link_link(
   inode->i_links_count++;
   // load directory if not loaded
   if ( ! dir->data ) {
-    result = ext_directory_load( fs, dir, &dir->inode );
+    result = ext_directory_load( fs, dir, &dir->cache->inode->inode );
     if ( EOK != result ) {
       free( buffer );
       return result;
@@ -211,11 +211,11 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
   ext_structure_directory_entry_t* prev = nullptr;
   const ext_structure_directory_entry_t* next = nullptr;
   // loop through data
-  while ( dir->inode.i_size && pos < dir->inode.i_size ) {
+  while ( dir->cache->inode->inode.i_size && pos < dir->cache->inode->inode.i_size ) {
     // get entry
     auto const entry = ( ext_structure_directory_entry_t* )
       &dir->data[ pos ];
-    if ( pos + entry->rec_len < dir->inode.i_size ) {
+    if ( pos + entry->rec_len < dir->cache->inode->inode.i_size ) {
       next = ( ext_structure_directory_entry_t* )
         &dir->data[ pos + entry->rec_len ];
     }
@@ -286,7 +286,7 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
     prev = entry;
   }
   // write back data
-  result = ext_inode_write_data( fs, &dir->inode, 0, dir->inode.i_size, dir->data );
+  result = ext_inode_write_data( fs, &dir->cache->inode->inode, 0, dir->cache->inode->inode.i_size, dir->data );
   if ( EOK != result ) {
     return result;
   }

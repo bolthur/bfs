@@ -68,8 +68,6 @@ BFSEXT_NO_EXPORT int ext_directory_load(
     free( dir->data );
     return result;
   }
-  // set inode
-  memcpy( &dir->inode, inode, sizeof( *inode ) );
   // return success
   return EOK;
 }
@@ -78,7 +76,6 @@ BFSEXT_NO_EXPORT int ext_directory_load(
  * @brief Remove directory
  * @param path
  * @return int
- * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
   // validate parameter
@@ -239,7 +236,6 @@ BFSEXT_EXPORT int ext_directory_remove( const char* path ) {
  * @param new_path
  * @return int
  * @todo add transaction
- * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path ) {
   // validate parameter
@@ -256,8 +252,8 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
     return ENOMEM;
   }
   // get fs
-  ext_fs_t* fs_old = mp->fs;
-  ext_fs_t* fs_new = mp->fs;
+  const ext_fs_t* fs_old = mp->fs;
+  const ext_fs_t* fs_new = mp->fs;
   // handle create flag with read only
   if ( fs_old->read_only || fs_new->read_only ) {
     return EROFS;
@@ -319,10 +315,10 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
     return ENOMEM;
   }
   // get dirnames ( parent directory )
-  char* base_old_path = basename( dup_old_base );
-  char* dir_old_path = dirname( dup_old_dir );
-  char* base_new_path = basename( dup_new_base );
-  char* dir_new_path = dirname( dup_new_dir );
+  const char* base_old_path = basename( dup_old_base );
+  const char* dir_old_path = dirname( dup_old_dir );
+  const char* base_new_path = basename( dup_new_base );
+  const char* dir_new_path = dirname( dup_new_dir );
   // check for unsupported
   if ( '.' == *dir_old_path || '.' == *dir_new_path ) {
     free( dup_old_base );
@@ -362,8 +358,8 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
   result = ext_link_link(
     source.mp->fs,
     &source,
-    &new_dir_dir.inode,
-    new_dir_dir.inode_number,
+    &new_dir_dir.cache->inode->inode,
+    new_dir_dir.cache->inode_number,
     ".."
   );
   if ( EOK != result ) {
@@ -377,8 +373,8 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
   result = ext_link_link(
     new_dir_dir.mp->fs,
     &new_dir_dir,
-    &source.inode,
-    source.inode_number,
+    &source.cache->inode->inode,
+    source.cache->inode_number,
     base_new_path
   );
   if ( EOK != result ) {
@@ -441,7 +437,6 @@ BFSEXT_EXPORT int ext_directory_move( const char* old_path, const char* new_path
  * @brief Create directory
  * @param path
  * @return int
- * @todo rework to use cache
  */
 BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   // validate parameter
@@ -475,7 +470,7 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
     return ENOMEM;
   }
   // extract dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
@@ -489,8 +484,7 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
     strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
   }
   // local variable for directory operations
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {0};
   // try to open basename
   result = ext_directory_open( &dir, dirpath );
   if ( EOK != result ) {
@@ -523,10 +517,35 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   // prepare inode
   inode.i_mode = EXT_INODE_EXT2_S_IFDIR;
   inode.i_dtime = 0;
+  // dummy cache
+  ext_cache_inode_node_t* inode_cache = ext_cache_inode_get( fs->inode, number );
+  if ( ! inode_cache ) {
+    common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  ext_cache_directory_entry_node_t* entry_cache = malloc( sizeof( *entry_cache ) );
+  if ( ! entry_cache ) {
+    ext_cache_inode_put( fs->inode, number );
+    common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
+    ext_directory_close( &dir );
+    free( pathdup_base );
+    free( pathdup_dir );
+    return result;
+  }
+  entry_cache->inode = inode_cache;
+  entry_cache->inode_number = number;
+  entry_cache->parent = dir.cache;
+  strcpy( entry_cache->name, base );
+  entry_cache->reference_count = 1;
+  ext_cache_directory_entry_insert( fs->directory, entry_cache );
   // temporary new directory
   ext_directory_t newdir = {
-    .inode = inode,
-    .inode_number = number,
+    .cache = entry_cache,
     .data = nullptr,
     .entry = nullptr,
     .pos = 0,
@@ -537,6 +556,7 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   result = ext_link_link( fs, &dir, &inode, number, base );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -546,14 +566,16 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   result = ext_link_link( fs, &newdir, &inode, number, "." );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
     return result;
   }
-  result = ext_link_link( fs, &newdir, &dir.inode, dir.inode_number, ".." );
+  result = ext_link_link( fs, &newdir, &dir.cache->inode->inode, dir.cache->inode_number, ".." );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -564,17 +586,19 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   result = ext_inode_get_local_inode( fs, number, &local_inode_number );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
     return result;
   }
-  uint64_t bgnumber = local_inode_number / fs->superblock.s_inodes_per_group;
+  const uint64_t group_number = local_inode_number / fs->superblock.s_inodes_per_group;
   // read block group
   ext_structure_block_group_descriptor_t bgd;
-  result = ext_blockgroup_read(fs, bgnumber, &bgd );
+  result = ext_blockgroup_read(fs, group_number, &bgd );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -582,9 +606,10 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   }
   // increment directories
   bgd.bg_used_dirs_count++;
-  result = ext_blockgroup_write(fs, bgnumber, &bgd );
+  result = ext_blockgroup_write(fs, group_number, &bgd );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     ext_directory_close( &dir );
     free( pathdup_base );
     free( pathdup_dir );
@@ -596,11 +621,13 @@ BFSEXT_EXPORT int ext_directory_make( const char* path ) {
   result = ext_directory_close( &dir );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     return result;
   }
   result = ext_directory_close( &newdir );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
+    ext_inode_deallocate( fs, &inode, number );
     return result;
   }
   // return success
@@ -675,8 +702,6 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     free( dir->data );
     return result;
   }
-  memcpy( &dir->inode, &directory->inode->inode, sizeof( ext_structure_inode_t ) );
-  dir->inode_number = directory->inode_number;
   dir->cache = directory;
   // copy over mountpoint
   dir->mp = mp;
@@ -744,7 +769,7 @@ BFSEXT_EXPORT int ext_directory_close( ext_directory_t* dir ) {
  */
 BFSEXT_EXPORT int ext_directory_next_entry( ext_directory_t* dir ) {
   // handle end reached
-  if ( dir->pos >= dir->inode.i_size ) {
+  if ( dir->pos >= dir->cache->inode->inode.i_size ) {
     // reset entry
     if ( dir->entry ) {
       dir->entry = nullptr;
@@ -775,7 +800,7 @@ BFSEXT_EXPORT int ext_directory_next_entry( ext_directory_t* dir ) {
   }
   // set entry and position
   dir->entry = nullptr;
-  dir->pos = dir->inode.i_size;
+  dir->pos = dir->cache->inode->inode.i_size;
   if ( it->entry ) {
     dir->entry = it->entry;
     dir->pos = it->pos;

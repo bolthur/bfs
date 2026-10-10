@@ -77,9 +77,9 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
     return EINVAL;
   }
   // handle position exceeds size
-  if ( pos >= it->reference->inode.i_size ) {
+  if ( pos >= it->reference->cache->inode->inode.i_size ) {
     // set fpos to position
-    it->pos = it->reference->inode.i_size;
+    it->pos = it->reference->cache->inode->inode.i_size;
     it->entry = nullptr;
     // return no entry
     return EOK;
@@ -88,11 +88,9 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
   it->pos = pos;
   it->entry = nullptr;
   // loop through data and try to find entry
-  while ( pos < it->reference->inode.i_size ) {
+  while ( pos < it->reference->cache->inode->inode.i_size ) {
     // get entry
-    ext_structure_directory_entry_t* entry = ( ext_structure_directory_entry_t* )(
-      &it->reference->data[ pos ]
-    );
+    auto const entry = ( ext_structure_directory_entry_t* )&it->reference->data[ pos ];
     // increment position
     pos += entry->rec_len;
     // handle unknown
@@ -111,7 +109,7 @@ BFSEXT_NO_EXPORT int ext_iterator_directory_seek(
   // handle nothing found
   if ( ! it->entry ) {
     // set fpos to position
-    it->pos = it->reference->inode.i_size;
+    it->pos = it->reference->cache->inode->inode.i_size;
     it->entry = nullptr;
   }
   // return success

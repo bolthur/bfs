@@ -53,16 +53,6 @@ typedef struct ext_file {
 
 /** @brief Ext directory structure */
 typedef struct ext_directory {
-  /**
-   * @brief inode
-   * @deprecated use cache entry instead
-   */
-  ext_structure_inode_t inode;
-  /**
-   * @brief inode number
-   * @deprecated use cache entry instead
-   */
-  uint64_t inode_number;
   /** @brief cache entry */
   ext_cache_directory_entry_node_t* cache;
   /** @brief Directory data */

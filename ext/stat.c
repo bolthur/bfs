@@ -113,8 +113,8 @@ BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
   free( open_path );
   // default inode is ext inode
   ext_structure_inode_t inode;
-  uint64_t inode_number = dir.inode_number;
-  memcpy( &inode, &dir.inode, sizeof( inode ) );
+  uint64_t inode_number = dir.cache->inode_number;
+  memcpy( &inode, &dir.cache->inode->inode, sizeof( inode ) );
   // handle valid base path
   if ( 0 != strcmp( dirpath, basepath ) ) {
     // get entry by name

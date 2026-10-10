@@ -37,18 +37,16 @@
 TEST( ext2, stat_root_directory ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = ext_stat( "/ext2/", &st );
   EXPECT_EQ( result, EOK );
   // open directory
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
   // check inode
-  EXPECT_EQ( st.st_ino, dir.inode_number );
+  EXPECT_EQ( st.st_ino, dir.cache->inode_number );
   // close again
   result = ext_directory_close( &dir );
   EXPECT_EQ( result, EOK );
@@ -58,18 +56,16 @@ TEST( ext2, stat_root_directory ) {
 TEST( ext2, stat_directory ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = ext_stat( "/ext2/hello", &st );
   EXPECT_EQ( result, EOK );
   // open directory
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // check inode
-  EXPECT_EQ( st.st_ino, dir.inode_number );
+  EXPECT_EQ( st.st_ino, dir.cache->inode_number );
   // close again
   result = ext_directory_close( &dir );
   EXPECT_EQ( result, EOK );

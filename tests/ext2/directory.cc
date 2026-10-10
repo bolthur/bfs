@@ -444,8 +444,7 @@ TEST( ext2, directory_new_dir_folder ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // create new folder
   int result = ext_directory_make( "/ext2/hello/foobar" );
   EXPECT_EQ( result, EOK );
@@ -470,8 +469,7 @@ TEST( ext2, directory_new_dir_folder_long ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // create new folder
   int result = ext_directory_make( "/ext2/hello/thisisalongname" );
   EXPECT_EQ( result, EOK );
