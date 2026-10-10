@@ -64,6 +64,8 @@ typedef struct ext_cache_inode {
   size_t capacity;
   /** @brief cache size */
   size_t size;
+  /** @brief file system object */
+  ext_fs_t* fs;
   /** @brief pointer to head */
   ext_cache_inode_node_t* head;
   /** @brief pointer to tail */
@@ -94,6 +96,8 @@ typedef struct ext_cache_directory_entry {
   size_t capacity;
   /** @brief cache size */
   size_t size;
+  /** @brief file system object */
+  ext_fs_t* fs;
   /** @brief pointer to head */
   ext_cache_directory_entry_node_t* head;
   /** @brief pointer to tail */
@@ -109,13 +113,13 @@ typedef struct ext_cache_directory_entry {
   uint32_t ext_cache_hash_inode( ext_fs_t*, uint32_t );
 
   // regular directory cache functions
-  ext_cache_directory_entry_t* ext_cache_directory_entry_setup( void );
+  ext_cache_directory_entry_t* ext_cache_directory_entry_setup( ext_fs_t* );
   void ext_cache_directory_entry_destroy( ext_cache_directory_entry_t* );
   void ext_cache_directory_entry_detach( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
   void ext_cache_directory_entry_mode_to_head( ext_cache_directory_entry_t*, ext_cache_directory_entry_node_t* );
 
   // regular inode cache functions
-  ext_cache_inode_t* ext_cache_inode_setup( void );
+  ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* );
   void ext_cache_inode_destroy( ext_cache_inode_t* );
   void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_mode_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );

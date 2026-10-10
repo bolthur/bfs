@@ -57,9 +57,12 @@ BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_inode(
 
 /**
  * Setup directory entry cache
+ * @param fs file system object
  * @return
  */
-BFSCOMMON_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup( void ) {
+BFSCOMMON_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup(
+  ext_fs_t* fs
+) {
   // allocate
   ext_cache_directory_entry_t* lru = malloc( sizeof( *lru ) );
   if ( ! lru ) {
@@ -69,6 +72,7 @@ BFSCOMMON_NO_EXPORT ext_cache_directory_entry_t* ext_cache_directory_entry_setup
   memset( lru, 0, sizeof( *lru ) );
   // populate bare minimum
   lru->capacity = EXT_CACHE_DENTRY_HASH_SIZE;
+  lru->fs = fs;
   // return success
   return lru;
 }
@@ -135,9 +139,10 @@ BFSCOMMON_NO_EXPORT void ext_cache_directory_entry_mode_to_head(
 
 /**
  * Setup inode cache
+ * @param fs file system object
  * @return
  */
-BFSCOMMON_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( void ) {
+BFSCOMMON_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( ext_fs_t* fs ) {
   // allocate
   ext_cache_inode_t* lru = malloc( sizeof( *lru ) );
   if ( ! lru ) {
@@ -147,6 +152,7 @@ BFSCOMMON_NO_EXPORT ext_cache_inode_t* ext_cache_inode_setup( void ) {
   memset( lru, 0, sizeof( *lru ) );
   // populate bare minimum
   lru->capacity = EXT_CACHE_INODE_HASH_SIZE;
+  lru->fs = fs;
   // return success
   return lru;
 }
@@ -230,7 +236,88 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_drain(
 BFSCOMMON_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
   [[maybe_unused]] ext_cache_inode_t* cache,
   [[maybe_unused]] uint64_t value
-) {
+) {/*
+  if ( ! cache ) {
+    return nullptr;
+  }
+  const uint64_t hash = block_number % cache->capacity;
+  common_lru_cache_node_t* node = cache->lookup[ hash ];
+  // check for match including hash collisions
+  while ( node ) {
+    if ( node->block_number == block_number ) {
+      common_lru_move_to_head( cache, node );
+      return node;
+    }
+    node = node->hash_next;
+  }
+  // cache miss => Handle cache full
+  if ( cache->size >= cache->capacity ) {
+    common_lru_cache_node_t* oldest = cache->tail;
+    // handle dirty
+    if ( oldest->dirty ) {
+      const int result = common_blockdev_if_bytes_write(
+        cache->bdev,
+        oldest->data,
+        block_number,
+        1
+      );
+      if ( result != 0 ) {
+        return nullptr;
+      }
+    }
+    // Remove from lookup
+    const uint64_t oldest_hash = oldest->block_number % cache->capacity;
+    if ( oldest->hash_prev ) {
+      oldest->hash_prev->hash_next = oldest->hash_next;
+    } else {
+      cache->lookup[ oldest_hash ] = oldest->hash_next;
+    }
+    if ( oldest->hash_next ) {
+      oldest->hash_next->hash_prev = oldest->hash_prev;
+    }
+    // Remove from list and recycle
+    common_lru_detach( cache, oldest );
+    node = oldest;
+  } else {
+    node = malloc( sizeof( common_lru_cache_node_t ) );
+    if ( ! node ) {
+      return nullptr;
+    }
+    memset( node, 0, sizeof( common_lru_cache_node_t ) );
+    node->data = malloc( ( size_t )( sizeof( uint8_t ) * cache->node_data_size ) );
+    if ( ! node->data ) {
+      free( node );
+      return nullptr;
+    }
+    memset( node->data, 0,  ( size_t )( sizeof( uint8_t ) * cache->node_data_size )  );
+    cache->size++;
+  }
+  // load from persistence
+  node->block_number = block_number;
+  node->dirty = false;
+  const int result = common_blockdev_if_bytes_read(
+    cache->bdev,
+    node->data,
+    block_number,
+    1
+  );
+  if ( result != 0 ) {
+    free( node->data );
+    free( node );
+    return nullptr;
+  }
+  // add to lookup
+  node->prev = node->next = nullptr;
+  // add to cache lookup
+  node->hash_next = cache->lookup[ hash ];
+  node->hash_prev = nullptr;
+  if ( node->hash_next ) {
+    node->hash_next->hash_prev = node;
+  }
+  common_lru_move_to_head( cache, node );
+  cache->lookup[ hash ] = node;
+  // return node
+  return node;*/
   return nullptr;
 }
 
@@ -242,10 +329,19 @@ BFSCOMMON_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
  * @return
  */
 BFSCOMMON_NO_EXPORT int ext_cache_inode_write(
-  [[maybe_unused]] ext_cache_inode_t* cache,
-  [[maybe_unused]] uint64_t value,
-  [[maybe_unused]] const uint8_t* in
+  ext_cache_inode_t* cache,
+  const uint64_t value,
+  const uint8_t* in
 ) {
+  if ( ! cache || ! in ) {
+    return EINVAL;
+  }
+  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, value );
+  if ( ! node ) {
+    return ENODATA;
+  }
+  node->dirty = true;
+  //memcpy( node->data, data, ( size_t )cache->node_data_size );
   return EOK;
 }
 
@@ -257,9 +353,17 @@ BFSCOMMON_NO_EXPORT int ext_cache_inode_write(
  * @return
  */
 BFSCOMMON_NO_EXPORT int ext_cache_inode_read(
-  [[maybe_unused]] ext_cache_inode_t* cache,
-  [[maybe_unused]] uint64_t value,
-  [[maybe_unused]] uint8_t* out
+  ext_cache_inode_t* cache,
+  const uint64_t value,
+  uint8_t* out
 ) {
+  if ( ! cache || ! out ) {
+    return EINVAL;
+  }
+  ext_cache_inode_node_t* node = ext_cache_inode_get( cache, value );
+  if ( ! node ) {
+    return ENODATA;
+  }
+  //memcpy( data, node->data, ( size_t )cache->node_data_size );
   return EOK;
 }

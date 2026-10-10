@@ -46,11 +46,11 @@ BFSEXT_NO_EXPORT int ext_fs_init(
   fs->bdev = bdev;
   fs->read_only = read_only;
   // populate caches
-  fs->inode = ext_cache_inode_setup();
+  fs->inode = ext_cache_inode_setup( fs );
   if ( ! fs->inode ) {
     return ENOMEM;
   }
-  fs->directory = ext_cache_directory_entry_setup();
+  fs->directory = ext_cache_directory_entry_setup( fs );
   if ( ! fs->directory ) {
     free( fs->inode );
     return ENOMEM;
