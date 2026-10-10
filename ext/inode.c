@@ -39,7 +39,7 @@
  */
 BFSEXT_NO_EXPORT int ext_inode_get_local_inode(
   ext_fs_t* fs,
-  uint64_t inode,
+  const uint64_t inode,
   uint64_t* result
 ) {
   // validate parameter
@@ -54,11 +54,12 @@ BFSEXT_NO_EXPORT int ext_inode_get_local_inode(
 
 /**
  * @brief Method to read an inode
- *
  * @param fs
  * @param number
  * @param inode
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_inode(
   ext_fs_t* fs,
@@ -110,11 +111,12 @@ BFSEXT_NO_EXPORT int ext_inode_read_inode(
 
 /**
  * @brief Method to write an inode
- *
  * @param fs
  * @param number
  * @param inode
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_inode(
   ext_fs_t* fs,
@@ -166,13 +168,14 @@ BFSEXT_NO_EXPORT int ext_inode_write_inode(
 
 /**
  * @brief Get block offset
- *
  * @param fs
  * @param inode
  * @param block_no
  * @param offset
  * @param allocate
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
   ext_fs_t* fs,
@@ -226,9 +229,9 @@ BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
       return result;
     }
     // adjust indirect block
-    uint64_t pow = (level - idx == 3 ? ((block_size / 4) * (block_size / 4)) :
+    const uint64_t pow = (level - idx == 3 ? ((block_size / 4) * (block_size / 4)) :
       (level - idx == 2 ? (block_size / 4) : 1));
-    uint64_t off = indirect_block / pow;
+    const uint64_t off = indirect_block / pow;
     indirect_block %= pow;
     // overwrite block number
     block_nr = (( uint32_t* )table)[ off ];
@@ -258,14 +261,15 @@ BFSEXT_NO_EXPORT int ext_inode_get_block_offset(
 }
 
 /**
- * @brief Read block
- *
+ * @brief Read inode
  * @param fs
  * @param inode
  * @param block_no
  * @param buffer
  * @param count
- * @return BFSEXT_NO_EXPORT
+ * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_block(
   ext_fs_t* fs,
@@ -318,13 +322,14 @@ BFSEXT_NO_EXPORT int ext_inode_read_block(
 
 /**
  * @brief Read inode data
- *
  * @param fs
  * @param inode
  * @param start
  * @param length
  * @param buffer
- * @return BFSEXT_NO_EXPORT
+ * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_read_data(
   ext_fs_t* fs,
@@ -354,7 +359,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
 
   // handle unaligned start
   if ( start % block_size ) {
-    uint64_t offset = start % block_size;
+    const uint64_t offset = start % block_size;
     // read to local buffer
     result = ext_inode_read_block( fs, inode, start_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -376,7 +381,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
   // handle unaligned end
   if ( length % block_size ) {
     // determine copy size
-    uint64_t copy_size = length % block_size;
+    const uint64_t copy_size = length % block_size;
     // read to local buffer
     result = ext_inode_read_block( fs, inode, end_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -390,7 +395,7 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
     end_block--;
   }
   // calculate block count
-  uint64_t block_count = end_block - start_block + 1;
+  const uint64_t block_count = end_block - start_block + 1;
   // load remaining blocks
   // read to local buffer
   result = ext_inode_read_block( fs, inode, start_block, buffer, block_count );
@@ -404,14 +409,15 @@ BFSEXT_NO_EXPORT int ext_inode_read_data(
 }
 
 /**
- * @brief Write block
- *
+ * @brief Write inode
  * @param fs
  * @param inode
  * @param block_no
  * @param buffer
  * @param count
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_block(
   ext_fs_t* fs,
@@ -452,14 +458,15 @@ BFSEXT_NO_EXPORT int ext_inode_write_block(
 }
 
 /**
- * @brief Write data
- *
+ * @brief Write inode data
  * @param fs
  * @param inode
  * @param start
  * @param length
  * @param buffer
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_write_data(
   ext_fs_t* fs,
@@ -491,7 +498,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
 
   // handle unaligned start
   if ( start % block_size ) {
-    uint64_t offset = start % block_size;
+    const uint64_t offset = start % block_size;
     // read to local buffer
     result = ext_inode_read_block( fs, inode, start_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -519,7 +526,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
   // handle unaligned end
   if ( length % block_size ) {
     // determine copy size
-    uint64_t copy_size = length % block_size;
+    const uint64_t copy_size = length % block_size;
     // read to local buffer
     result = ext_inode_read_block( fs, inode, end_block, local_buffer, 1 );
     if ( EOK != result ) {
@@ -539,7 +546,7 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
     end_block--;
   }
   // calculate block count
-  uint64_t block_count = end_block - start_block + 1;
+  const uint64_t block_count = end_block - start_block + 1;
   // write remaining blocks
   if ( block_count > 0 ) {
     result = ext_inode_write_block( fs, inode, start_block, buffer, block_count );
@@ -558,11 +565,12 @@ BFSEXT_NO_EXPORT int ext_inode_write_data(
 
 /**
  * @brief Allocate new inode
- *
  * @param fs
  * @param inode
- * @param number
+ * @param inode_number
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_allocate(
   ext_fs_t* fs,
@@ -669,11 +677,12 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
 
 /**
  * @brief deallocate inode blocks recursive
- *
  * @param fs
  * @param table_block
  * @param level
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
   ext_fs_t* fs,
@@ -735,11 +744,12 @@ BFSEXT_NO_EXPORT int ext_inode_deallocate_block_recursive(
 
 /**
  * @brief Helper to deallocate an inode
- *
  * @param fs
  * @param inode
  * @param number
  * @return int
+ *
+ * @todo use inode cache from fs for read / write
  */
 BFSEXT_NO_EXPORT int ext_inode_deallocate(
   ext_fs_t* fs,

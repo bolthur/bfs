@@ -42,7 +42,7 @@ typedef enum {
   int ext_inode_read_block( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint8_t* buffer, uint64_t count );
   int ext_inode_write_block( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint8_t* buffer, uint64_t count );
   int ext_inode_get_block_offset( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t block_no, uint64_t* offset, inode_allocate_t allocate );
-  int ext_inode_allocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t* number );
+  int ext_inode_allocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t* inode_number );
   int ext_inode_deallocate_block_recursive( ext_fs_t* fs, uint64_t table_block, uint64_t level );
   int ext_inode_deallocate( ext_fs_t* fs, ext_structure_inode_t* inode, uint64_t number );
 #endif

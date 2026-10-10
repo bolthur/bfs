@@ -105,7 +105,7 @@ typedef struct ext_cache_directory_entry {
 
 #if defined( _BFS_COMPILING )
   // helper functions
-  uint32_t ext_cache_hash_dentry( ext_cache_directory_entry_node_t*, const char* );
+  uint32_t ext_cache_hash_directory_entry( ext_cache_directory_entry_node_t*, const char* );
   uint32_t ext_cache_hash_inode( ext_fs_t*, uint32_t );
 
   // regular directory cache functions
@@ -120,6 +120,9 @@ typedef struct ext_cache_directory_entry {
   void ext_cache_inode_detach( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_mode_to_head( ext_cache_inode_t*, ext_cache_inode_node_t* );
   void ext_cache_inode_drain( ext_cache_inode_t* );
+  ext_cache_inode_node_t* ext_cache_inode_get( ext_cache_inode_t*, uint64_t );
+  int ext_cache_inode_write( ext_cache_inode_t*, uint64_t, const uint8_t* );
+  int ext_cache_inode_read( ext_cache_inode_t*, uint64_t, uint8_t* );
 #endif
 
 #ifdef __cplusplus

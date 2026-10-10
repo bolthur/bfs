@@ -20,13 +20,15 @@
 #include <common/bfscommon_export.h>
 #include <ext/cache.h>
 
+#include "common/errno.h"
+
 /**
  * Helper to create new dentry hash
  * @param parent parent cache entry
  * @param name dentry name
  * @return
  */
-BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_dentry(
+BFSCOMMON_NO_EXPORT uint32_t ext_cache_hash_directory_entry(
   ext_cache_directory_entry_node_t* parent,
   const char* name
 ) {
@@ -214,5 +216,50 @@ BFSCOMMON_NO_EXPORT void ext_cache_inode_mode_to_head(
  * @param cache cache to drain
  * @todo implement properly
  */
-BFSCOMMON_NO_EXPORT void ext_cache_inode_drain( [[maybe_unused]] ext_cache_inode_t* cache ) {
+BFSCOMMON_NO_EXPORT void ext_cache_inode_drain(
+  [[maybe_unused]] ext_cache_inode_t* cache
+) {
+}
+
+/**
+ * Helper to get inode from cache
+ * @param cache cache to operate on
+ * @param value
+ * @return
+ */
+BFSCOMMON_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
+  [[maybe_unused]] ext_cache_inode_t* cache,
+  [[maybe_unused]] uint64_t value
+) {
+  return nullptr;
+}
+
+/**
+ * Write inode
+ * @param cache cache to operate on
+ * @param value
+ * @param in input buffer
+ * @return
+ */
+BFSCOMMON_NO_EXPORT int ext_cache_inode_write(
+  [[maybe_unused]] ext_cache_inode_t* cache,
+  [[maybe_unused]] uint64_t value,
+  [[maybe_unused]] const uint8_t* in
+) {
+  return EOK;
+}
+
+/**
+ * Read inode
+ * @param cache cache to operate on
+ * @param value
+ * @param out output buffer
+ * @return
+ */
+BFSCOMMON_NO_EXPORT int ext_cache_inode_read(
+  [[maybe_unused]] ext_cache_inode_t* cache,
+  [[maybe_unused]] uint64_t value,
+  [[maybe_unused]] uint8_t* out
+) {
+  return EOK;
 }
