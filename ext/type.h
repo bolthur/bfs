@@ -22,7 +22,8 @@
 #include <common/mountpoint.h>
 #include <ext/structure.h>
 #include <ext/fs.h>
-#include <ext/cache.h>
+#include <ext/cache/directory.h>
+#include <ext/cache/inode.h>
 
 #ifndef _EXT_TYPE_H
 #define _EXT_TYPE_H

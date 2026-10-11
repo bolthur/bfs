@@ -32,7 +32,7 @@
 #include <ext/type.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
-#include <ext/cache.h>
+#include <ext/cache/directory.h>
 #include <ext/drain.h>
 #include <bfsconfig.h>
 

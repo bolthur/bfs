@@ -28,8 +28,7 @@
 #include <ext/fs.h>
 #include <ext/structure.h>
 #include <ext/bfsext_export.h>
-
-#include "cache.h"
+#include <ext/cache/inode.h>
 
 /**
  * @brief Helper to get local inode index

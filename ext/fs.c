@@ -24,7 +24,8 @@
 #include <ext/fs.h>
 #include <ext/superblock.h>
 #include <ext/bfsext_export.h>
-#include <ext/cache.h>
+#include <ext/cache/directory.h>
+#include <ext/cache/inode.h>
 
 /**
  * @brief Init ext fs

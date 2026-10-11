@@ -1,9 +1,10 @@
 
 aux_source_directory(. BFSEXT_SRC)
+aux_source_directory(cache BFSEXT_CACHE_SRC)
 if(BFS_BUILD_SHARED_LIB)
-  add_library(bfsext SHARED ${BFSEXT_SRC})
+  add_library(bfsext SHARED ${BFSEXT_SRC} ${BFSEXT_CACHE_SRC})
 else()
-  add_library(bfsext STATIC ${BFSEXT_SRC})
+  add_library(bfsext STATIC ${BFSEXT_SRC} ${BFSEXT_CACHE_SRC})
 endif()
 
 set_target_properties(bfsext
@@ -20,6 +21,11 @@ if(DEFINED INSTALL_LIB)
   INSTALL(TARGETS bfsext DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/bfs)
   INSTALL(
     DIRECTORY ${PROJECT_BINARY_DIR}/ext/. DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/ext
+    FILES_MATCHING PATTERN "*.h*"
+    PATTERN "CMakeFiles" EXCLUDE
+    PATTERN "bfsext_export.h" EXCLUDE)
+  INSTALL(
+    DIRECTORY ${PROJECT_BINARY_DIR}/ext/cache/. DESTINATION ${CMAKE_INSTALL_PREFIX}/include/bfs/ext/cache
     FILES_MATCHING PATTERN "*.h*"
     PATTERN "CMakeFiles" EXCLUDE
     PATTERN "bfsext_export.h" EXCLUDE)

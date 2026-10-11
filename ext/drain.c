@@ -16,7 +16,8 @@
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <common/lru.h>
-#include <ext/cache.h>
+#include <ext/cache/directory.h>
+#include <ext/cache/inode.h>
 #include <ext/drain.h>
 
 /**
