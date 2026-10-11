@@ -262,17 +262,6 @@ BFSEXT_NO_EXPORT int ext_cache_directory_entry_get(
     // free temporary data again
     free( data );
   }
-  // handle no directory
-  if ( ! ( node->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
-    // dereference inode
-    ext_cache_inode_put( cache->fs->inode, node->inode_number );
-    // dereference parent
-    ext_cache_directory_entry_put( node->parent );
-    // free node
-    free( node );
-    // return nullptr
-    return ENOTDIR;
-  }
   // copy over name and initialize reference count
   strcpy( node->name, name );
   node->reference_count = 1;

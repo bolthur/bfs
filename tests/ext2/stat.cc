@@ -86,7 +86,7 @@ TEST( ext2, stat_file ) {
   result = ext_file_open( &file, "/ext2/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
   // check inode
-  EXPECT_EQ( st.st_ino, file.inode_number );
+  EXPECT_EQ( st.st_ino, file.cache->inode->inode_number );
   // close again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );

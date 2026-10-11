@@ -82,7 +82,7 @@ BFSEXT_NO_EXPORT int ext_file_get(
     return ENOMEM;
   }
   // extract base and dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if (
@@ -170,9 +170,10 @@ BFSEXT_NO_EXPORT int ext_file_get(
     return result;
   }
 
-  // read inode
-  ext_structure_inode_t inode;
-  result = ext_inode_read_inode( fs, dir->entry->inode, &inode );
+  // read entry cache
+  ext_cache_directory_entry_node_t* cache;
+  result = ext_cache_directory_entry_get(
+    fs->directory, dir->cache, base, &cache );
   if ( EOK != result ) {
     ext_directory_close( dir );
     free( pathdup_base );
@@ -183,11 +184,10 @@ BFSEXT_NO_EXPORT int ext_file_get(
 
   // copy over necessary information
   file->mp = dir->mp;
-  memcpy( &file->inode, &inode, sizeof( inode ) );
+  file->cache = cache;
   file->dir = dir;
   file->flags = ( uint32_t )flags;
-  file->fsize = file->inode.i_size;
-  file->inode_number = dir->entry->inode;
+  file->fsize = file->cache->inode->inode.i_size;
   // handle append mode
   if ( file->flags & O_APPEND ) {
     file->fpos = file->fsize;
@@ -465,8 +465,8 @@ BFSEXT_EXPORT int ext_file_move( const char* old_path, const char* new_path ) {
   result = ext_link_link(
     target.mp->fs,
     &target,
-    &file.inode,
-    file.inode_number,
+    &file.cache->inode->inode,
+    file.cache->inode->inode_number,
     base_new_path
   );
   if ( EOK != result ) {
@@ -633,9 +633,9 @@ BFSEXT_EXPORT int ext_file_close( ext_file_t* file ) {
  *
  * @todo implement
  */
-BFSEXT_EXPORT int ext_file_truncate( ext_file_t* file, uint64_t size ) {
+BFSEXT_EXPORT int ext_file_truncate( ext_file_t* file, const uint64_t size ) {
   // validate
-  if ( ! file || ! file->mp || ! file->dir || ! file->inode_number ) {
+  if ( ! file || ! file->mp || ! file->dir || ! file->cache->inode->inode_number ) {
     return EINVAL;
   }
   // handle invalid flags
@@ -667,7 +667,7 @@ BFSEXT_EXPORT int ext_file_read(
     return EINVAL;
   }
   // handle not opened
-  if ( ! file->inode_number || ! file->mp ) {
+  if ( ! file->cache->inode->inode_number || ! file->mp ) {
     return EINVAL;
   }
   // handle invalid mode
@@ -688,7 +688,7 @@ BFSEXT_EXPORT int ext_file_read(
     size -= ( file->fpos + size - file->fsize );
   }
   const int result = ext_inode_read_data(
-    fs, &file->inode, file->fpos, size, buffer );
+    fs, &file->cache->inode->inode, file->fpos, size, buffer );
   if ( EOK != result ) {
     return result;
   }
@@ -743,7 +743,7 @@ BFSEXT_EXPORT int ext_file_write(
     file->fpos = file->fsize;
   }
   // write to file
-  result = ext_inode_write_data( fs, &file->inode, file->fpos, size, buffer );
+  result = ext_inode_write_data( fs, &file->cache->inode->inode, file->fpos, size, buffer );
   if ( EOK != result ) {
     common_transaction_rollback( fs->bdev );
     return result;
@@ -778,7 +778,7 @@ BFSEXT_EXPORT int ext_file_seek(
   switch ( whence ) {
     case SEEK_SET:
       // check for negative offset or to big offset
-      if ( 0 > offset || ( uint64_t )offset > file->inode.i_size ) {
+      if ( 0 > offset || ( uint64_t )offset > file->cache->inode->inode.i_size ) {
         return EINVAL;
       }
       // update file position
@@ -788,7 +788,7 @@ BFSEXT_EXPORT int ext_file_seek(
       // handle invalid offsets
       if (
         ( 0 > offset && ( uint64_t )-offset > file->fpos )
-        || ( 0 < offset && ( uint64_t )offset > file->inode.i_size - file->fpos )
+        || ( 0 < offset && ( uint64_t )offset > file->cache->inode->inode.i_size - file->fpos )
       ) {
         return EINVAL;
       }
@@ -801,7 +801,7 @@ BFSEXT_EXPORT int ext_file_seek(
       return EOK;
     case SEEK_END:
       // update file position
-      file->fpos = file->inode.i_size;
+      file->fpos = file->cache->inode->inode.i_size;
       return EOK;
   }
   // invalid whence
@@ -839,7 +839,7 @@ BFSEXT_EXPORT int ext_file_size( ext_file_t* file, uint64_t* size ) {
     return EINVAL;
   }
   // write size
-  *size = file->inode.i_size;
+  *size = file->cache->inode->inode.i_size;
   // return success
   return EOK;
 }

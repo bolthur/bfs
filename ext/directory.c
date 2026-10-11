@@ -694,6 +694,13 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
     // get next one
     p = strtok( nullptr, CONFIG_PATH_SEPARATOR_STRING );
   }
+  // handle no directory
+  if ( ! ( directory->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    // free duplicate
+    free( duppath );
+    // return nullptr
+    return ENOTDIR;
+  }
   // free duplicate
   free( duppath );
   // copy over data

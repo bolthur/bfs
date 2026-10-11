@@ -45,7 +45,7 @@ TEST( ext2, file_open_non_existant_file ) {
     "r"
   );
   EXPECT_EQ( result, ENOENT );
-  EXPECT_EQ( file.inode_number, 0 );
+  EXPECT_FALSE( file.cache );
   EXPECT_FALSE( file.mp );
   // close file
   result = ext_file_close( &file );
@@ -65,7 +65,7 @@ TEST( ext2, file_open2_non_existant_file ) {
     O_RDONLY
   );
   EXPECT_EQ( result, ENOENT );
-  EXPECT_EQ( file.inode_number, 0 );
+  EXPECT_FALSE( file.cache );
   EXPECT_FALSE( file.mp );
   // close file
   result = ext_file_close( &file );
@@ -85,7 +85,7 @@ TEST( ext2, file_open_existant_file ) {
     "r"
   );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // close file
@@ -106,7 +106,7 @@ TEST( ext2, file_open2_existant_file ) {
     O_RDONLY
   );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // close file
@@ -308,7 +308,7 @@ TEST( ext2, file_read_normal1 ) {
     "r"
   );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
@@ -337,7 +337,7 @@ TEST( ext2, file_read_normal2 ) {
   // load root dir
   int result = ext_file_open( &file, "/ext2/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
@@ -366,7 +366,7 @@ TEST( ext2, file_read_rootdir ) {
   // load root dir
   int result = ext_file_open( &file, "/ext2/world.txt", "r" );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
@@ -395,7 +395,7 @@ TEST( ext2, file_read_write_only ) {
   // load root dir
   int result = ext_file_open2( &file, "/ext2/world.txt", O_WRONLY );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
@@ -428,7 +428,7 @@ TEST( ext2, file_write_append ) {
     O_RDWR | O_APPEND
   );
   EXPECT_EQ( result, EOK );
-  EXPECT_NE( file.inode_number, 0 );
+  EXPECT_NE( file.cache->inode->inode_number, 0 );
   EXPECT_NE( file.fsize, 0 );
   EXPECT_EQ( file.fsize, file.fpos );
   EXPECT_TRUE( file.mp );

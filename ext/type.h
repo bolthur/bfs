@@ -44,28 +44,26 @@ typedef struct ext_file {
   uint64_t fsize;
   /** @brief Directory containing the file */
   ext_directory_t* dir;
-  /** @brief inode */
-  ext_structure_inode_t inode;
-  /** @brief inode number */
-  uint64_t inode_number;
+  /** @brief cache entry */
+  ext_cache_directory_entry_node_t* cache;
   /** @brief current file position */
   uint64_t fpos;
 } ext_file_t;
 
 /** @brief Ext directory structure */
 typedef struct ext_directory {
-  /** @brief cache entry */
-  ext_cache_directory_entry_node_t* cache;
+  /** @brief mount point this directory is related to */
+  common_mountpoint_t* mp;
   /** @brief Directory data */
   uint8_t* data;
-  /** @brief current directory entry */
-  ext_structure_directory_entry_t* entry;
   /** @brief current position */
   uint64_t pos;
   /** @brief directory content size */
   uint64_t entry_size;
-  /** @brief mount point this directory is related to */
-  common_mountpoint_t* mp;
+  /** @brief cache entry */
+  ext_cache_directory_entry_node_t* cache;
+  /** @brief current directory entry */
+  ext_structure_directory_entry_t* entry;
 } ext_directory_t;
 
 
