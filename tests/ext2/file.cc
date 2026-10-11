@@ -36,8 +36,7 @@
 TEST( ext2, file_open_non_existant_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open(
     &file,
@@ -56,8 +55,7 @@ TEST( ext2, file_open_non_existant_file ) {
 TEST( ext2, file_open2_non_existant_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open2(
     &file,
@@ -76,8 +74,7 @@ TEST( ext2, file_open2_non_existant_file ) {
 TEST( ext2, file_open_existant_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open(
     &file,
@@ -97,8 +94,7 @@ TEST( ext2, file_open_existant_file ) {
 TEST( ext2, file_open2_existant_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open2(
     &file,
@@ -115,16 +111,81 @@ TEST( ext2, file_open2_existant_file ) {
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
 }
 
+TEST( ext2, file_open_existant_file_multiple ) {
+  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
+  // get mountpoint
+  common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
+  EXPECT_TRUE( mp );
+  // open same file over and over again
+  for ( size_t i = 0; i < 100; i++ ) {
+    // file variable
+    ext_file_t file = {};
+    // load root dir
+    int result = ext_file_open(
+      &file,
+      "/ext2/foobarlongfolder/foo/bar/hello.txt",
+      "r"
+    );
+    EXPECT_EQ( result, EOK );
+    EXPECT_NE( file.cache->inode->inode_number, 0 );
+    EXPECT_NE( file.fsize, 0 );
+    EXPECT_TRUE( file.mp );
+    // allocate buffer for content
+    auto buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
+    EXPECT_TRUE( buffer );
+    // read from file
+    uint64_t read_count = 0;
+    result = ext_file_read( &file, buffer, file.fsize, &read_count );
+    buffer[ file.fsize ] = '\0';
+    EXPECT_EQ( result, EOK );
+    EXPECT_EQ( read_count, file.fsize );
+    EXPECT_STREQ( buffer, "world\n" );
+    // free buffer
+    free( buffer );
+    buffer = nullptr;
+    // close file
+    result = ext_file_close( &file );
+    EXPECT_EQ( result, EOK );
+    // load root dir
+    memset( &file, 0, sizeof( file ) );
+    result = ext_file_open(
+      &file,
+      "/ext2/hello/file/open/truncate.txt",
+      "r"
+    );
+    EXPECT_EQ( result, EOK );
+    EXPECT_NE( file.cache->inode->inode_number, 0 );
+    EXPECT_NE( file.fsize, 0 );
+    EXPECT_TRUE( file.mp );
+    // allocate buffer for content
+    buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
+    EXPECT_TRUE( buffer );
+    // read from file
+    read_count = 0;
+    result = ext_file_read( &file, buffer, file.fsize, &read_count );
+    buffer[ file.fsize ] = '\0';
+    EXPECT_EQ( result, EOK );
+    EXPECT_EQ( read_count, file.fsize );
+    EXPECT_STREQ( buffer, "hello world\n" );
+    // free buffer
+    free( buffer );
+    buffer = nullptr;
+    // close file
+    result = ext_file_close( &file );
+    EXPECT_EQ( result, EOK );
+  }
+  // unmount again
+  helper_unmount_ext_test_image( "ext2", "/ext2/" );
+}
+
 TEST( ext2, file_open_create_file_rofs ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asdf.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EROFS );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -140,16 +201,14 @@ TEST( ext2, file_open_create_file_rofs ) {
 TEST( ext2, file_open_create_file_rwfs ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asdf.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -166,8 +225,7 @@ TEST( ext2, file_open_create_file_rwfs ) {
 TEST( ext2, file_open_truncate_file ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2(
     &file,
     "/ext2/hello/file/open/truncate.txt",
@@ -195,16 +253,14 @@ TEST( ext2, file_open_truncate_file ) {
 TEST( ext2, file_open_create_file_short_short_ext ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asd1.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -221,16 +277,14 @@ TEST( ext2, file_open_create_file_short_short_ext ) {
 TEST( ext2, file_open_create_file_short_long_ext ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asd2.jpeg", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -247,16 +301,14 @@ TEST( ext2, file_open_create_file_short_long_ext ) {
 TEST( ext2, file_open_create_file_long_short_ext ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asdftolongname.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -273,16 +325,14 @@ TEST( ext2, file_open_create_file_long_short_ext ) {
 TEST( ext2, file_open_create_file_long_long_ext ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // try to create file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/asdftolongname2.jpeg", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -299,8 +349,7 @@ TEST( ext2, file_open_create_file_long_long_ext ) {
 TEST( ext2, file_read_normal1 ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open(
     &file,
@@ -312,7 +361,7 @@ TEST( ext2, file_read_normal1 ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -332,8 +381,7 @@ TEST( ext2, file_read_normal1 ) {
 TEST( ext2, file_read_normal2 ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open( &file, "/ext2/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
@@ -341,7 +389,7 @@ TEST( ext2, file_read_normal2 ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -361,8 +409,7 @@ TEST( ext2, file_read_normal2 ) {
 TEST( ext2, file_read_rootdir ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open( &file, "/ext2/world.txt", "r" );
   EXPECT_EQ( result, EOK );
@@ -370,7 +417,7 @@ TEST( ext2, file_read_rootdir ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -390,8 +437,7 @@ TEST( ext2, file_read_rootdir ) {
 TEST( ext2, file_read_write_only ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open2( &file, "/ext2/world.txt", O_WRONLY );
   EXPECT_EQ( result, EOK );
@@ -399,7 +445,7 @@ TEST( ext2, file_read_write_only ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // read from file
@@ -419,8 +465,7 @@ TEST( ext2, file_read_write_only ) {
 TEST( ext2, file_write_append ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // file variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // load root dir
   int result = ext_file_open2(
     &file,
@@ -433,7 +478,7 @@ TEST( ext2, file_write_append ) {
   EXPECT_EQ( file.fsize, file.fpos );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // set to beginning
@@ -454,7 +499,7 @@ TEST( ext2, file_write_append ) {
   EXPECT_EQ( write_count, strlen( buffer ) );
   // allocate buffer for content
   free( buffer );
-  buffer = ( char* )malloc( file.fsize + 1 );
+  buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // set to beginning
@@ -479,12 +524,11 @@ TEST( ext2, file_write_append ) {
 TEST( ext2, file_ftruncate_ro ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // open file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   int result = ext_file_open2( &file, "/ext2/hello/trunc/extend.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
   // save old size
-  uint64_t old_size = file.fsize;
+  const uint64_t old_size = file.fsize;
   // call for truncate
   result = ext_file_truncate( &file, old_size * 2 );
   EXPECT_EQ( result, EPERM );
@@ -782,8 +826,7 @@ TEST( ext2, file_remove_rootdir_ro_fail ) {
   int result = ext_file_remove( "/ext2/fremove.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/fremove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -801,8 +844,7 @@ TEST( ext2, file_remove_rootdir_rw_success ) {
   int result = ext_file_remove( "/ext2/fremove.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/fremove.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -816,8 +858,7 @@ TEST( ext2, file_remove_rootdir_rw_longname ) {
   int result = ext_file_remove( "/ext2/fremovelongname.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/fremovelongname.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -831,8 +872,7 @@ TEST( ext2, file_remove_dir_ro_fail ) {
   int result = ext_file_remove( "/ext2/hello/file/remove.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/hello/file/remove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -850,8 +890,7 @@ TEST( ext2, file_remove_dir_rw_success ) {
   int result = ext_file_remove( "/ext2/hello/file/remove.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/hello/file/remove.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -865,8 +904,7 @@ TEST( ext2, file_remove_dir_rw_longname ) {
   int result = ext_file_remove( "/ext2/hello/file/removelongname.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/hello/file/removelongname.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -880,8 +918,7 @@ TEST( ext2, file_move_rootdir_ro_fail ) {
   int result = ext_file_move( "/ext2/fmove.txt", "/ext2/fmove2.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -902,8 +939,7 @@ TEST( ext2, file_move_rootdir_target_exist_fail ) {
   int result = ext_file_move( "/ext2/fmove.txt", "/ext2/world.txt" );
   EXPECT_EQ( result, EEXIST );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -927,8 +963,7 @@ TEST( ext2, file_move_rootdir_source_not_exist_fail ) {
   int result = ext_file_move( "/ext2/fmoveinvalid.txt", "/ext2/world2.txt" );
   EXPECT_EQ( result, ENOENT );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -945,8 +980,7 @@ TEST( ext2, file_move_rootdir_rw_short_name_success ) {
   int result = ext_file_move( "/ext2/fmove.txt", "/ext2/fmove2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -984,8 +1018,7 @@ TEST( ext2, file_move_rootdir_rw_long_name_success ) {
   int result = ext_file_move( "/ext2/fmovelongname.txt", "/ext2/fmovelongname2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -1023,8 +1056,7 @@ TEST( ext2, file_move_dir_ro_fail ) {
   int result = ext_file_move( "/ext2/hello/file/fmove.txt", "/ext2/hello/file/fmove2.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1045,8 +1077,7 @@ TEST( ext2, file_move_dir_target_exist_fail ) {
   int result = ext_file_move( "/ext2/hello/file/fmove.txt", "/ext2/hello/world.txt" );
   EXPECT_EQ( result, EEXIST );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1070,8 +1101,7 @@ TEST( ext2, file_move_dir_source_not_exist_fail ) {
   int result = ext_file_move( "/ext2/hello/file/fmoveinvalid.txt", "/ext2/world2.txt" );
   EXPECT_EQ( result, ENOENT );
   // directory variable
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   // open base directory
   result = ext_file_open2( &file, "/ext2/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1088,8 +1118,7 @@ TEST( ext2, file_move_dir_rw_short_name_success ) {
   int result = ext_file_move( "/ext2/hello/file/fmove.txt", "/ext2/hello/file/fmove2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/file/" );
   EXPECT_EQ( result, EOK );
@@ -1127,8 +1156,7 @@ TEST( ext2, file_move_dir_rw_long_name_success ) {
   int result = ext_file_move( "/ext2/hello/file/fmovelongname.txt", "/ext2/hello/file/fmovelongname2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/file/" );
   EXPECT_EQ( result, EOK );

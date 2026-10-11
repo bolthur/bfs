@@ -65,8 +65,7 @@ TEST( ext2, directory_read_dir_utils ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
   int result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -203,8 +202,7 @@ TEST( ext2, directory_read_dir_utils_rewind ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
   int result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -251,8 +249,7 @@ TEST( ext2, directory_read_dir_utils_rewind ) {
 TEST( ext2, directory_get_by_name ) {
   helper_mount_ext_test_image( false, "ext2.img", "ext2", "/ext2/" );
   // open file
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open directory
   int result = ext_directory_open( &dir, "/ext2/hello/" );
   EXPECT_EQ( result, EOK );
@@ -275,14 +272,12 @@ TEST( ext2, directory_iterator_dir_read ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
   int result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
 
-  ext_iterator_directory_t it;
-  memset( &it, 0, sizeof( it ) );
+  ext_iterator_directory_t it = {};
   result = ext_iterator_directory_init(&it, &dir, 0);
   EXPECT_EQ( result, EOK );
   EXPECT_TRUE( it.entry );
@@ -421,8 +416,7 @@ TEST( ext2, directory_iterator_dir_read ) {
 TEST( ext2, directory_util_dir_get_non_existing_by_name ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // load root dir
   int result = ext_directory_open( &dir, "/ext2/hello" );
   EXPECT_EQ( result, EOK );
@@ -494,8 +488,7 @@ TEST( ext2, directory_remove_dir_ro_fail ) {
   int result = ext_directory_remove( "/ext2/hello/folder/remove/" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/remove/" );
   EXPECT_EQ( result, EOK );
@@ -513,8 +506,7 @@ TEST( ext2, directory_remove_dir_rw_success ) {
   int result = ext_directory_remove( "/ext2/hello/folder/remove/" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
@@ -534,8 +526,7 @@ TEST( ext2, directory_remove_dir_rw_notempty ) {
   int result = ext_directory_remove( "/ext2/hello/folder/removefail/" );
   EXPECT_EQ( result, ENOTEMPTY );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
@@ -555,8 +546,7 @@ TEST( ext2, directory_remove_dir_rw_longname ) {
   int result = ext_directory_remove( "/ext2/hello/folder/removelongname/" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/hello/folder/" );
   EXPECT_EQ( result, EOK );
@@ -576,8 +566,7 @@ TEST( ext2, directory_move_dir_ro_fail ) {
   int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/move2" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -597,8 +586,7 @@ TEST( ext2, directory_move_dir_rw_notempty ) {
   int result = ext_directory_move( "/ext2/hello/folder/movefail", "/ext2/hello/folder/move2" );
   EXPECT_EQ( result, ENOTEMPTY );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );
@@ -621,8 +609,7 @@ TEST( ext2, directory_move_dir_rw_exist ) {
   int result = ext_directory_move( "/ext2/hello/folder/move", "/ext2/hello/folder/movefail" );
   EXPECT_EQ( result, EEXIST );
   // directory variable
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {};
   // open base directory
   result = ext_directory_open( &dir, "/ext2/" );
   EXPECT_EQ( result, EOK );

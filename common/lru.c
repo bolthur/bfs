@@ -86,6 +86,8 @@ BFSCOMMON_NO_EXPORT void common_lru_drain( common_lru_cache_t* cache ) {
   // loop through nodes
   auto node = cache->head;
   while ( node ) {
+    // get next
+    auto const next = node->next;
     // write dirty to persistence
     if ( node->dirty ) {
       common_blockdev_if_bytes_write(
@@ -95,27 +97,47 @@ BFSCOMMON_NO_EXPORT void common_lru_drain( common_lru_cache_t* cache ) {
         1
       );
     }
-    // go to next
-    node = node->next;
-  }
-  // loop through nodes again
-  node = cache->head;
-  while ( node ) {
-    // get next
-    auto const next = node->next;
-    // detach node
+    // detach node and remove from hash lookup
     common_lru_detach( cache, node );
+    common_lru_hash_remove( cache, node );
     // free data
     free( node->data );
     free( node );
     // continue with next
     node = next;
   }
-  memset( cache->lookup, 0, LRU_CACHE_CAPACITY * sizeof( common_lru_cache_node_t* ) );
+  // reset size
+  cache->size = 0;
 }
 
 /**
- * HElper to detach a node
+ * Helper to remove inode from hash lookup
+ * @param cache
+ * @param node
+ */
+BFSCOMMON_NO_EXPORT void common_lru_hash_remove(
+  common_lru_cache_t* cache,
+  const common_lru_cache_node_t* node
+) {
+  const uint64_t hash = node->block_number % cache->capacity;
+  auto current = cache->lookup[ hash ];
+  while ( current ) {
+    if ( current->block_number == node->block_number ) {
+      if ( current->hash_prev ) {
+        current->hash_prev->hash_next = current->hash_next;
+      } else {
+        cache->lookup[ hash ] = current->hash_next;
+      }
+      if ( current->hash_next ) {
+        current->hash_next->hash_prev = current->hash_prev;
+      }
+    }
+    current = current->hash_next;
+  }
+}
+
+/**
+ * Helper to detach a node
  * @param cache
  * @param node
  */
@@ -198,25 +220,18 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
       const int result = common_blockdev_if_bytes_write(
         cache->bdev,
         oldest->data,
-        block_number,
+        oldest->block_number,
         1
       );
       if ( result != 0 ) {
         return nullptr;
       }
     }
-    // Remove from lookup
-    const uint64_t oldest_hash = oldest->block_number % cache->capacity;
-    if ( oldest->hash_prev ) {
-      oldest->hash_prev->hash_next = oldest->hash_next;
-    } else {
-      cache->lookup[ oldest_hash ] = oldest->hash_next;
-    }
-    if ( oldest->hash_next ) {
-      oldest->hash_next->hash_prev = oldest->hash_prev;
-    }
     // Remove from list and recycle
     common_lru_detach( cache, oldest );
+    common_lru_hash_remove( cache, oldest );
+    memset( oldest->data, 0, oldest->data_size );
+    // reuse oldest
     node = oldest;
   } else {
     common_log( "allocating cache for %"PRIu64"\r\n", block_number );
@@ -225,12 +240,13 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
       return nullptr;
     }
     memset( node, 0, sizeof( common_lru_cache_node_t ) );
-    node->data = malloc( ( size_t )( sizeof( uint8_t ) * cache->node_data_size ) );
+    node->data_size = ( size_t )( sizeof( uint8_t ) * cache->node_data_size );
+    node->data = malloc( node->data_size );
     if ( ! node->data ) {
       free( node );
       return nullptr;
     }
-    memset( node->data, 0,  ( size_t )( sizeof( uint8_t ) * cache->node_data_size )  );
+    memset( node->data, 0,  node->data_size );
     cache->size++;
     common_log( "block %"PRIu64" allocated for cache: %#"PRIxPTR"\r\n",
       block_number, ( uintptr_t )node->data );

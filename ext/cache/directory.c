@@ -158,6 +158,8 @@ BFSEXT_NO_EXPORT void ext_cache_directory_entry_drain(
     // continue with next
     node = next;
   }
+  // reset size
+  cache->size = 0;
 }
 
 /**
@@ -401,25 +403,11 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_all
   if ( ! oldest ) {
     return nullptr;
   }
-  // remove from hash table
-  ext_cache_directory_entry_hash_remove( cache, oldest );
   // dereference inode
   ext_cache_inode_put( cache->fs->inode, oldest->inode_number );
-  // remove from list
-  if ( oldest->lru_prev ) {
-    oldest->lru_prev->lru_next = oldest->lru_next;
-  }
-  if ( oldest->lru_next ) {
-    oldest->lru_next->lru_prev = oldest->lru_prev;
-  }
-  if ( cache->head == oldest ) {
-    cache->head = oldest->lru_next;
-  }
-  if ( cache->tail == oldest ) {
-    cache->tail = oldest->lru_prev;
-  }
-  // clear out data
-  memset( oldest, 0, sizeof( *oldest ) );
+  // remove from hash table
+  ext_cache_directory_entry_hash_remove( cache, oldest );
+  ext_cache_directory_entry_detach( cache, oldest );
   // finally return oldest
   return oldest;
 }

@@ -187,6 +187,8 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_unlock( common_blockdev_t* bdev ) {
  * @private
  */
 int blockdev_resize( common_blockdev_t* bdev, const uint64_t block_size ) {
+  // drain lru cache
+  common_lru_drain( bdev->lru );
   // allocate new buffer
   uint8_t* block_buffer = malloc( sizeof( char ) * ( size_t )block_size );
   if ( ! block_buffer ) {
@@ -195,8 +197,6 @@ int blockdev_resize( common_blockdev_t* bdev, const uint64_t block_size ) {
   // overwrite block size and buffer
   bdev->bdif->block_size = block_size;
   bdev->bdif->block_buffer = block_buffer;
-  // drain lru cache
-  common_lru_drain( bdev->lru );
   // set new block size
   bdev->lru->node_data_size = block_size;
   // return success

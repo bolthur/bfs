@@ -26,6 +26,7 @@
 #include <common/file.h>
 #include <common/transaction.h>
 #include <common/mountpoint.h>
+#include <common/log.h>
 #include <ext/directory.h>
 #include <ext/file.h>
 #include <ext/inode.h>
@@ -53,6 +54,7 @@ BFSEXT_NO_EXPORT int ext_file_get(
   if ( ! file || ! path ) {
     return EINVAL;
   }
+  common_log( "Opening %s\r\n", path );
   // get mountpoint
   common_mountpoint_t* mp = common_mountpoint_find( path );
   if ( ! mp ) {

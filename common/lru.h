@@ -37,6 +37,8 @@ typedef struct common_lru_cache_node {
   uint64_t block_number;
   /** @brief pointer to data */
   uint8_t* data;
+  /** @brief data size */
+  size_t data_size;
   /** @brief dirty flag */
   bool dirty;
   /** @brief pointer to next element */
@@ -73,6 +75,7 @@ typedef struct common_lru_cache {
   common_lru_cache_t* common_lru_setup( common_blockdev_t*, uint64_t );
   void common_lru_destroy( common_lru_cache_t* );
   void common_lru_drain( common_lru_cache_t* );
+  void common_lru_hash_remove( common_lru_cache_t*, const common_lru_cache_node_t* );
   void common_lru_detach( common_lru_cache_t*, common_lru_cache_node_t* );
   void common_lru_move_to_head( common_lru_cache_t*, common_lru_cache_node_t* );
   common_lru_cache_node_t* common_lru_get( common_lru_cache_t*, uint64_t );
