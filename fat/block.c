@@ -112,8 +112,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     // next root block is root directory offset + sector
     uint64_t rootdir_offset;
     uint64_t rootdir_size;
-    fat_directory_t dir;
-    memset( &dir, 0, sizeof( dir ) );
+    fat_directory_t dir = {0};
     dir.file.cluster = file->cluster;
     dir.file.mp = file->mp;
     // get offset and size of root directory

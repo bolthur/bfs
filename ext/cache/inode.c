@@ -226,6 +226,8 @@ BFSEXT_NO_EXPORT int ext_cache_inode_write(
   node->dirty = true;
   // copy content
   memcpy( &node->inode, in, sizeof( ext_structure_inode_t ) );
+  // decrement inode again
+  ext_cache_inode_put( cache, inode_number );
   // return success
   return EOK;
 }
@@ -252,6 +254,8 @@ BFSEXT_NO_EXPORT int ext_cache_inode_read(
   }
   // copy content
   memcpy( out, &node->inode, sizeof( ext_structure_inode_t ) );
+  // decrement inode again
+  ext_cache_inode_put( cache, inode_number );
   // return success
   return EOK;
 }

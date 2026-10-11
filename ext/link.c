@@ -37,7 +37,6 @@
  * @param number
  * @param path
  * @return int
- * @todo evaluate type by mode
  * @todo use direntry cache
  */
 BFSEXT_NO_EXPORT int ext_link_link(
@@ -198,9 +197,12 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
   }
   // check if existing
   int result = ext_directory_entry_by_name( dir, path );
+  // treat not existing as success
   if ( ENOENT == result ) {
     return EOK;
-  } else if ( EOK != result ) {
+  }
+  // handle error
+  if ( EOK != result ) {
     return result;
   }
   uint64_t pos = 0;

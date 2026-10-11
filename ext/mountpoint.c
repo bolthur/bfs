@@ -27,6 +27,8 @@
 #include <ext/mountpoint.h>
 #include <ext/bfsext_export.h>
 #include <ext/superblock.h>
+#include <ext/cache/directory.h>
+#include <ext/cache/inode.h>
 #include <bfsconfig.h>
 
 /**
@@ -121,6 +123,16 @@ BFSEXT_EXPORT int ext_mountpoint_umount( const char* mountpoint ) {
   }
   // get fat fs instance
   ext_fs_t* fs = entry->fs;
+  // drain and destroy directory cache
+  if ( fs->directory ) {
+    ext_cache_directory_entry_drain( fs->directory );
+    ext_cache_directory_entry_destroy( fs->directory );
+  }
+  // drain and destroy inode cache
+  if ( fs->inode ) {
+    ext_cache_inode_drain( fs->inode );
+    ext_cache_inode_destroy( fs->inode );
+  }
   // finish
   int result = common_blockdev_fini( fs->bdev );
   if ( EOK != result ) {

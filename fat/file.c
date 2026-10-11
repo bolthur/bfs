@@ -989,9 +989,7 @@ BFSFAT_EXPORT int fat_file_move( const char* old_path, const char* new_path ) {
   }
   // open destination to check whether it exists
   fat_file_t file;
-  fat_directory_t source, target;
-  memset( &source, 0, sizeof( source ) );
-  memset( &target, 0, sizeof( target ) );
+  fat_directory_t source = {0}, target = {0};
   memset( &file, 0, sizeof( file ) );
   int result = fat_file_open2( &file, new_path, O_RDONLY );
   if ( ENOENT != result ) {

@@ -139,16 +139,6 @@ BFSEXT_NO_EXPORT int ext_fs_init(
  */
 BFSEXT_NO_EXPORT int ext_fs_fini( ext_fs_t* fs ) {
   if ( fs ) {
-    // drain and destroy directory cache
-    if ( fs->directory ) {
-      ext_cache_directory_entry_drain( fs->directory );
-      ext_cache_directory_entry_destroy( fs->directory );
-    }
-    // drain and destroy inode cache
-    if ( fs->inode ) {
-      ext_cache_inode_drain( fs->inode );
-      ext_cache_inode_destroy( fs->inode );
-    }
     // free all groups
     if ( fs->groups ) {
       free( fs->groups );

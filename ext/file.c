@@ -172,14 +172,23 @@ BFSEXT_NO_EXPORT int ext_file_get(
 
   // read entry cache
   ext_cache_directory_entry_node_t* cache;
-  result = ext_cache_directory_entry_get(
-    fs->directory, dir->cache, base, &cache );
+  result = ext_cache_directory_entry_get( fs->directory, dir->cache, base, &cache );
   if ( EOK != result ) {
     ext_directory_close( dir );
     free( pathdup_base );
     free( pathdup_dir );
     free( dir );
     return result;
+  }
+
+  // start with parent and loop cache entries to increment ref counts
+  auto parent_cache = cache->parent;
+  while ( parent_cache ) {
+    // get parent cache with automatic increment
+    ext_cache_directory_entry_node_t* tmp_cache;
+    assert( EOK == ext_cache_directory_entry_get( fs->directory, parent_cache->parent, parent_cache->name, &tmp_cache ) );
+    // continue with parent
+    parent_cache = parent_cache->parent;
   }
 
   // copy over necessary information
@@ -344,9 +353,7 @@ BFSEXT_EXPORT int ext_file_move( const char* old_path, const char* new_path ) {
   }
   // open destination to check whether it exists
   ext_file_t file;
-  ext_directory_t source, target;
-  memset( &source, 0, sizeof( source ) );
-  memset( &target, 0, sizeof( target ) );
+  ext_directory_t source = {0}, target = {0};
   memset( &file, 0, sizeof( file ) );
   result = ext_file_open2( &file, new_path, O_RDONLY );
   if ( ENOENT != result ) {
@@ -610,6 +617,9 @@ BFSEXT_EXPORT int ext_file_close( ext_file_t* file ) {
     return EINVAL;
   }
   int result = EOK;
+  if ( file->cache ) {
+    ext_cache_directory_entry_put( file->cache );
+  }
   if ( file->dir ) {
     result = ext_directory_close( file->dir );
     if ( EOK != result ) {

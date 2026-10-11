@@ -76,8 +76,8 @@ BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
     return ENOMEM;
   }
   // get dir and base name
-  char* dirpath = dirname( pathdup_dir );
-  char* basepath = basename( pathdup_base );
+  const char* dirpath = dirname( pathdup_dir );
+  const char* basepath = basename( pathdup_base );
   // check for unsupported
   if ( '.' == *dirpath ) {
     free( pathdup_base );
@@ -85,7 +85,7 @@ BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
     free( duppath );
     return ENOTSUP;
   }
-  size_t open_path_size = strlen( mp->name ) + strlen( dirpath ) + 1;
+  const size_t open_path_size = strlen( mp->name ) + strlen( dirpath ) + 1;
   char* open_path = malloc( open_path_size );
   if ( ! open_path ) {
     free( pathdup_base );
@@ -100,8 +100,7 @@ BFSEXT_NO_EXPORT int ext_stat( const char* path, struct stat *st ) {
     strcat( open_path, CONFIG_PATH_SEPARATOR_STRING );
   }
   // open directory
-  ext_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  ext_directory_t dir = {0};
   result = ext_directory_open( &dir, open_path );
   if ( EOK != result ) {
     free( open_path );

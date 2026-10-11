@@ -243,9 +243,7 @@ BFSFAT_EXPORT int fat_directory_move(
     return EROFS;
   }
   // variables for source and target dir
-  fat_directory_t source, target;
-  memset( &source, 0, sizeof( source ) );
-  memset( &target, 0, sizeof( target ) );
+  fat_directory_t source = {0}, target = {0};
   // open source directory
   int result = fat_directory_open( &source, old_path );
   if ( EOK != result ) {
@@ -553,8 +551,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     strcat( dirpath, CONFIG_PATH_SEPARATOR_STRING );
   }
   // local variable for directory operations
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {0};
   // try to open basename
   result = fat_directory_open( &dir, dirpath );
   if ( EOK != result ) {
@@ -1378,8 +1375,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     entry_size = sizeof( *data ) * long_name_length;
     memset( data, 0, ( size_t )entry_size );
     // build short name
-    fat_structure_directory_entry_t* short_entry = ( fat_structure_directory_entry_t* )
-      ( &data[ long_name_length - 1 ] );
+    auto const short_entry = ( fat_structure_directory_entry_t* )( &data[ long_name_length - 1 ] );
     // set directory flag
     if ( directory ) {
       short_entry->attributes = FAT_DIRECTORY_FILE_ATTRIBUTE_DIRECTORY;

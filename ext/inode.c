@@ -498,7 +498,7 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
   }
 
   uint64_t number = 0;
-  uint64_t bgcount;
+  uint64_t group_count;
   // get block size
   uint64_t block_size;
   int result = ext_superblock_block_size( fs, &block_size );
@@ -506,7 +506,7 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
     return result;
   }
   // get block group number
-  result = ext_superblock_blockgroup_count( fs, &bgcount );
+  result = ext_superblock_blockgroup_count( fs, &group_count );
   if ( EOK != result ) {
     return result;
   }
@@ -516,10 +516,10 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
     return ENOMEM;
   }
 
-  for ( uint64_t bgnumber = 0; bgnumber < bgcount && 0 == number; bgnumber++ ) {
+  for ( uint64_t group_number = 0; group_number < group_count && 0 == number; group_number++ ) {
     // read block group descriptor
     ext_structure_block_group_descriptor_t bgd = {0};
-    result = ext_blockgroup_read( fs, bgnumber, &bgd );
+    result = ext_blockgroup_read( fs, group_number, &bgd );
     if ( EOK != result ) {
       free( bitmap );
       return result;
@@ -562,13 +562,13 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
           }
           // update block group
           bgd.bg_free_inodes_count--;
-          result = ext_blockgroup_write( fs, bgnumber, &bgd );
+          result = ext_blockgroup_write( fs, group_number, &bgd );
           if ( EOK != result ) {
             free( bitmap );
             return result;
           }
           // set block group number
-          number = (bgnumber * fs->superblock.s_inodes_per_group) + ( i * 32 ) + j;
+          number = (group_number * fs->superblock.s_inodes_per_group) + ( i * 32 ) + j;
         }
       }
     }
@@ -586,8 +586,6 @@ BFSEXT_NO_EXPORT int ext_inode_allocate(
   if ( EOK != result ) {
     return result;
   }
-  // remove from cache
-  ext_cache_inode_put( fs->inode, *inode_number );
   // return success
   return EOK;
 }

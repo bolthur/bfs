@@ -90,8 +90,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
     strcat( open_path, CONFIG_PATH_SEPARATOR_STRING );
   }
   // open directory
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {0};
   common_log( "Opening directory %s\r\n", open_path );
   int result = fat_directory_open( &dir, open_path );
   if ( EOK != result ) {

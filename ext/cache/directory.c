@@ -131,13 +131,17 @@ BFSEXT_NO_EXPORT void ext_cache_directory_entry_move_to_head(
 BFSEXT_NO_EXPORT void ext_cache_directory_entry_drain(
   ext_cache_directory_entry_t* cache
 ) {
+  // get cache head
   auto node = cache->head;
+  // loop while node is there
   while ( node ) {
     // cache next
     auto const next = node->lru_next;
     // handle still referenced
     if ( node->reference_count ) {
+      // go to next
       node = next;
+      // skip rest
       continue;
     }
     // dereference inode in case it is set
@@ -417,12 +421,14 @@ BFSEXT_NO_EXPORT ext_cache_directory_entry_node_t* ext_cache_directory_entry_all
 }
 
 /**
- * Dereference a node up to it's parent
+ * Dereference a node
  * @param node
  */
 BFSEXT_NO_EXPORT void ext_cache_directory_entry_put( ext_cache_directory_entry_node_t* node ) {
   while ( node ) {
+    // decrement parent
     node->reference_count--;
+    // go to parent
     node = node->parent;
   }
 }

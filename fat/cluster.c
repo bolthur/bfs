@@ -187,7 +187,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     // log output
     common_log( "Loading sector %#"PRIx64"\r\n", fat_sector );
     // read sector to memory
-    int result = common_blockdev_bytes_read(
+    const int result = common_blockdev_bytes_read(
       fs->bdev,
       fat_sector * fs->superblock.bytes_per_sector,
       *buffer,

@@ -674,6 +674,9 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   const char* real_path = path + strlen( mp->name ) - 1;
   char* duppath = strdup( real_path );
   if ( ! duppath ) {
+    // dereference
+    ext_cache_directory_entry_put( directory );
+    // return no memory
     return ENOMEM;
   }
   char* p = duppath;
@@ -682,12 +685,18 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   while ( p != nullptr ) {
     // only valid when there is something
     if ( strlen( p ) ) {
+      // cache parent
+      ext_cache_directory_entry_node_t* parent = directory;
       // load directory
       result = ext_cache_directory_entry_get(
-        fs->directory, directory, p, &directory );
+        fs->directory, parent, p, &directory );
       // handle not found
       if ( EOK != result ) {
+        // dereference
+        ext_cache_directory_entry_put( parent );
+        // free duplicate
         free( duppath );
+        // return result
         return result;
       }
     }
@@ -696,9 +705,11 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   }
   // handle no directory
   if ( ! ( directory->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    // dereference
+    ext_cache_directory_entry_put( directory );
     // free duplicate
     free( duppath );
-    // return nullptr
+    // return not directory
     return ENOTDIR;
   }
   // free duplicate
@@ -706,6 +717,9 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   // copy over data
   dir->data = malloc( directory->inode->inode.i_size );
   if ( ! dir->data ) {
+    // dereference
+    ext_cache_directory_entry_put( directory );
+    // return no memory
     return ENOMEM;
   }
   // load folder data into temporary buffer
@@ -718,7 +732,11 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   );
   // handle error
   if ( EOK != result ) {
+    // dereference
+    ext_cache_directory_entry_put( directory );
+    // free data
     free( dir->data );
+    // return result
     return result;
   }
   dir->cache = directory;
@@ -898,12 +916,7 @@ BFSEXT_NO_EXPORT int ext_directory_entry_size(
   if ( ! value ) {
     return EINVAL;
   }
-  // calculate length
-  uint64_t length = name_length + sizeof( ext_structure_directory_entry_t );
-  if ( length % 4 ) {
-    length += 4 - length % 4;
-  }
-  // save
-  *value = length;
+  // calculate and push length
+  *value = ( name_length + sizeof( ext_structure_directory_entry_t ) + 3 ) & ~3UL;
   return EOK;
 }

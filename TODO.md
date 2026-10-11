@@ -40,7 +40,9 @@
   - [x] Introduce some sort of read/write cache instead of transactions caching blocks until drain / flush
   - [x] Add ext directory entry level cache
   - [x] Add ext inode entry level cache
-  - [ ] Rework inode cache to prevent memory leaks
+  - [x] Rework inode cache to prevent memory leaks
+  - [ ] Add fat directory entry level cache
+  - [ ] Add fat chain / extent cache 
 - [ ] Cleanup
   - [ ] Check written code and simplify it once everything works
   - [ ] Check code and deduplicate similar code like file move or folder move
