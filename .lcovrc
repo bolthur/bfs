@@ -1,0 +1,3 @@
+
+# Broadly ignores non-fatal formatting and tracking errors
+ignore_errors = mismatch,inconsistent,unused,empty,gcov,source,negative,child

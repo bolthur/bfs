@@ -28,8 +28,11 @@
 extern "C" {
 #endif
 
+/** @brief inode allocation enum */
 typedef enum {
+  /** @brief no allocation */
   INODE_NO_ALLOC = 0,
+  /** @brief allocate */
   INODE_ALLOC = 1
 } inode_allocate_t;
 

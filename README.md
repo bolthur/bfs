@@ -31,3 +31,10 @@ mkdir build
 cd build
 cmake -G"Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain/arm-raspi2b_r1-bolthur-eabi.cmake ..
 ```
+
+### Compilation including documentation and code coverage
+
+
+```bash
+cmake -G"Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain/generic-test-gcc.cmake -DBFS_BUILD_DOC=ON -DBFS_BUILD_WITH_COVERAGE=ON -DCMAKE_BUILD_TYPE=Debug ..
+```

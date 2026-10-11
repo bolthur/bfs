@@ -100,7 +100,7 @@ if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
     VERBATIM )
 endif()
 
-if(${BFS_BUILD_WITH_COVERAGE})
+if(BFS_BUILD_WITH_COVERAGE)
   # find necessary programs
   find_program(LCOV_PATH lcov)
   find_program(GENHTML_PATH genhtml)
@@ -111,16 +111,19 @@ if(${BFS_BUILD_WITH_COVERAGE})
     # adjust cflags according to compiler
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS_COVERAGE "${CMAKE_EXE_LINKER_FLAGS_DEBUG} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_SHARED_LINKER_FLAGS_COVERAGE "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_MODULE_LINKER_FLAGS_COVERAGE "${CMAKE_MODULE_LINKER_FLAGS_DEBUG} --coverage -fprofile-arcs -ftest-coverage")
     # set output directory
     set(CMAKE_COVERAGE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/cov)
     # note the option ALL which allows to build the docs together with the application
     add_custom_target(coverage_collect
-      COMMAND lcov --capture --directory . --output-file coverage.info
+      COMMAND lcov --capture --directory ${CMAKE_CURRENT_BINARY_DIR} --output-file coverage.info --config-file ${CMAKE_SOURCE_DIR}/.lcovrc
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Generating lcov information"
       VERBATIM )
     add_custom_target(coverage_strip
-      COMMAND lcov --remove coverage.info '/usr/*' --remove coverage.info '*tests/*' --output-file ${CMAKE_CURRENT_BINARY_DIR}/coverage.info
+      COMMAND lcov --remove coverage.info '/usr/*' --remove coverage.info '*tests/*' --output-file ${CMAKE_CURRENT_BINARY_DIR}/coverage.info --config-file ${CMAKE_SOURCE_DIR}/.lcovrc
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Strip out test and system include"
       DEPENDS coverage_collect )

@@ -59,3 +59,4 @@
 - [x] Add code coverage collection
   - [x] Get ctest coverage command to run
   - [x] Get html coverage output
+  - [x] Fix broken ctest coverage output

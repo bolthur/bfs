@@ -80,58 +80,106 @@ extern "C" {
 #define EXT_SUPERBLOCK_EXT2_LZO_ALG 4
 
 typedef struct {
+  /** @brief inode count */
   uint32_t s_inodes_count;
+  /** @brief block count */
   uint32_t s_blocks_count;
+  /** @brief reserved blocks count */
   uint32_t s_r_blocks_count;
+  /** @brief free blocks count */
   uint32_t s_free_blocks_count;
+  /** @brief free inode count */
   uint32_t s_free_inodes_count;
+  /** @brief first data block */
   uint32_t s_first_data_block;
+  /** @brief block size */
   uint32_t s_log_block_size;
+  /** @brief frag size */
   uint32_t s_log_frag_size;
+  /** @brief amount of blocks per group */
   uint32_t s_blocks_per_group;
+  /** @brief amount of frags per group */
   uint32_t s_frags_per_group;
+  /** @brief amount of inodes per group */
   uint32_t s_inodes_per_group;
+  /** @brief mtime */
   uint32_t s_mtime;
+  /** @brief wtime */
   uint32_t s_wtime;
+  /** @brief mount count */
   uint16_t s_mnt_count;
+  /** @brief max mount count */
   uint16_t s_max_mnt_count;
+  /** @brief magix */
   uint16_t s_magic;
+  /** @brief state */
   uint16_t s_state;
+  /** @brief errors */
   uint16_t s_errors;
+  /** @brief minor revision */
   uint16_t s_minor_rev_level;
+  /** @brief last check */
   uint32_t s_lastcheck;
+  /** @brief check interval */
   uint32_t s_checkinterval;
+  /** @brief creator os */
   uint32_t s_creator_os;
+  /** @brief revision */
   uint32_t s_rev_level;
+  /** @brief resuid */
   uint16_t s_def_resuid;
+  /** @brief resgid */
   uint16_t s_def_resgid;
   // only for ext greater or equal to 1
+  /** @brief first inode */
   uint32_t s_first_ino;
+  /** @brief inode size */
   uint16_t s_inode_size;
+  /** @brief block group number */
   uint16_t s_block_group_nr;
+  /** @brief feature compatibility */
   uint32_t s_feature_compat;
+  /** @brief feature incompatibility */
   uint32_t s_feature_incompat;
+  /** @brief read only feature compatibility */
   uint32_t s_feature_ro_compat;
+  /** @brief uuid */
   uint8_t s_uuid[ 16 ];
+  /** @brief columen name */
   uint8_t s_volume_name[ 16 ];
+  /** @brief last mounted */
   uint8_t s_last_mounted[ 64 ];
+  /** @brief bitmap algorithm */
   uint32_t s_algo_bitmap;
   // performance hints
+  /** @brief pre allocated blocks */
   uint8_t s_prealloc_blocks;
+  /** @brief pre allocated directory blocks */
   uint8_t s_prealloc_dir_blocks;
+  /** @brief alignment */
   uint16_t alignment0;
   // journaling
+  /** @brief journal uuid */
   uint8_t s_journal_uuid[ 16 ];
+  /** @brief journal inum */
   uint32_t s_journal_inum;
+  /** @brief journal dev */
   uint32_t s_journal_dev;
+  /** @brief last orphan */
   uint32_t s_last_orphan;
   // directory index
+  /** @brief hash seed */
   uint32_t s_hash_seed[ 4 ];
+  /** @brief hash version */
   uint8_t s_def_hash_version;
+  /** @brief padding */
   uint8_t padding0[ 3 ];
   // other options
+  /** @brief default mount options */
   uint32_t s_default_mount_options;
+  /** @brief first meta block group */
   uint32_t s_first_meta_bg;
+  /** @brief unused */
   uint8_t unused0[ 760 ];
 } ext_structure_superblock_t;
 static_assert(
@@ -139,14 +187,23 @@ static_assert(
   "invalid ext_structure_superblock_t size!"
 );
 
+/** @brief block group descriptor structure */
 typedef struct {
+  /** @brief block bitmap */
   uint32_t bg_block_bitmap;
+  /** @brief inode bitmap */
   uint32_t bg_inode_bitmap;
+  /** @brief inode table */
   uint32_t bg_inode_table;
+  /** @brief free block count */
   uint16_t bg_free_blocks_count;
+  /** @brief free inode count */
   uint16_t bg_free_inodes_count;
+  /** @brief used directories count */
   uint16_t bg_used_dirs_count;
+  /** @brief padding */
   uint16_t bg_pad;
+  /** @brief reserved */
   uint8_t bg_reserved[ 12 ];
 } ext_structure_block_group_descriptor_t;
 static_assert(
@@ -212,46 +269,84 @@ static_assert(
 #define EXT_INODE_EXT3_JOURNAL_DATA_FL  0x00004000
 #define EXT_INODE_EXT2_RESERVED_FL  0x80000000
 
+/** @brief inode structure */
 typedef struct {
+  /** @brief mode */
   uint16_t i_mode;
+  /** @brief uid */
   uint16_t i_uid;
+  /** @brief size */
   uint32_t i_size;
+  /** @brief atime */
   uint32_t i_atime;
+  /** @brief ctime */
   uint32_t i_ctime;
+  /** @brief mtime */
   uint32_t i_mtime;
+  /** @brief dtime */
   uint32_t i_dtime;
+  /** @brief gid */
   uint16_t i_gid;
+  /** @brief link count */
   uint16_t i_links_count;
+  /** @brief block count*/
   uint32_t i_blocks;
+  /** @brief flags */
   uint32_t i_flags;
+  /** @brief os dependant 1 */
   uint32_t i_osd1;
+  /** @brief blocks */
   uint32_t i_block[ 15 ];
+  /** @brief generation */
   uint32_t i_generation;
+  /** @brief file acl */
   uint32_t i_file_acl;
+  /** @brief dir acl */
   uint32_t i_dir_acl;
+  /** @brief faddr */
   uint32_t i_faddr;
+  /** @brief os information */
   union {
+    /** @brief hurd related */
     struct {
+      /** @brief frag */
       uint8_t h_i_frag;
+      /** @brief size */
       uint8_t h_i_fsize;
+      /** @brief mode high */
       uint16_t h_i_mode_high;
+      /** @brief uid high */
       uint16_t h_i_uid_high;
+      /** @brief gid high */
       uint16_t h_i_gid_high;
+      /** @brief author */
       uint32_t h_i_author;
     } i_osd2_hurd;
+    /** @brief linux related */
     struct {
+      /** @brief frag */
       uint8_t h_i_frag;
+      /** @brief size */
       uint8_t h_i_fsize;
+      /** @brief reserved */
       uint16_t reserved0;
+      /** @brief high uid */
       uint16_t h_i_uid_high;
+      /** @brief high gid */
       uint16_t h_i_gid_high;
+      /** @brief reserved */
       uint32_t reserved1;
     } i_osd2_linux;
+    /** @brief masix related */
     struct {
+      /** @brief frag */
       uint8_t h_i_frag;
+      /** @brief size */
       uint8_t h_i_fsize;
+      /** @brief reserved */
       uint8_t reserved0[ 10 ];
     } i_osd2_masix;
+    /** @brief os dependant 2 */
     uint8_t i_osd2[ 12 ];
   } os_information;
 } ext_structure_inode_t;
@@ -260,13 +355,21 @@ static_assert(
   "invalid ext_structure_inode_t size!"
 );
 
+/** @brief directory entry file type for unknown */
 #define EXT_DIRECTORY_EXT2_FT_UNKNOWN 0
+/** @brief directory entry file type for file */
 #define EXT_DIRECTORY_EXT2_FT_REG_FILE 1
+/** @brief directory entry file type for directory */
 #define EXT_DIRECTORY_EXT2_FT_DIR 2
+/** @brief directory entry file type for character device */
 #define EXT_DIRECTORY_EXT2_FT_CHRDEV 3
+/** @brief directory entry file type for block device */
 #define EXT_DIRECTORY_EXT2_FT_BLKDEV 4
+/** @brief directory entry file type for fifo */
 #define EXT_DIRECTORY_EXT2_FT_FIFO 5
+/** @brief directory entry file type for socket */
 #define EXT_DIRECTORY_EXT2_FT_SOCK 6
+/** @brief directory entry file type for symlink */
 #define EXT_DIRECTORY_EXT2_FT_SYMLINK 7
 
 /** @brief ext directory entry representation */

@@ -27,7 +27,9 @@
 extern "C" {
 #endif
 
-typedef struct ext_cache_inode  ext_cache_inode_t;
+/** @see ext_cache_inode_t */
+typedef struct ext_cache_inode ext_cache_inode_t;
+/** @see ext_cache_directory_entry_t */
 typedef struct ext_cache_directory_entry ext_cache_directory_entry_t;
 
 /** @brief Fat file system object */
