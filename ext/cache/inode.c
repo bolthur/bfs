@@ -17,8 +17,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <common/errno.h>
 #include <common/lru.h>
+#include <common/log.h>
 #include <ext/cache/inode.h>
 #include <ext/inode.h>
 #include <ext/bfsext_export.h>
@@ -182,6 +184,8 @@ BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
     free( node );
     return nullptr;
   }
+  common_log( "Loading inode %"PRIu64" from block %"PRIu64" with offset %"PRIu64"\r\n",
+    inode_number, block, offset )
   // load cache via lru
   common_lru_cache_node_t* lru = common_lru_get( cache->fs->bdev->lru, block );
   if ( ! lru ) {
@@ -196,6 +200,7 @@ BFSEXT_NO_EXPORT ext_cache_inode_node_t* ext_cache_inode_get(
   node->dirty = false;
   // copy inode data
   memcpy( &node->inode, inode, sizeof( ext_structure_inode_t ) );
+  common_log( "node->inode.i_mode = %#"PRIx16"\r\n", node->inode.i_mode );
   // insert node
   ext_cache_inode_insert( cache, node );
   // return node

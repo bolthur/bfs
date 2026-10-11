@@ -41,7 +41,7 @@ TEST( fat12, transaction_nested_commit ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   EXPECT_TRUE( mp );
   // cache fat fs
-  fat_fs_t* fs = ( fat_fs_t* )mp->fs;
+  auto const fs = static_cast<fat_fs_t*>( mp->fs );
   EXPECT_TRUE( fs );
   // start transaction
   int result = common_transaction_begin( fs->bdev );
@@ -80,7 +80,7 @@ TEST( fat12, transaction_nested_rollback ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/fat12/" );
   EXPECT_TRUE( mp );
   // cache fat fs
-  fat_fs_t* fs = ( fat_fs_t* )mp->fs;
+  auto const fs = static_cast<fat_fs_t*>( mp->fs );
   EXPECT_TRUE( fs );
   // start transaction
   int result = common_transaction_begin( fs->bdev );

@@ -17,8 +17,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <common/errno.h>
 #include <common/lru.h>
+#include <common/log.h>
 #include <ext/cache/directory.h>
 #include <ext/inode.h>
 #include <ext/bfsext_export.h>
@@ -207,6 +209,8 @@ BFSEXT_NO_EXPORT int ext_cache_directory_entry_get(
     // handle no directory
     if ( ! ( parent->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
       free( node );
+      common_log( "inode_number: %"PRIu64"\r\n", parent->inode->inode_number )
+      common_log( "parent direntry cache \"%s\" is not a directory\r\n", parent->name )
       return ENOTDIR;
     }
     // allocate temporary space for folder data

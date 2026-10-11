@@ -75,14 +75,12 @@ TEST( ext2, stat_directory ) {
 TEST( ext2, stat_file ) {
   helper_mount_ext_test_image( true, "ext2.img", "ext2", "/ext2/" );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = ext_stat( "/ext2/hello/world.txt", &st );
   EXPECT_EQ( result, EOK );
   // open file
-  ext_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  ext_file_t file = {};
   result = ext_file_open( &file, "/ext2/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
   // check inode
@@ -91,4 +89,42 @@ TEST( ext2, stat_file ) {
   result = ext_file_close( &file );
   EXPECT_EQ( result, EOK );
   helper_unmount_ext_test_image( "ext2", "/ext2/" );
+}
+
+TEST( ext2, stat_root_file ) {
+  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/" );
+  // prepare stat structure
+  struct stat st = {};
+  // try to get stat
+  int result = ext_stat( "/lorem.txt", &st );
+  EXPECT_EQ( result, EOK );
+  // open file
+  ext_file_t file = {};
+  result = ext_file_open( &file, "/lorem.txt", "r" );
+  EXPECT_EQ( result, EOK );
+  // check inode
+  EXPECT_EQ( st.st_ino, file.cache->inode->inode_number );
+  // close again
+  result = ext_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  helper_unmount_ext_test_image( "ext2", "/" );
+}
+
+TEST( ext2, stat_file_2 ) {
+  helper_mount_ext_test_image( true, "ext2.img", "ext2", "/" );
+  // prepare stat structure
+  struct stat st = {};
+  // try to get stat
+  int result = ext_stat( "/hello/world.txt", &st );
+  EXPECT_EQ( result, EOK );
+  // open file
+  ext_file_t file = {};
+  result = ext_file_open( &file, "/hello/world.txt", "r" );
+  EXPECT_EQ( result, EOK );
+  // check inode
+  EXPECT_EQ( st.st_ino, file.cache->inode->inode_number );
+  // close again
+  result = ext_file_close( &file );
+  EXPECT_EQ( result, EOK );
+  helper_unmount_ext_test_image( "ext2", "/" );
 }

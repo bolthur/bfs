@@ -40,7 +40,7 @@ TEST( ext2, transaction_nested_commit ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // cache ext fs
-  ext_fs_t* fs = ( ext_fs_t* )mp->fs;
+  auto const fs = static_cast<ext_fs_t*>( mp->fs );
   EXPECT_TRUE( fs );
   // start transaction
   int result = common_transaction_begin( fs->bdev );
@@ -79,7 +79,7 @@ TEST( ext2, transaction_nested_rollback ) {
   common_mountpoint_t* mp = common_mountpoint_by_mountpoint( "/ext2/" );
   EXPECT_TRUE( mp );
   // cache ext fs
-  ext_fs_t* fs = ( ext_fs_t* )mp->fs;
+  auto const fs = static_cast<ext_fs_t*>( mp->fs );
   EXPECT_TRUE( fs );
   // start transaction
   int result = common_transaction_begin( fs->bdev );

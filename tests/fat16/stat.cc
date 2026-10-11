@@ -37,14 +37,12 @@
 TEST( fat16, stat_root_directory ) {
   helper_mount_fat_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = fat_stat( "/fat16/", &st );
   EXPECT_EQ( result, EOK );
   // open directory
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat16/" );
   EXPECT_EQ( result, EOK );
   // check mode
@@ -58,14 +56,12 @@ TEST( fat16, stat_root_directory ) {
 TEST( fat16, stat_directory ) {
   helper_mount_fat_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = fat_stat( "/fat16/hello", &st );
   EXPECT_EQ( result, EOK );
   // open directory
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat16/hello/" );
   EXPECT_EQ( result, EOK );
   // check mode
@@ -79,14 +75,12 @@ TEST( fat16, stat_directory ) {
 TEST( fat16, stat_file ) {
   helper_mount_fat_test_image( false, "fat16.img", "fat16", "/fat16/", FAT_FAT16 );
   // prepare stat structure
-  struct stat st;
-  memset( &st, 0, sizeof( st ) );
+  struct stat st = {};
   // try to get stat
   int result = fat_stat( "/fat16/hello/world.txt", &st );
   EXPECT_EQ( result, EOK );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   result = fat_file_open( &file, "/fat16/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
   // check mode

@@ -302,11 +302,11 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_write(
         return result;
       }
       buffer += bdev->bdif->block_size;
+      block_index++;
     }
     // increment buffer and decrement length
     const uint64_t read_length = bdev->bdif->block_size * blen;
     len -= read_length;
-    block_index += blen;
   }
   // remaining data
   if ( len ) {
@@ -359,6 +359,8 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
   uint64_t block_index = ( off + bdev->part_offset ) / bdev->bdif->block_size;
   uint8_t* buffer = buf;
   int result;
+  common_log( "off + bdev->part_offset = %#"PRIx64"\r\n", off + bdev->part_offset );
+  common_log( "block_index = %"PRIu64"\r\n", block_index );
   // check whether start is misaligned block
   const uint64_t unaligned = off & ( bdev->bdif->block_size - 1 );
   if ( unaligned ) {
@@ -393,11 +395,11 @@ BFSCOMMON_EXPORT int common_blockdev_bytes_read(
         return result;
       }
       buffer += bdev->bdif->block_size;
+      block_index++;
     }
     // increment buffer and decrement length
     const uint64_t read_length = bdev->bdif->block_size * blen;
     len -= read_length;
-    block_index += blen;
   }
   // remaining data
   if ( len ) {

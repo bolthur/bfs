@@ -22,6 +22,7 @@
 #include <common/errno.h> // IWYU pragma: keep
 #include <common/transaction.h>
 #include <common/mountpoint.h>
+#include <common/log.h>
 #include <ext/inode.h>
 #include <ext/iterator.h>
 #include <ext/directory.h>
@@ -705,6 +706,8 @@ BFSEXT_EXPORT int ext_directory_open( ext_directory_t* dir, const char* path ) {
   }
   // handle no directory
   if ( ! ( directory->inode->inode.i_mode & EXT_INODE_EXT2_S_IFDIR ) ) {
+    // log something
+    common_log( "direntry cache is not a directory\r\n" )
     // dereference
     ext_cache_directory_entry_put( directory );
     // free duplicate

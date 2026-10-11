@@ -795,8 +795,10 @@ BFSEXT_NO_EXPORT int ext_inode_calculate_block_number(
   }
   // calculate byte offset of inode
   const uint64_t byte_offset_in_table = local_inode_index * inode_size;
+  // get partition offset
+  const uint64_t part_offset = fs->bdev->part_offset / fs->bdev->bdif->block_size;
   // calculate physical block
-  *out_block_number = inode_table_start_block + ( byte_offset_in_table / bsize );
+  *out_block_number = part_offset + inode_table_start_block + ( byte_offset_in_table / bsize );
   // calculate byte offset in block
   *out_block_offset = byte_offset_in_table % bsize;
   // return success

@@ -17,9 +17,11 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <common/errno.h>
 #include <common/lru.h>
 #include <common/constant.h>
+#include <common/log.h>
 #include <common/bfscommon_export.h>
 
 /**
@@ -180,6 +182,7 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
   // check for match including hash collisions
   while ( node ) {
     if ( node->block_number == block_number ) {
+      common_log( "block %"PRIu64" found in cache\r\n", block_number );
       common_lru_move_to_head( cache, node );
       return node;
     }
@@ -187,6 +190,7 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
   }
   // cache miss => Handle cache full
   if ( cache->size >= cache->capacity ) {
+    common_log( "kicking out oldest block for %"PRIu64"\r\n", block_number );
     common_lru_cache_node_t* oldest = cache->tail;
     // handle dirty
     if ( oldest->dirty ) {
@@ -214,6 +218,7 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
     common_lru_detach( cache, oldest );
     node = oldest;
   } else {
+    common_log( "allocating cache for %"PRIu64"\r\n", block_number );
     node = malloc( sizeof( common_lru_cache_node_t ) );
     if ( ! node ) {
       return nullptr;
@@ -236,6 +241,7 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
     block_number,
     1
   );
+  common_log( "read data from %"PRIu64" with result %d\r\n", block_number, result );
   if ( result != 0 ) {
     free( node->data );
     free( node );
