@@ -31,7 +31,9 @@
 extern "C" {
 #endif
 
+/** @see common_blockdev_iface_t */
 typedef struct common_blockdev_iface common_blockdev_iface_t;
+/** @see common_lru_cache_t */
 typedef struct common_lru_cache common_lru_cache_t;
 
 /** @brief Common block device structure */

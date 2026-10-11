@@ -1643,7 +1643,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
 /**
  * @brief Get creation time of directory
  *
- * @param file
+ * @param dir
  * @param ctime
  * @return int
  */
@@ -1654,8 +1654,8 @@ BFSFAT_EXPORT int fat_directory_ctime( fat_directory_t* dir, time_t* ctime ) {
 /**
  * @brief Get modification time of directory
  *
- * @param file
- * @param ctime
+ * @param dir
+ * @param mtime
  * @return int
  */
 BFSFAT_EXPORT int fat_directory_mtime( fat_directory_t* dir, time_t* mtime ) {
@@ -1665,8 +1665,8 @@ BFSFAT_EXPORT int fat_directory_mtime( fat_directory_t* dir, time_t* mtime ) {
 /**
  * @brief Get access time of directory
  *
- * @param file
- * @param ctime
+ * @param dir
+ * @param atime
  * @return int
  */
 BFSFAT_EXPORT int fat_directory_atime( fat_directory_t* dir, time_t* atime ) {
@@ -1676,7 +1676,7 @@ BFSFAT_EXPORT int fat_directory_atime( fat_directory_t* dir, time_t* atime ) {
 /**
  * @brief Get creation time of dentry
  *
- * @param file
+ * @param dir
  * @param ctime
  * @return int
  */
@@ -1700,8 +1700,8 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_ctime( fat_structure_directory_entry_t
 /**
  * @brief Get modification time of dentry
  *
- * @param file
- * @param ctime
+ * @param dir
+ * @param mtime
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_directory_dentry_mtime( fat_structure_directory_entry_t* dir, time_t* mtime ) {
@@ -1724,8 +1724,8 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_mtime( fat_structure_directory_entry_t
 /**
  * @brief Get access time of dentry
  *
- * @param file
- * @param ctime
+ * @param dir
+ * @param atime
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_directory_dentry_atime( fat_structure_directory_entry_t* dir, time_t* atime ) {

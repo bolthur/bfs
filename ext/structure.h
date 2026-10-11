@@ -31,13 +31,16 @@ extern "C" {
 
 #pragma pack(push, 1)
 
+/** @brief super block magic */
 #define EXT_SUPERBLOCK_MAGIC 0xEF53
 
 #define EXT_GOOD_OLD_REV 0
 #define EXT_DYNAMIC_REV 1
 
 // s_state
+/** @brief super block valid filesystem */
 #define EXT_SUPERBLOCK_EXT2_VALID_FS 1
+/** @brief super block error file system */
 #define EXT_SUPERBLOCK_EXT2_ERROR_FS 2
 // s_errors
 #define EXT_SUPERBLOCK_EXT2_ERRORS_CONTINUE 1
@@ -152,11 +155,17 @@ static_assert(
 );
 
 // reserved inodes
+/** @brief bad inode value */
 #define EXT_INODE_EXT2_BAD_INO 1
+/** @brief root inode */
 #define EXT_INODE_EXT2_ROOT_INO 2
+/** @brief acl index inode */
 #define EXT_INODE_EXT2_ACL_IDX_INO 3
+/** @brief acl data inode */
 #define EXT_INODE_EXT2_ACL_DATA_INO 4
+/** @brief boot loader inode */
 #define EXT_INODE_EXT2_BOOT_LOADER_INO 5
+/** @brief undel directory inode */
 #define EXT_INODE_EXT2_UNDEL_DIR_INO 6
 
 // mode values
@@ -260,11 +269,17 @@ static_assert(
 #define EXT_DIRECTORY_EXT2_FT_SOCK 6
 #define EXT_DIRECTORY_EXT2_FT_SYMLINK 7
 
+/** @brief ext directory entry representation */
 typedef struct {
+  /** @brief inode number */
   uint32_t inode;
+  /** @brief record length */
   uint16_t rec_len;
+  /** @brief name length */
   uint8_t name_len;
+  /** @brief file type */
   uint8_t file_type;
+  /** @brief entry name */
 #ifdef __cplusplus
   char name[255];
 #else

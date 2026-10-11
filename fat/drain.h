@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-/** @file ext/drain.h */
+/** @file fat/drain.h */
 
 #include <fat/fs.h>
 

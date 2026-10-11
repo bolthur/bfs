@@ -26,6 +26,7 @@
 extern "C" {
 #endif
 
+/** @brief initializer for constructors */
 #ifdef __cplusplus
   #define INITIALIZER(f) \
     static void f(void); \
@@ -49,6 +50,7 @@ extern "C" {
     static void f(void)
 #endif
 
+/** @brief unused define */
 #ifndef __unused
   #if defined(_MSC_VER)
     #define __unused
@@ -57,6 +59,7 @@ extern "C" {
   #endif
 #endif
 
+/** @brief inline define */
 #ifndef __inline
   #define __inline inline
 #endif

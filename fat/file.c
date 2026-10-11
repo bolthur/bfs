@@ -1326,7 +1326,7 @@ BFSFAT_EXPORT int fat_file_ctime( fat_file_t* file, time_t* ctime ) {
  * @brief Get modification time of file
  *
  * @param file
- * @param ctime
+ * @param mtime
  * @return int
  */
 BFSFAT_EXPORT int fat_file_mtime( fat_file_t* file, time_t* mtime ) {
@@ -1337,7 +1337,7 @@ BFSFAT_EXPORT int fat_file_mtime( fat_file_t* file, time_t* mtime ) {
  * @brief Get access time of file
  *
  * @param file
- * @param ctime
+ * @param atime
  * @return int
  */
 BFSFAT_EXPORT int fat_file_atime( fat_file_t* file, time_t* atime ) {
