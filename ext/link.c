@@ -277,7 +277,7 @@ BFSEXT_NO_EXPORT int ext_link_unlink(
       // try to merge with next one
       } else if ( next ) {
         const uint16_t entry_length = entry->rec_len;
-        memcpy( entry, next, next->rec_len );
+        memmove( entry, next, next->rec_len );
         entry->rec_len += entry_length;
       }
       break;

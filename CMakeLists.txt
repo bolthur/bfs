@@ -62,6 +62,7 @@ option(BFS_BUILD_WITH_COVERAGE "Build with coverage data" OFF)
 option(BFS_MALLOC_FALLBACK_SIZE "Malloc fallback size" 0)
 option(BFS_USE_TRANSACTION "Use transaction for file operations" 1)
 option(BFS_ENABLE_LOGGING "Enable logging" 0)
+option(BFS_ENABLE_ASAN "Enable asan" OFF)
 
 # Set system type if not set
 if(NOT DEFINED SYSTEM_TYPE)
@@ -98,6 +99,14 @@ if (DOXYGEN_FOUND AND BFS_BUILD_DOC)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen"
     VERBATIM )
+endif()
+
+if(BFS_ENABLE_ASAN)
+  # adjust cflags according to compiler
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
 endif()
 
 if(BFS_BUILD_WITH_COVERAGE)

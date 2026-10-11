@@ -182,7 +182,8 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
   // check for match including hash collisions
   while ( node ) {
     if ( node->block_number == block_number ) {
-      common_log( "block %"PRIu64" found in cache\r\n", block_number );
+      common_log( "block %"PRIu64" found in cache: %#"PRIxPTR"\r\n",
+        block_number, ( uintptr_t )node->data );
       common_lru_move_to_head( cache, node );
       return node;
     }
@@ -231,6 +232,8 @@ BFSCOMMON_NO_EXPORT common_lru_cache_node_t* common_lru_get(
     }
     memset( node->data, 0,  ( size_t )( sizeof( uint8_t ) * cache->node_data_size )  );
     cache->size++;
+    common_log( "block %"PRIu64" allocated for cache: %#"PRIxPTR"\r\n",
+      block_number, ( uintptr_t )node->data );
   }
   // load from persistence
   node->block_number = block_number;
