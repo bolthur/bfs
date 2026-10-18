@@ -17,8 +17,8 @@
 
 /** @file common/util.h */
 
-#ifndef _COMMON_UTIL_H
-#define _COMMON_UTIL_H
+#ifndef COMMON_UTIL_H
+#define COMMON_UTIL_H
 
 #ifdef __cplusplus
 extern "C" {

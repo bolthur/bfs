@@ -17,12 +17,12 @@
 
 /** @file fat/superblock.h */
 
+#ifndef FAT_SUPERBLOCK_H
+#define FAT_SUPERBLOCK_H
+
 #include <common/blockdev.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
-
-#ifndef _FAT_SUPERBLOCK_H
-#define _FAT_SUPERBLOCK_H
 
 #ifdef __cplusplus
 extern "C" {

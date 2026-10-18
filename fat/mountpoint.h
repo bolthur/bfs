@@ -17,10 +17,10 @@
 
 /** @file fat/mountpoint.h */
 
-#include <stdbool.h>
+#ifndef FAT_MOUNTPOINT_H
+#define FAT_MOUNTPOINT_H
 
-#ifndef _FAT_MOUNTPOINT_H
-#define _FAT_MOUNTPOINT_H
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

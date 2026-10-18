@@ -17,12 +17,12 @@
 
 /** @file fat/iterator.h */
 
+#ifndef FAT_ITERATOR_H
+#define FAT_ITERATOR_H
+
 #include <stdint.h>
 #include <fat/structure.h>
 #include <fat/type.h>
-
-#ifndef _FAT_ITERATOR_H
-#define _FAT_ITERATOR_H
 
 #ifdef __cplusplus
 extern "C" {

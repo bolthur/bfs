@@ -17,13 +17,13 @@
 
 /** @file ext/link.h */
 
+#ifndef EXT_LINK_H
+#define EXT_LINK_H
+
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
 #include <ext/type.h>
-
-#ifndef _EXT_LINK_H
-#define _EXT_LINK_H
 
 #ifdef __cplusplus
 extern "C" {

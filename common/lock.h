@@ -17,8 +17,8 @@
 
 /** @file common/lock.h */
 
-#ifndef _COMMON_LOCK_H
-#define _COMMON_LOCK_H
+#ifndef COMMON_LOCK_H
+#define COMMON_LOCK_H
 
 #ifdef __cplusplus
 extern "C" {

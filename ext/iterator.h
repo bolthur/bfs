@@ -17,12 +17,12 @@
 
 /** @file ext/iterator.h */
 
+#ifndef EXT_ITERATOR_H
+#define EXT_ITERATOR_H
+
 #include <stdint.h>
 #include <ext/structure.h>
 #include <ext/type.h>
-
-#ifndef _EXT_ITERATOR_H
-#define _EXT_ITERATOR_H
 
 #ifdef __cplusplus
 extern "C" {

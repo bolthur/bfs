@@ -17,11 +17,11 @@
 
 /** @file ext/file.h */
 
+#ifndef EXT_FILE_H
+#define EXT_FILE_H
+
 #include <stdint.h>
 #include <ext/type.h>
-
-#ifndef _EXT_FILE_H
-#define _EXT_FILE_H
 
 #ifdef __cplusplus
 extern "C" {

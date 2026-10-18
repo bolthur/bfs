@@ -17,10 +17,10 @@
 
 /** @file common/stdio.h */
 
-#include <bfsconfig.h>
+#ifndef COMMON_STDIO_H
+#define COMMON_STDIO_H
 
-#ifndef _COMMON_STDIO_H
-#define _COMMON_STDIO_H
+#include <bfsconfig.h>
 
 #ifdef __cplusplus
 extern "C" {

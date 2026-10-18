@@ -17,11 +17,11 @@
 
 /** @file ext/cache/inode.h */
 
+#ifndef EXT_CACHE_INODE_H
+#define EXT_CACHE_INODE_H
+
 #include <stdint.h>
 #include <ext/fs.h>
-
-#ifndef _EXT_CACHE_INODE_H
-#define _EXT_CACHE_INODE_H
 
 #ifdef __cplusplus
 extern "C" {

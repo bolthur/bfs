@@ -17,13 +17,13 @@
 
 /** @file common/mountpoint.h */
 
+#ifndef COMMON_MOUNTPOINT_H
+#define COMMON_MOUNTPOINT_H
+
 #include <stdbool.h>
 #include <limits.h>
 #include <thirdparty/queue.h>
 #include <common/lock.h>
-
-#ifndef _COMMON_MOUNTPOINT_H
-#define _COMMON_MOUNTPOINT_H
 
 #ifdef __cplusplus
 extern "C" {

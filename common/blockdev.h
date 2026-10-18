@@ -19,13 +19,13 @@
  * @file common/blockdev.h
  */
 
+#ifndef COMMON_BLOCKDEV_H
+#define COMMON_BLOCKDEV_H
+
 #include <stdint.h>
 #include <limits.h>
 #include <stddef.h>
 #include <thirdparty/queue.h>
-
-#ifndef _COMMON_BLOCKDEV_H
-#define _COMMON_BLOCKDEV_H
 
 #ifdef __cplusplus
 extern "C" {

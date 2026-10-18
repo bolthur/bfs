@@ -17,8 +17,8 @@
 
 /** @file ext/stat.h */
 
-#ifndef _EXT_STAT_H
-#define _EXT_STAT_H
+#ifndef EXT_STAT_H
+#define EXT_STAT_H
 
 #ifdef __cplusplus
 extern "C" {

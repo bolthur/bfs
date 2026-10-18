@@ -17,11 +17,11 @@
 
 /** @file ext/indirection.h */
 
+#ifndef EXT_INDIRECTION_H
+#define EXT_INDIRECTION_H
+
 #include <stdint.h>
 #include <ext/fs.h>
-
-#ifndef _EXT_INDIRECTION_H
-#define _EXT_INDIRECTION_H
 
 #ifdef __cplusplus
 extern "C" {

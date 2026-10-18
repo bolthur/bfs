@@ -17,8 +17,8 @@
 
 /** @file fat/stat.h */
 
-#ifndef _FAT_STAT_H
-#define _FAT_STAT_H
+#ifndef FAT_STAT_H
+#define FAT_STAT_H
 
 #ifdef __cplusplus
 extern "C" {

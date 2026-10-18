@@ -17,11 +17,11 @@
 
 /** @file ext/fs.h */
 
+#ifndef EXT_FS_H
+#define EXT_FS_H
+
 #include <common/blockdev.h>
 #include <ext/structure.h>
-
-#ifndef _EXT_FS_H
-#define _EXT_FS_H
 
 #ifdef __cplusplus
 extern "C" {

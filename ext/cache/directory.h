@@ -17,12 +17,12 @@
 
 /** @file ext/cache/directory.h */
 
+#ifndef EXT_CACHE_DIRECTORY_H
+#define EXT_CACHE_DIRECTORY_H
+
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/cache/inode.h>
-
-#ifndef _EXT_CACHE_DIRECTORY_H
-#define _EXT_CACHE_DIRECTORY_H
 
 #ifdef __cplusplus
 extern "C" {

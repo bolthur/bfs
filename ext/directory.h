@@ -17,13 +17,13 @@
 
 /** @file ext/directory.h */
 
+#ifndef EXT_DIRECTORY_H
+#define EXT_DIRECTORY_H
+
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
 #include <ext/type.h>
-
-#ifndef _EXT_DIRECTORY_H
-#define _EXT_DIRECTORY_H
 
 #ifdef __cplusplus
 extern "C" {

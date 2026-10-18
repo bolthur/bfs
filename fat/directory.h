@@ -17,14 +17,14 @@
 
 /** @file fat/directory.h */
 
+#ifndef FAT_DIRECTORY_H
+#define FAT_DIRECTORY_H
+
 #include <time.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <fat/type.h>
 #include <fat/structure.h>
-
-#ifndef _FAT_DIRECTORY_H
-#define _FAT_DIRECTORY_H
 
 #ifdef __cplusplus
 extern "C" {

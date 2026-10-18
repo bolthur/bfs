@@ -17,12 +17,12 @@
 
 /** @file ext/block.h */
 
+#ifndef EXT_BLOCK_H
+#define EXT_BLOCK_H
+
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
-
-#ifndef _EXT_BLOCK_H
-#define _EXT_BLOCK_H
 
 #ifdef __cplusplus
 extern "C" {

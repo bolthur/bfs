@@ -17,11 +17,11 @@
 
 /** @file blockdev/tests/blockdev.h */
 
+#ifndef BLOCKDEV_H
+#define BLOCKDEV_H
+
 #include <common/blockdev.h>
 #include <stdint.h>
-
-#ifndef _BLOCKDEV_H
-#define _BLOCKDEV_H
 
 #ifdef __cplusplus
 extern "C" {

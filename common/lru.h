@@ -17,12 +17,12 @@
 
 /** @file common/lru.h */
 
+#ifndef COMMON_LRU_H
+#define COMMON_LRU_H
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <common/blockdev.h>
-
-#ifndef _COMMON_LRU_H
-#define _COMMON_LRU_H
 
 #ifdef __cplusplus
 extern "C" {

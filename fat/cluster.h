@@ -17,12 +17,12 @@
 
 /** @file fat/cluster.h */
 
+#ifndef FAT_CLUSTER_H
+#define FAT_CLUSTER_H
+
 #include <stdint.h>
 #include <fat/fs.h>
 #include <fat/type.h>
-
-#ifndef _FAT_CLUSTER_H
-#define _FAT_CLUSTER_H
 
 #ifdef __cplusplus
 extern "C" {

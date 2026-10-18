@@ -17,12 +17,12 @@
 
 /** @file fat/block.h */
 
+#ifndef FAT_BLOCK_H
+#define FAT_BLOCK_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <fat/type.h>
-
-#ifndef _FAT_BLOCK_H
-#define _FAT_BLOCK_H
 
 #ifdef __cplusplus
 extern "C" {

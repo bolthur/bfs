@@ -17,6 +17,9 @@
 
 /** @file ext/type.h */
 
+#ifndef EXT_TYPE_H
+#define EXT_TYPE_H
+
 #include <stdint.h>
 #include <limits.h>
 #include <common/mountpoint.h>
@@ -24,9 +27,6 @@
 #include <ext/fs.h>
 #include <ext/cache/directory.h>
 #include <ext/cache/inode.h>
-
-#ifndef _EXT_TYPE_H
-#define _EXT_TYPE_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,8 +17,8 @@
 
 /** @file common/log.h */
 
-#ifndef _COMMON_LOG_H
-#define _COMMON_LOG_H
+#ifndef COMMON_LOG_H
+#define COMMON_LOG_H
 
 #ifdef __cplusplus
 extern "C" {

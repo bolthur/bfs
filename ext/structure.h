@@ -17,13 +17,13 @@
 
 /** @file ext/structure.h */
 
+#ifndef EXT_STRUCTURE_H
+#define EXT_STRUCTURE_H
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
-
-#ifndef _EXT_STRUCTURE_H
-#define _EXT_STRUCTURE_H
 
 #ifdef __cplusplus
 extern "C" {

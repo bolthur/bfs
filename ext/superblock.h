@@ -17,12 +17,12 @@
 
 /** @file ext/superblock.h */
 
+#ifndef EXT_SUPERBLOCK_H
+#define EXT_SUPERBLOCK_H
+
 #include <stdint.h>
 #include <ext/structure.h>
 #include <ext/fs.h>
-
-#ifndef _EXT_SUPERBLOCK_H
-#define _EXT_SUPERBLOCK_H
 
 #ifdef __cplusplus
 extern "C" {

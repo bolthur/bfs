@@ -17,13 +17,13 @@
 
 /** @file fat/fs.h */
 
+#ifndef FAT_FS_H
+#define FAT_FS_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <common/blockdev.h>
 #include <fat/structure.h>
-
-#ifndef _FAT_FS_H
-#define _FAT_FS_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,10 +17,10 @@
 
 /** @file fat/drain.h */
 
-#include <fat/fs.h>
+#ifndef FAT_DRAIN_H
+#define FAT_DRAIN_H
 
-#ifndef _FAT_DRAIN_H
-#define _FAT_DRAIN_H
+#include <fat/fs.h>
 
 #ifdef __cplusplus
 extern "C" {

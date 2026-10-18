@@ -17,13 +17,11 @@
 
 /** @file blockdev/bolthur/blockdev.h */
 
+#ifndef BLOCKDEV_H
+#define BLOCKDEV_H
+
 #include <stdint.h>
-#include <stdbool.h>
-
 #include <common/blockdev.h>
-
-#ifndef _BLOCKDEV_H
-#define _BLOCKDEV_H
 
 #ifdef __cplusplus
 extern "C" {

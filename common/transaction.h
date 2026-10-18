@@ -19,14 +19,14 @@
  * @file common/transaction.h
  */
 
+#ifndef COMMON_TRANSACTION_H
+#define COMMON_TRANSACTION_H
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <common/blockdev.h>
 #include <thirdparty/queue.h>
 #include <thirdparty/tree.h>
-
-#ifndef _COMMON_TRANSACTION_H
-#define _COMMON_TRANSACTION_H
 
 #ifdef __cplusplus
 extern "C" {

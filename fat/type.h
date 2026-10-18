@@ -17,14 +17,14 @@
 
 /** @file fat/type.h */
 
+#ifndef FAT_TYPE_H
+#define FAT_TYPE_H
+
 #include <stdint.h>
 #include <limits.h>
 #include <common/mountpoint.h>
 #include <fat/structure.h>
 #include <fat/fs.h>
-
-#ifndef _FAT_TYPE_H
-#define _FAT_TYPE_H
 
 #ifdef __cplusplus
 extern "C" {

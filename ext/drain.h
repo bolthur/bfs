@@ -17,10 +17,10 @@
 
 /** @file ext/drain.h */
 
-#include <ext/fs.h>
+#ifndef EXT_DRAIN_H
+#define EXT_DRAIN_H
 
-#ifndef _EXT_DRAIN_H
-#define _EXT_DRAIN_H
+#include <ext/fs.h>
 
 #ifdef __cplusplus
 extern "C" {

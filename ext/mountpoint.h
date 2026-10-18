@@ -17,10 +17,10 @@
 
 /** @file ext/mountpoint.h */
 
-#include <stdbool.h>
+#ifndef EXT_MOUNTPOINT_H
+#define EXT_MOUNTPOINT_H
 
-#ifndef _EXT_MOUNTPOINT_H
-#define _EXT_MOUNTPOINT_H
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

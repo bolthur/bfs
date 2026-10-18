@@ -17,13 +17,13 @@
 
 /** @file fat/structure.h */
 
+#ifndef FAT_STRUCTURE_H
+#define FAT_STRUCTURE_H
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
-
-#ifndef _FAT_STRUCTURE_H
-#define _FAT_STRUCTURE_H
 
 #ifdef __cplusplus
 extern "C" {

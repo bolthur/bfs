@@ -17,12 +17,12 @@
 
 /** @file ext/inode.h */
 
+#ifndef EXT_INODE_H
+#define EXT_INODE_H
+
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
-
-#ifndef _EXT_INODE_H
-#define _EXT_INODE_H
 
 #ifdef __cplusplus
 extern "C" {

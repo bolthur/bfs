@@ -19,8 +19,8 @@
  * @file common/constant.h
  */
 
-#ifndef _COMMON_CONSTANT_H
-#define _COMMON_CONSTANT_H
+#ifndef COMMON_CONSTANT_H
+#define COMMON_CONSTANT_H
 
 #ifdef __cplusplus
 extern "C" {

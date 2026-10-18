@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with bolthur/bfs.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _HELPER_HH
-#define _HELPER_HH
+#ifndef HELPER_HH
+#define HELPER_HH
 
 #include <fat/structure.h>
 

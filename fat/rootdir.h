@@ -17,13 +17,13 @@
 
 /** @file fat/rootdir.h */
 
+#ifndef FAT_ROOTDIR_H
+#define FAT_ROOTDIR_H
+
 #include <stdint.h>
 #include <common/mountpoint.h>
 #include <fat/structure.h>
 #include <fat/type.h>
-
-#ifndef _FAT_ROOTDIR_H
-#define _FAT_ROOTDIR_H
 
 #ifdef __cplusplus
 extern "C" {

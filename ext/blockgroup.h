@@ -17,13 +17,13 @@
 
 /** @file ext/blockgroup.h */
 
+#ifndef EXT_BLOCKGROUP_H
+#define EXT_BLOCKGROUP_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <ext/fs.h>
 #include <ext/structure.h>
-
-#ifndef _EXT_BLOCKGROUP_H
-#define _EXT_BLOCKGROUP_H
 
 #ifdef __cplusplus
 extern "C" {

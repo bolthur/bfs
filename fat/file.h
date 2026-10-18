@@ -17,12 +17,12 @@
 
 /** @file fat/file.h */
 
+#ifndef FAT_FILE_H
+#define FAT_FILE_H
+
 #include <time.h>
 #include <stdint.h>
 #include <fat/type.h>
-
-#ifndef _FAT_FILE_H
-#define _FAT_FILE_H
 
 #ifdef __cplusplus
 extern "C" {

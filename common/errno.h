@@ -17,8 +17,8 @@
 
 /** @file common/errno.h */
 
-#ifndef _COMMON_ERRNO_H
-#define _COMMON_ERRNO_H
+#ifndef COMMON_ERRNO_H
+#define COMMON_ERRNO_H
 
 #include <bfsconfig.h>
 
