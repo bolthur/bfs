@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #if defined( _BFS_COMPILING )
-  int fat_superblock_read( common_blockdev_t* bdev, fat_structure_superblock_t* bpb );
+  int fat_superblock_read( common_blockdev_t* bdev, fat_structure_superblock_t* superblock );
   int fat_superblock_check( fat_fs_t* fs );
 #endif
 

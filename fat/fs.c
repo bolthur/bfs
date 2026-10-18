@@ -36,7 +36,7 @@
 BFSFAT_NO_EXPORT int fat_fs_init(
   fat_fs_t* fs,
   common_blockdev_t* bdev,
-  bool read_only
+  const bool read_only
 ) {
   // validate
   if ( ! fs || ! bdev ) {

@@ -32,8 +32,9 @@ BFSFAT_NO_EXPORT int fat_type_validate( fat_fs_t* fs ) {
   // exfat
   if ( 0 == fs->superblock.bytes_per_sector ) {
     return ENOTSUP;
+  }
   // fat12
-  } else if ( 4085 > fs->total_clusters ) {
+  if ( 4085 > fs->total_clusters ) {
     fs->type = FAT_FAT12;
   // fat16 / vfat
   } else if ( 65525 > fs->total_clusters ) {

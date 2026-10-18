@@ -106,6 +106,7 @@ BFSFAT_EXPORT int fat_stat( const char* path, struct stat *st ) {
   time_t ctime = 0;
   mode_t mode = S_IFDIR;
   uint64_t size = 0;
+  common_log( "Looking for entry %s\r\n", basepath );
   // handle valid base path
   if ( 0 != strcmp( dirpath, basepath ) ) {
     // get entry by name

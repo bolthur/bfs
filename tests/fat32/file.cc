@@ -38,8 +38,7 @@
 TEST( fat32, file_open_non_existant_file ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open(
     &file,
@@ -58,8 +57,7 @@ TEST( fat32, file_open_non_existant_file ) {
 TEST( fat32, file_open2_non_existant_file ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open2(
     &file,
@@ -78,8 +76,7 @@ TEST( fat32, file_open2_non_existant_file ) {
 TEST( fat32, file_open_existant_file ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open(
     &file,
@@ -99,8 +96,7 @@ TEST( fat32, file_open_existant_file ) {
 TEST( fat32, file_open2_existant_file ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open2(
     &file,
@@ -120,8 +116,7 @@ TEST( fat32, file_open2_existant_file ) {
 TEST( fat32, file_open_create_file_rofs ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asdf.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EROFS );
   // open /hello and check for asdf
@@ -142,8 +137,7 @@ TEST( fat32, file_open_create_file_rofs ) {
 TEST( fat32, file_open_create_file_rwfs ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asdf.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
@@ -168,8 +162,7 @@ TEST( fat32, file_open_create_file_rwfs ) {
 TEST( fat32, file_open_truncate_file ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2(
     &file,
     "/fat32/hello/file/open/truncate.txt",
@@ -197,16 +190,14 @@ TEST( fat32, file_open_truncate_file ) {
 TEST( fat32, file_open_create_file_short_short_ext ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asd1.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat32/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -223,16 +214,14 @@ TEST( fat32, file_open_create_file_short_short_ext ) {
 TEST( fat32, file_open_create_file_short_long_ext ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asd2.jpeg", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat32/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -249,16 +238,14 @@ TEST( fat32, file_open_create_file_short_long_ext ) {
 TEST( fat32, file_open_create_file_long_short_ext ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asdftolongname.txt", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat32/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -275,16 +262,14 @@ TEST( fat32, file_open_create_file_long_short_ext ) {
 TEST( fat32, file_open_create_file_long_long_ext ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // try to create file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/asdftolongname2.jpeg", O_RDWR | O_CREAT );
   EXPECT_EQ( result, EOK );
   // close file again
   result = fat_file_close( &file );
   EXPECT_EQ( result, EOK );
   // open /hello and check for asdf
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   result = fat_directory_open( &dir, "/fat32/hello/" );
   EXPECT_EQ( result, EOK );
   // try to find asdf
@@ -301,8 +286,7 @@ TEST( fat32, file_open_create_file_long_long_ext ) {
 TEST( fat32, file_read_normal1 ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open(
     &file,
@@ -314,7 +298,7 @@ TEST( fat32, file_read_normal1 ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -334,8 +318,7 @@ TEST( fat32, file_read_normal1 ) {
 TEST( fat32, file_read_normal2 ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open( &file, "/fat32/hello/world.txt", "r" );
   EXPECT_EQ( result, EOK );
@@ -343,7 +326,7 @@ TEST( fat32, file_read_normal2 ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -363,8 +346,7 @@ TEST( fat32, file_read_normal2 ) {
 TEST( fat32, file_read_rootdir ) {
   helper_mount_fat_test_image( true, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open( &file, "/fat32/world.txt", "r" );
   EXPECT_EQ( result, EOK );
@@ -372,7 +354,7 @@ TEST( fat32, file_read_rootdir ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   // read from file
   uint64_t read_count = 0;
@@ -392,8 +374,7 @@ TEST( fat32, file_read_rootdir ) {
 TEST( fat32, file_read_write_only ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open2( &file, "/fat32/world.txt", O_WRONLY );
   EXPECT_EQ( result, EOK );
@@ -401,7 +382,7 @@ TEST( fat32, file_read_write_only ) {
   EXPECT_NE( file.fsize, 0 );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto const buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // read from file
@@ -421,8 +402,7 @@ TEST( fat32, file_read_write_only ) {
 TEST( fat32, file_write_append ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // file variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // load root dir
   int result = fat_file_open2(
     &file,
@@ -435,7 +415,7 @@ TEST( fat32, file_write_append ) {
   EXPECT_EQ( file.fsize, file.fpos );
   EXPECT_TRUE( file.mp );
   // allocate buffer for content
-  char* buffer = ( char* )malloc( file.fsize + 1 );
+  auto buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // set to beginning
@@ -456,7 +436,7 @@ TEST( fat32, file_write_append ) {
   EXPECT_EQ( write_count, strlen( buffer ) );
   // allocate buffer for content
   free( buffer );
-  buffer = ( char* )malloc( file.fsize + 1 );
+  buffer = static_cast< char* >( malloc( file.fsize + 1 ) );
   EXPECT_TRUE( buffer );
   memset( buffer, 0, file.fsize + 1 );
   // set to beginning
@@ -481,12 +461,11 @@ TEST( fat32, file_write_append ) {
 TEST( fat32, file_ftruncate_ro ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/extend.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
   // save old size
-  uint64_t old_size = file.fsize;
+  const uint64_t old_size = file.fsize;
   // call for truncate
   result = fat_file_truncate( &file, old_size * 2 );
   EXPECT_EQ( result, EPERM );
@@ -507,19 +486,18 @@ TEST( fat32, file_ftruncate_ro ) {
 TEST( fat32, file_ftruncate_extend_cluster ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/extend.txt", O_RDWR );
   EXPECT_EQ( result, EOK );
   // save old size
-  fat_fs_t* fs = ( fat_fs_t* )file.mp->fs;
-  uint64_t cluster_size = fs->superblock.bytes_per_sector
+  auto const fs = static_cast<fat_fs_t*>( file.mp->fs );
+  const uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
   uint64_t old_count = file.fsize / cluster_size;
   if ( file.fsize % cluster_size ) {
     old_count++;
   }
-  uint64_t truncate_size = ( old_count + 1 ) * cluster_size - 1;
+  const uint64_t truncate_size = ( old_count + 1 ) * cluster_size - 1;
   uint64_t new_count = truncate_size / cluster_size;
   if ( truncate_size % cluster_size ) {
     new_count++;
@@ -552,7 +530,7 @@ TEST( fat32, file_ftruncate_extend_cluster ) {
   uint64_t cluster_count = 1;
   uint64_t current_cluster = file.cluster;
   uint64_t previous_sector = 0;
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   // check cluster chain
   while ( true ) {
     // read cluster
@@ -585,8 +563,8 @@ TEST( fat32, file_ftruncate_extend_cluster_times_n ) {
     int result = fat_file_open2( &file, "/fat32/hello/trunc/extend.txt", O_RDWR );
     EXPECT_EQ( result, EOK );
     // save old size
-    fat_fs_t* fs = ( fat_fs_t* )file.mp->fs;
-    uint64_t cluster_size = fs->superblock.bytes_per_sector
+    auto const fs = static_cast< fat_fs_t* >( file.mp->fs );
+    const uint64_t cluster_size = fs->superblock.bytes_per_sector
         * fs->superblock.sectors_per_cluster;
     uint64_t old_count = file.fsize / cluster_size;
     if ( file.fsize % cluster_size ) {
@@ -625,7 +603,7 @@ TEST( fat32, file_ftruncate_extend_cluster_times_n ) {
     uint64_t cluster_count = 1;
     uint64_t current_cluster = file.cluster;
     uint64_t previous_sector = 0;
-    uint8_t* buffer = NULL;
+    uint8_t* buffer = nullptr;
     // check cluster chain
     while ( true ) {
       // read cluster
@@ -653,12 +631,11 @@ TEST( fat32, file_ftruncate_extend_cluster_times_n ) {
 TEST( fat32, file_ftruncate_shrink_cluster ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/shrink.txt", O_RDWR );
   EXPECT_EQ( result, EOK );
   // save old size
-  fat_fs_t* fs = ( fat_fs_t* )file.mp->fs;
+  auto const fs = static_cast<fat_fs_t*>( file.mp->fs );
   uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
   uint64_t old_count = file.fsize / cluster_size + 1;
@@ -685,7 +662,7 @@ TEST( fat32, file_ftruncate_shrink_cluster ) {
   uint64_t cluster_count = 1;
   uint64_t current_cluster = file.cluster;
   uint64_t previous_sector = 0;
-  uint8_t* buffer = NULL;
+  uint8_t* buffer = nullptr;
   // check cluster chain
   while ( true ) {
     // read cluster
@@ -712,12 +689,11 @@ TEST( fat32, file_ftruncate_shrink_cluster ) {
 TEST( fat32, file_ftruncate_extend_size_only ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/extend2.txt", O_RDWR );
   EXPECT_EQ( result, EOK );
   // save old size
-  uint64_t old_size = file.fsize;
+  const uint64_t old_size = file.fsize;
   // call for truncate
   result = fat_file_truncate( &file, old_size * 2 );
   EXPECT_EQ( result, EOK );
@@ -738,12 +714,11 @@ TEST( fat32, file_ftruncate_extend_size_only ) {
 TEST( fat32, file_ftruncate_shrink_size_only ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/shrink2.txt", O_RDWR );
   EXPECT_EQ( result, EOK );
   // save old size
-  uint64_t old_size = file.fsize;
+  const uint64_t old_size = file.fsize;
   // call for truncate
   result = fat_file_truncate( &file, old_size / 2 );
   EXPECT_EQ( result, EOK );
@@ -764,12 +739,9 @@ TEST( fat32, file_ftruncate_shrink_size_only ) {
 TEST( fat32, file_ftruncate_free_cluster_size ) {
   helper_mount_fat_test_image( false, "fat32.img", "fat32", "/fat32/", FAT_FAT32 );
   // open file
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   int result = fat_file_open2( &file, "/fat32/hello/trunc/shrink2.txt", O_RDWR );
   EXPECT_EQ( result, EOK );
-  // save old size
-  uint64_t old_size = file.fsize;
   // call for truncate
   result = fat_file_truncate( &file, 0 );
   EXPECT_EQ( result, EOK );
@@ -799,8 +771,7 @@ TEST( fat32, file_remove_rootdir_ro_fail ) {
   int result = fat_file_remove( "/fat32/fremove.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/fremove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -818,8 +789,7 @@ TEST( fat32, file_remove_rootdir_rw_success ) {
   int result = fat_file_remove( "/fat32/fremove.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/fremove.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -833,8 +803,7 @@ TEST( fat32, file_remove_rootdir_rw_longname ) {
   int result = fat_file_remove( "/fat32/fremovelongname.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/fremovelongname.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -848,8 +817,7 @@ TEST( fat32, file_remove_dir_ro_fail ) {
   int result = fat_file_remove( "/fat32/hello/file/remove.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/hello/file/remove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -867,8 +835,7 @@ TEST( fat32, file_remove_dir_rw_success ) {
   int result = fat_file_remove( "/fat32/hello/file/remove.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/hello/file/remove.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -882,8 +849,7 @@ TEST( fat32, file_remove_dir_rw_longname ) {
   int result = fat_file_remove( "/fat32/hello/file/removelongname.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/hello/file/removelongname.txt", O_RDONLY );
   EXPECT_EQ( result, ENOENT );
@@ -897,8 +863,7 @@ TEST( fat32, file_move_rootdir_ro_fail ) {
   int result = fat_file_move( "/fat32/fmove.txt", "/fat32/fmove2.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -919,8 +884,7 @@ TEST( fat32, file_move_rootdir_target_exist_fail ) {
   int result = fat_file_move( "/fat32/fmove.txt", "/fat32/world.txt" );
   EXPECT_EQ( result, EEXIST );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -944,8 +908,7 @@ TEST( fat32, file_move_rootdir_source_not_exist_fail ) {
   int result = fat_file_move( "/fat32/fmoveinvalid.txt", "/fat32/world2.txt" );
   EXPECT_EQ( result, ENOENT );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -962,8 +925,7 @@ TEST( fat32, file_move_rootdir_rw_short_name_success ) {
   int result = fat_file_move( "/fat32/fmove.txt", "/fat32/fmove2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   // open base directory
   result = fat_directory_open( &dir, "/fat32/" );
   EXPECT_EQ( result, EOK );
@@ -1001,8 +963,7 @@ TEST( fat32, file_move_rootdir_rw_long_name_success ) {
   int result = fat_file_move( "/fat32/fmovelongname.txt", "/fat32/fmovelongname2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   // open base directory
   result = fat_directory_open( &dir, "/fat32/" );
   EXPECT_EQ( result, EOK );
@@ -1040,8 +1001,7 @@ TEST( fat32, file_move_dir_ro_fail ) {
   int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/file/fmove2.txt" );
   EXPECT_EQ( result, EROFS );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1062,8 +1022,7 @@ TEST( fat32, file_move_dir_target_exist_fail ) {
   int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/world.txt" );
   EXPECT_EQ( result, EEXIST );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/hello/file/fmove.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1087,8 +1046,7 @@ TEST( fat32, file_move_dir_source_not_exist_fail ) {
   int result = fat_file_move( "/fat32/hello/file/fmoveinvalid.txt", "/fat32/world2.txt" );
   EXPECT_EQ( result, ENOENT );
   // directory variable
-  fat_file_t file;
-  memset( &file, 0, sizeof( file ) );
+  fat_file_t file = {};
   // open base directory
   result = fat_file_open2( &file, "/fat32/world.txt", O_RDONLY );
   EXPECT_EQ( result, EOK );
@@ -1105,8 +1063,7 @@ TEST( fat32, file_move_dir_rw_short_name_success ) {
   int result = fat_file_move( "/fat32/hello/file/fmove.txt", "/fat32/hello/file/fmove2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   // open base directory
   result = fat_directory_open( &dir, "/fat32/hello/file/" );
   EXPECT_EQ( result, EOK );
@@ -1144,8 +1101,7 @@ TEST( fat32, file_move_dir_rw_long_name_success ) {
   int result = fat_file_move( "/fat32/hello/file/fmovelongname.txt", "/fat32/hello/file/fmovelongname2.txt" );
   EXPECT_EQ( result, EOK );
   // directory variable
-  fat_directory_t dir;
-  memset( &dir, 0, sizeof( dir ) );
+  fat_directory_t dir = {};
   // open base directory
   result = fat_directory_open( &dir, "/fat32/hello/file/" );
   EXPECT_EQ( result, EOK );

@@ -63,7 +63,7 @@ BFSFAT_NO_EXPORT int fat_block_unload( fat_file_t* file ) {
  * @param size size of data to load except for fixed sized root directories
  * @return int
  */
-BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
+BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, const uint64_t size ) {
   if ( ! file ) {
     return EINVAL;
   }

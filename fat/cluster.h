@@ -49,7 +49,7 @@ extern "C" {
   int fat_cluster_load( fat_fs_t* fs, fat_file_t* file );
   int fat_cluster_next( const fat_fs_t* fs, uint64_t current, uint64_t* previous_sector, uint8_t** buffer, uint64_t* next );
   int fat_cluster_to_lba( fat_fs_t* fs, uint64_t cluster, uint64_t* lba );
-  int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster );
+  int fat_cluster_get_free( const fat_fs_t* fs, uint64_t* cluster );
   int fat_cluster_set_cluster( const fat_fs_t* fs, uint64_t cluster, uint64_t value );
   int fat_cluster_get_by_num( fat_fs_t* fs, uint64_t cluster, uint64_t num, uint64_t* target );
   int fat_cluster_get_chain_end_value( fat_fs_t* fs, uint64_t* end );

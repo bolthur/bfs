@@ -74,6 +74,7 @@ BFSFAT_EXPORT int fat_mountpoint_mount( const char* device_name, const char* mou
   if ( ! fs ) {
     return ENOMEM;
   }
+  memset( fs, 0, sizeof( *fs ) );
   // init fat fs
   result = fat_fs_init( fs, bdev, read_only );
   if ( EOK != result ) {

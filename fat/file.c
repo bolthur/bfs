@@ -143,7 +143,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     return ENOMEM;
   }
   // get fs
-  fat_fs_t* fs = mp->fs;
+  const fat_fs_t* fs = mp->fs;
   // handle create flag with read only
   if (
     (
@@ -166,7 +166,7 @@ BFSFAT_NO_EXPORT int fat_file_get( fat_file_t* file, const char* path, int flags
     return ENOMEM;
   }
   // extract base and dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
@@ -350,7 +350,7 @@ BFSFAT_EXPORT int fat_file_open(
 BFSFAT_EXPORT int fat_file_open2(
   fat_file_t* file,
   const char* path,
-  int flags
+  const int flags
 ) {
   // validate parameter
   if ( ! file || ! path ) {
@@ -432,7 +432,7 @@ int fat_file_read(
     return EPERM;
   }
   // cache mountpoint and fs
-  common_mountpoint_t*mp = file->mp;
+  const common_mountpoint_t* mp = file->mp;
   fat_fs_t* fs = mp->fs;
   // ensure that fs is valid
   if ( ! fs ) {
@@ -445,19 +445,19 @@ int fat_file_read(
     size -= ( file->fpos + size - file->fsize );
   }
   // calculate sector to start with
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+  const uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
   uint8_t* u8buffer = buffer;
   *read_count = 0;
   while ( size > 0 ) {
-    uint64_t copy_start = file->fpos % cluster_size;
+    const uint64_t copy_start = file->fpos % cluster_size;
     uint64_t copy_size = cluster_size - copy_start;
     // cap copy size
     if ( copy_size > size ) {
       copy_size = size;
     }
     // load block
-    int result = fat_block_load( file, cluster_size );
+    const int result = fat_block_load( file, cluster_size );
     if ( EOK != result ) {
       return result;
     }
@@ -466,7 +466,7 @@ int fat_file_read(
       break;
     }
     // copy over content
-    size_t copy_amount = ( size_t )( copy_size + copy_start );
+    const size_t copy_amount = ( size_t )( copy_size + copy_start );
     uint8_t* u8buffer_start = u8buffer + *read_count;
     memcpy( u8buffer_start, file->block.data, copy_amount );
     // increment read count

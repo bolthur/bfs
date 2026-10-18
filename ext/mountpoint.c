@@ -81,6 +81,7 @@ BFSEXT_EXPORT int ext_mountpoint_mount(
   if ( ! fs ) {
     return ENOMEM;
   }
+  memset( fs, 0, sizeof( *fs ) );
   // init fat fs
   result = ext_fs_init( fs, bdev, read_only );
   if ( EOK != result ) {

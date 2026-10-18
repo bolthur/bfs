@@ -71,6 +71,10 @@ BFSFAT_NO_EXPORT int fat_superblock_check( fat_fs_t* fs ) {
     + fs->superblock.hidden_sector_count + (
       fs->superblock.table_count * fs->fat_size
     ) + fs->root_dir_sectors;
+  // in case partition offset is the same as hidden sector count, we've to subtract it again
+  if ( fs->superblock.hidden_sector_count == fs->bdev->part_offset / fs->superblock.bytes_per_sector ) {
+    fs->first_data_sector -= fs->superblock.hidden_sector_count;
+  }
   fs->first_fat_sector = fs->superblock.reserved_sector_count;
   fs->data_sectors = fs->total_sectors - fs->first_data_sector;
   fs->total_clusters = fs->data_sectors / fs->superblock.sectors_per_cluster;

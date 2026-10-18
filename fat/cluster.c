@@ -103,7 +103,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     free( buffer );
   }
   // return success
-  return EOK;
+    return EOK;
 }
 
 /**
@@ -120,10 +120,11 @@ BFSFAT_NO_EXPORT int fat_cluster_to_lba(
   uint64_t* lba
 ) {
   // validate parameter
-  if ( ! fs || ! lba ) {
+  if ( ! fs || ! lba || cluster < 2 ) {
     return EINVAL;
   }
-  // set lba
+  // calculate set lba
+  /// FIXME: REPLACE MAGIC NUMBER
   *lba = ( ( cluster - 2 ) * fs->superblock.sectors_per_cluster )
     + fs->first_data_sector;
   // return success
@@ -159,17 +160,13 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     fat_bit_offset %= SECTOR_BITS;
     fat_index = fat_bit_offset / 8;
   } else if ( FAT_FAT16 == fs->type ) {
-    const uint64_t cluster_size = fs->superblock.bytes_per_sector
-      * fs->superblock.sectors_per_cluster;
-    fat_sector = ( current * sizeof( uint16_t ) ) / cluster_size
+    fat_sector = ( current * sizeof( uint16_t ) ) / fs->superblock.bytes_per_sector
       + fs->first_fat_sector;
-    fat_index = ( current * sizeof( uint16_t ) ) % cluster_size;
+    fat_index = ( current * sizeof( uint16_t ) ) % fs->superblock.bytes_per_sector;
   } else if ( FAT_FAT32 == fs->type ) {
-    const uint64_t cluster_size = fs->superblock.bytes_per_sector
-      * fs->superblock.sectors_per_cluster;
-    fat_sector = ( current * sizeof( uint32_t ) ) / cluster_size
+    fat_sector = ( current * sizeof( uint32_t ) ) / fs->superblock.bytes_per_sector
       + fs->first_fat_sector;
-    fat_index = ( current * sizeof( uint32_t ) ) % cluster_size;
+    fat_index = ( current * sizeof( uint32_t ) ) % fs->superblock.bytes_per_sector;
   } else {
     return ENOTSUP;
   }
@@ -248,7 +245,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
  * @param cluster
  * @return int
  */
-BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
+BFSFAT_NO_EXPORT int fat_cluster_get_free( const fat_fs_t* fs, uint64_t* cluster ) {
   uint64_t index;
   uint64_t previous_sector = 0;
   uint8_t* buffer = nullptr;

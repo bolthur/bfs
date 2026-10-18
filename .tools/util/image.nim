@@ -64,8 +64,8 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
     of "fat32":
       useMtools = true
       let clusterSize: int = 4
-      imageMegaSize = ( 64 * clusterSize ).toFloat
-      command = "mkfs.vfat -s " & intToStr( clusterSize ) & " -R 38 -m 2 -a -F32 " & partitionImage & " -h 2048 --mbr=yes"
+      imageMegaSize = 256
+      command = "mkfs.vfat -s " & intToStr( clusterSize ) & " -R 38 -m 2 -a -F32 " & partitionImage & " --mbr=yes"
       partitionType = "0c"
       partitionSubtract = blockSizeImage
     of "ext2":
@@ -136,13 +136,15 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
       var info = getFileInfo( file )
       if info.kind == pcDir:
         var localfolder = file.replace( filesToCopy )
-        cmdResult = execCmdEx( "mmd -i " & partitionImage & " ::" & localfolder )
+        command = "mmd -i " & partitionImage & " ::" & localfolder
+        cmdResult = execCmdEx( command )
       else:
         var splitted = splitPath( file )
         if splitted.tail == ".gitkeep":
           continue
         var localfolder = splitted.head.replace( filesToCopy )
-        cmdResult = execCmdEx( "mcopy -i " & partitionImage & " " & file & " ::" & localfolder )
+        command = "mcopy -i " & partitionImage & " " & file & " ::" & localfolder
+        cmdResult = execCmdEx( command )
       if 0 != cmdResult.exitCode:
         echo "Unable to copy content to boot partition: " & cmdResult.output
         quit( 1 )
@@ -152,21 +154,24 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
       var info = getFileInfo( file )
       if info.kind == pcDir:
         var localfolder = file.replace( additionalFile )
-        cmdResult = execCmdEx( "mmd -i " & partitionImage & " ::" & localfolder )
+        command = "mmd -i " & partitionImage & " ::" & localfolder
+        cmdResult = execCmdEx( command )
       else:
         var splitted = splitPath( file )
         var localfolder = splitted.head.replace( additionalFile )
-        cmdResult = execCmdEx( "mcopy -i " & partitionImage & " " & file & " ::" & localfolder )
+        command = "mcopy -i " & partitionImage & " " & file & " ::" & localfolder;
+        cmdResult = execCmdEx( command )
       if 0 != cmdResult.exitCode:
         echo "Unable to copy content to boot partition: " & cmdResult.output
         quit( 1 )
   # set partitions
-  cmdResult = execCmdEx( """printf "
+  if imageType == "ext2":
+    cmdResult = execCmdEx( """printf "
 type=""" & partitionType & """, size=""" & intToStr( int( partitionSize / blockSizeImage ) ) & """
 " | sfdisk """" & partitionImage & """"""" )
-  if 0 != cmdResult.exitCode:
-    echo "Unable to set partition types in target image: " & cmdResult.output
-    quit( 1 )
+    if 0 != cmdResult.exitCode:
+      echo "Unable to set partition types in target image: " & cmdResult.output
+      quit( 1 )
 
 proc createPlainImageFile*( imageType: string, imageName: string, destinationFolder: string ): void =
   # bunch of variables
