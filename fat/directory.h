@@ -37,7 +37,7 @@ int fat_directory_open( fat_directory_t* dir, const char* path );
 int fat_directory_close( fat_directory_t* dir );
 int fat_directory_next_entry( fat_directory_t* dir );
 int fat_directory_rewind( fat_directory_t* dir );
-int fat_directory_entry_by_name( fat_directory_t* dir, const char* path );
+int fat_directory_entry_by_name( fat_directory_t* dir, const char* name );
 
 int fat_directory_ctime( fat_directory_t* dir, time_t* ctime );
 int fat_directory_mtime( fat_directory_t* dir, time_t* mtime );

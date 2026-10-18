@@ -41,7 +41,7 @@
 BFSFAT_NO_EXPORT int fat_iterator_directory_init(
   fat_iterator_directory_t* it,
   fat_directory_t* dir,
-  uint64_t pos
+  const uint64_t pos
 ) {
   // validate parameter
   if ( ! it || ! dir ) {
@@ -64,7 +64,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_init(
  */
 BFSFAT_NO_EXPORT int fat_iterator_directory_next( fat_iterator_directory_t* it ) {
   // skip value is sizeof entry structure
-  uint64_t skip = sizeof( fat_structure_directory_entry_t );
+  constexpr uint64_t skip = sizeof( fat_structure_directory_entry_t );
   // get next directory
   return fat_iterator_directory_seek( it, it->reference->file.fpos + skip );
 }
@@ -78,7 +78,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_next( fat_iterator_directory_t* it )
  */
 BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
   fat_iterator_directory_t* it,
-  uint64_t pos
+  const uint64_t pos
 ) {
   // validate parameter
   if ( ! it ) {
@@ -100,11 +100,11 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
     return EOK;
   }
   // extract fs pointer
-  fat_fs_t* fs = it->reference->file.mp->fs;
+  const fat_fs_t* fs = it->reference->file.mp->fs;
   // set iterator current to null as long as set isn't done
   it->entry = nullptr;
   // cache block size
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+  const uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
   // update iterator position
   it->reference->file.fpos = pos;
@@ -121,7 +121,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_seek(
  */
 BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   fat_iterator_directory_t* it,
-  uint64_t cluster_size
+  const uint64_t cluster_size
 ) {
   // validate parameter
   if ( ! it || ! cluster_size ) {
@@ -142,7 +142,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // skip all invalid entries
   while ( true ) {
     // calculate offset in block
-    uint64_t offset_within_block = pos % cluster_size;
+    const uint64_t offset_within_block = pos % cluster_size;
     // update iterator position
     it->reference->file.fpos = pos;
     // load block
@@ -191,7 +191,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_set(
   // get correct entry
   while ( true ) {
     // calculate offset in block
-    uint64_t offset_within_block = pos % cluster_size;
+    const uint64_t offset_within_block = pos % cluster_size;
     // update iterator position
     it->reference->file.fpos = pos;
     // load block
@@ -284,7 +284,7 @@ BFSFAT_NO_EXPORT int fat_iterator_directory_fini( fat_iterator_directory_t* it )
     it->data = nullptr;
   }
   // unload fat block
-  int result = fat_block_unload( &it->reference->file );
+  const int result = fat_block_unload( &it->reference->file );
   if ( EOK != result ) {
     return result;
   }

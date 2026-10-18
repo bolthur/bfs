@@ -67,7 +67,6 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
   if ( ! file ) {
     return EINVAL;
   }
-  int result;
   // extract fs pointer
   fat_fs_t* fs = file->mp->fs;
   // extract block device
@@ -94,7 +93,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
     return EOK;
   }
   // load chain
-  result = fat_cluster_load( fs, file );
+  int result = fat_cluster_load(fs, file);
   if ( EOK != result ) {
     return result;
   }
@@ -160,7 +159,7 @@ BFSFAT_NO_EXPORT int fat_block_load( fat_file_t* file, uint64_t size ) {
       file->block.data_size = size;
     }
     // get cluster by number
-    uint64_t cluster = file->chain[ current_block ];
+    const uint64_t cluster = file->chain[ current_block ];
     // transform data cluster to lba
     uint64_t lba;
     result = fat_cluster_to_lba( fs, cluster, &lba );
@@ -198,11 +197,11 @@ BFSFAT_NO_EXPORT int fat_block_write( fat_file_t* file ) {
   if ( ! file || !file->block.data ) {
     return EINVAL;
   }
-  common_mountpoint_t* mp = file->mp;
-  fat_fs_t* fs = mp->fs;
+  const common_mountpoint_t* mp = file->mp;
+  const fat_fs_t* fs = mp->fs;
   // translate to lba
-  uint64_t lba = file->block.sector;
-  uint64_t block_size = file->block.data_size;
+  const uint64_t lba = file->block.sector;
+  const uint64_t block_size = file->block.data_size;
   // write cluster
   return common_blockdev_bytes_write(
     fs->bdev,

@@ -55,7 +55,7 @@ BFSFAT_NO_EXPORT int fat_directory_size(
     return EINVAL;
   }
   // load cluster chain
-  int result = fat_cluster_load( dir->file.mp->fs, &dir->file );
+  const int result = fat_cluster_load( dir->file.mp->fs, &dir->file );
   if ( EOK != result ) {
     return result;
   }
@@ -85,7 +85,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
     return ENOMEM;
   }
   // get fs
-  fat_fs_t* fs = mp->fs;
+  const fat_fs_t* fs = mp->fs;
   // handle create flag with read only
   if ( fs->read_only ) {
     return EROFS;
@@ -107,7 +107,7 @@ BFSFAT_EXPORT int fat_directory_remove( const char* path ) {
     return ENOMEM;
   }
   // extract base and dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath  = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
@@ -237,7 +237,7 @@ BFSFAT_EXPORT int fat_directory_move(
     return ENOMEM;
   }
   // get fs
-  fat_fs_t* fs = mp->fs;
+  const fat_fs_t* fs = mp->fs;
   // handle create flag with read only
   if ( fs->read_only ) {
     return EROFS;
@@ -537,7 +537,7 @@ BFSFAT_EXPORT int fat_directory_make( const char* path ) {
     return ENOMEM;
   }
   // extract dirname
-  char* base = basename( pathdup_base );
+  const char* base = basename( pathdup_base );
   char* dirpath = dirname( pathdup_dir );
   // check for unsupported
   if ( '.' == *dirpath ) {
@@ -698,7 +698,7 @@ BFSFAT_EXPORT int fat_directory_open( fat_directory_t* dir, const char* path ) {
       // return result
       return ENOENT;
     }
-    fat_fs_t* fs = mp->fs;
+    const fat_fs_t* fs = mp->fs;
     uint32_t found_start_cluster = ( uint32_t )dir->entry->first_cluster_lower;
     if ( FAT_FAT32 == fs->type ) {
       found_start_cluster |= ( ( uint32_t )dir->entry->first_cluster_upper << 16 );
@@ -777,7 +777,7 @@ BFSFAT_EXPORT int fat_directory_close( fat_directory_t* dir ) {
     free( dir->entry );
   }
   // close file
-  int result = fat_file_close( &dir->file );
+  const int result = fat_file_close( &dir->file );
   if ( EOK != result ) {
     return result;
   }
@@ -905,7 +905,7 @@ BFSFAT_EXPORT int fat_directory_rewind( fat_directory_t* dir ) {
     dir->entry = nullptr;
   }
   // unload cached block
-  int result = fat_block_unload( &dir->file );
+  const int result = fat_block_unload( &dir->file );
   if ( EOK != result ) {
     return result;
   }
@@ -987,7 +987,7 @@ BFSFAT_NO_EXPORT int fat_directory_entry_is_valid(
   }
   bool is_free;
   // invalid if free
-  int result = fat_directory_entry_is_free( entry, &is_free );
+  const int result = fat_directory_entry_is_free( entry, &is_free );
   if ( EOK != result ) {
     return result;
   }
@@ -1055,7 +1055,7 @@ BFSFAT_NO_EXPORT int fat_directory_extract_name_short(
   // copy extension to temporary
   strncpy( temporary, entry->extension, 3 );
   // save result of trim in extra pointer
-  char* trimmed = util_trim( temporary );
+  const char* trimmed = util_trim( temporary );
   // check for extension is not empty
   if ( strlen( trimmed ) ) {
     // add a dot as separator
@@ -1082,7 +1082,7 @@ BFSFAT_NO_EXPORT int fat_directory_extract_name_short(
 BFSFAT_NO_EXPORT int fat_directory_extend(
   fat_directory_t* dir,
   void* buffer,
-  uint64_t size
+  const uint64_t size
 ) {
   // validate parameter
   if ( ! dir || ! dir->file.mp->fs ) {
@@ -1097,19 +1097,18 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   if ( dir && 0 == dir->file.cluster ) {
     return fat_rootdir_extend( dir, buffer, size );
   }
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+  const uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
   // validate parameter
   if ( ! dir || ! buffer || ! dir->file.cluster || ! dir->file.fsize ) {
     return EINVAL;
   }
-  int result;
   // load chain if necessary
-  result = fat_cluster_load( fs, &dir->file );
+  int result = fat_cluster_load( fs, &dir->file );
   if ( EOK != result ) {
     return result;
   }
-  uint64_t necessary_entry_count = size
+  const uint64_t necessary_entry_count = size
     / sizeof( fat_structure_directory_entry_t );
   // allocate buffer
   fat_structure_directory_entry_t* entry = malloc( ( size_t )dir->file.fsize );
@@ -1143,7 +1142,7 @@ BFSFAT_NO_EXPORT int fat_directory_extend(
   }
   // loop through root directory and try to find a entry
   fat_structure_directory_entry_t* current = entry;
-  fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
+  auto const end = ( fat_structure_directory_entry_t* )(
     ( uint8_t* )entry + dir->file.fsize
   );
   fat_structure_directory_entry_t* start = nullptr;
@@ -1289,7 +1288,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
   if ( ! dir || ! name ) {
     return EINVAL;
   }
-  fat_fs_t* fs = dir->file.mp->fs;
+  const fat_fs_t* fs = dir->file.mp->fs;
   // handle create flag with read only
   if ( fs->read_only ) {
     return EROFS;
@@ -1317,8 +1316,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     && ( directory || ( ! directory && 3 >= extension_length ) )
   ) {
     // short entry is enough
-    fat_structure_directory_entry_t* data = ( fat_structure_directory_entry_t* )
-      malloc( sizeof( *data ) );
+    fat_structure_directory_entry_t* data = malloc( sizeof( *data ) );
     if ( ! data ) {
       return ENOMEM;
     }
@@ -1367,8 +1365,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
     // add final short entry
     long_name_length++;
     // allocate
-    fat_structure_directory_entry_long_t* data = ( fat_structure_directory_entry_long_t* )
-      malloc( sizeof( *data ) * long_name_length );
+    fat_structure_directory_entry_long_t* data = malloc( sizeof( *data ) * long_name_length );
     if ( ! data ) {
       return ENOMEM;
     }
@@ -1409,14 +1406,12 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
       free( data );
       return result;
     }
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wanalyzer-out-of-bounds"
     // loop through long name parts and fill them
     for ( size_t index = 0; index < long_name_length - 1; index++ ) {
-      uint8_t* base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
-      uint8_t* end = ( uint8_t* )( name + name_length );
+      auto base_offsetted = ( uint8_t* )( name + ( index * 13 ) );
+      auto const end = ( uint8_t* )( name + name_length );
       // order index
-      size_t order_index = long_name_length - 2 - index;
+      const size_t order_index = long_name_length - 2 - index;
       // set order information
       data[ order_index ].order = ( uint8_t )index + 1;
       // last entry is orred with 0x40
@@ -1448,7 +1443,6 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_insert(
         data[ order_index ].final_two_byte[ local_index ] = *base_offsetted;
       }
     }
-    #pragma GCC diagnostic pop
     // set entry data
     entry_data = data;
   }
@@ -1485,9 +1479,9 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_update(
     return EINVAL;
   }
   // get fs and calculate cluster size
-  common_mountpoint_t* mp = dir->file.mp;
-  fat_fs_t* fs = mp->fs;
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+  const common_mountpoint_t* mp = dir->file.mp;
+  const fat_fs_t* fs = mp->fs;
+  const uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
   // handle create flag with read only
   if ( fs->read_only ) {
@@ -1542,7 +1536,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   // clear out space
   memset( entry, 0, ( size_t )dir->file.fsize );
   // calculate cluster size
-  uint64_t cluster_size = fs->superblock.sectors_per_cluster
+  const uint64_t cluster_size = fs->superblock.sectors_per_cluster
     * fs->superblock.bytes_per_sector;
   // copy over data
   uint64_t copy_pos = 0;
@@ -1569,9 +1563,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   // set start
   fat_structure_directory_entry_t* start = entry;
   // set current
-  fat_structure_directory_entry_t* current = ( fat_structure_directory_entry_t* )(
-    ( uint8_t* )entry + pos
-  );
+  auto current = ( fat_structure_directory_entry_t* )( ( uint8_t* )entry + pos );
   uint64_t count = 0;
   // loop backwards until first possible non long name
   while( true ) {
@@ -1599,8 +1591,7 @@ BFSFAT_NO_EXPORT int fat_directory_dentry_remove(
   count++;
   for ( uint64_t index = 0; index < count; index++ ) {
     // get entry to delete
-    fat_structure_directory_entry_long_t* current2 =
-      ( fat_structure_directory_entry_long_t* )start;
+    auto current2 = ( fat_structure_directory_entry_long_t* )start;
     current2 += ( pos / sizeof( fat_structure_directory_entry_long_t ) );
     current2 += index;
     // mark as deleted

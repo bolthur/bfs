@@ -63,9 +63,9 @@ proc imageCreatePartition( target: string, contentFolder: string, imageType: str
       partitionSubtract = blockSizeImage
     of "fat32":
       useMtools = true
-      let clusterSize: int = 2
+      let clusterSize: int = 4
       imageMegaSize = ( 64 * clusterSize ).toFloat
-      command = "mkfs.vfat -s " & intToStr( clusterSize ) & " -F32 " & partitionImage & " --mbr=yes"
+      command = "mkfs.vfat -s " & intToStr( clusterSize ) & " -R 38 -m 2 -a -F32 " & partitionImage & " -h 2048 --mbr=yes"
       partitionType = "0c"
       partitionSubtract = blockSizeImage
     of "ext2":

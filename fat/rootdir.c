@@ -55,13 +55,13 @@ BFSFAT_NO_EXPORT int fat_rootdir_open(
   uint64_t rootdir_offset;
   // query root dir size and
   common_log( "Querying root directory offset and size!\r\n" );
-  int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
+  const int result = fat_rootdir_offset_size( dir, &rootdir_offset, &rootdir_size );
   if ( EOK != result ) {
     dir->file.mp = nullptr;
     return result;
   }
   // cache block size
-  fat_fs_t* fs = mp->fs;
+  const fat_fs_t* fs = mp->fs;
   // populate directory
   dir->file.cluster = FAT_FAT32 == fs->type
     ? ( uint32_t )rootdir_offset : 0;
@@ -90,7 +90,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_close( fat_directory_t* dir ) {
     free( dir->entry );
   }
   // close file
-  int result = fat_file_close( &dir->file );
+  const int result = fat_file_close( &dir->file );
   if ( EOK != result ) {
     return result;
   }
@@ -118,7 +118,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
     return EINVAL;
   }
   // bunch of necessary variables
-  fat_fs_t* fs = dir->file.mp->fs;
+  const fat_fs_t* fs = dir->file.mp->fs;
   uint64_t rootdir_offset;
   uint64_t rootdir_size;
   // handle different types
@@ -137,7 +137,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_offset_size(
     // root dir in fat32 is stored within data section
     dir->file.cluster = fs->superblock.extended.fat32.root_cluster;
     // gather size of root directory like with a normal directory
-    int result = fat_directory_size( dir, &rootdir_size );
+    const int result = fat_directory_size( dir, &rootdir_size );
     if ( EOK != result ) {
       return result;
     }
@@ -167,17 +167,17 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     return EINVAL;
   }
   // bunch of necessary variables
-  fat_fs_t* fs = dir->file.mp->fs;
-  int result;
+  const fat_fs_t* fs = dir->file.mp->fs;
   // check for readonly
   if ( fs->read_only ) {
     return EROFS;
   }
-  uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
+  const uint64_t necessary_entry_count = size / sizeof( fat_structure_directory_entry_t );
   // root dir of fat12 and 16 fixed sized
   if ( FAT_FAT12 == fs->type || FAT_FAT16 == fs->type ) {
+    int result;
     // calculate root dir size with round up
-    uint64_t rootdir_size = (
+    const uint64_t rootdir_size = (
       fs->superblock.root_entry_count
         * sizeof( fat_structure_directory_entry_t )
         + ( fs->superblock.bytes_per_sector - 1 )
@@ -209,7 +209,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_extend( fat_directory_t* dir, void* buffer, uin
     }
     // loop through root directory and try to find a entry
     fat_structure_directory_entry_t* current = entry;
-    fat_structure_directory_entry_t* end = ( fat_structure_directory_entry_t* )(
+    auto const end = ( fat_structure_directory_entry_t* )(
       ( uint8_t* )entry + rootdir_size * fs->superblock.bytes_per_sector
     );
     fat_structure_directory_entry_t* start = nullptr;
@@ -304,7 +304,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
     return EINVAL;
   }
   // bunch of necessary variables
-  fat_fs_t* fs = dir->file.mp->fs;
+  const fat_fs_t* fs = dir->file.mp->fs;
   // check for readonly
   if ( fs->read_only ) {
     return EROFS;
@@ -318,9 +318,9 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   if ( FAT_FAT12 != fs->type && FAT_FAT16 != fs->type ) {
     return EINVAL;
   }
-  uint64_t block_size = fs->bdev->bdif->block_size;
+  const uint64_t block_size = fs->bdev->bdif->block_size;
   // calculate root dir size with round up
-  uint64_t rootdir_size = (
+  const uint64_t rootdir_size = (
     fs->superblock.root_entry_count
       * sizeof( fat_structure_directory_entry_t )
       + ( block_size - 1 )
@@ -342,7 +342,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   uint64_t copy_pos = 0;
   for ( uint64_t idx = 0; idx < dir->file.fsize; idx += fs->superblock.bytes_per_sector ) {
     // load block
-    int result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
+    const int result = fat_block_load( &dir->file, fs->superblock.bytes_per_sector );
     if ( EOK != result ) {
       free( entry );
       return result;
@@ -390,8 +390,7 @@ BFSFAT_NO_EXPORT int fat_rootdir_remove(
   // clear out
   for ( uint64_t index = 0; index < count; index++ ) {
     // get entry to delete
-    fat_structure_directory_entry_long_t* current2 =
-      ( fat_structure_directory_entry_long_t* )start;
+    auto current2 = ( fat_structure_directory_entry_long_t* )start;
     current2 += ( pos / sizeof( fat_structure_directory_entry_long_t ) );
     current2 += index;
     // mark as deleted

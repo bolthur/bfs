@@ -42,7 +42,7 @@ extern "C" {
   int fat_iterator_directory_init( fat_iterator_directory_t* it, fat_directory_t* dir, uint64_t pos );
   int fat_iterator_directory_next( fat_iterator_directory_t* it );
   int fat_iterator_directory_seek( fat_iterator_directory_t* it, uint64_t pos );
-  int fat_iterator_directory_set( fat_iterator_directory_t* it, uint64_t block_size );
+  int fat_iterator_directory_set( fat_iterator_directory_t* it, uint64_t cluster_size );
   int fat_iterator_directory_fini( fat_iterator_directory_t* it );
 #endif
 

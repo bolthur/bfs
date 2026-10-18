@@ -60,7 +60,7 @@ BFSBLOCKDEV_NO_EXPORT int blockdev_open( common_blockdev_t* bdev ) {
     return EIO;
   }
   // disable file buffering
-  setbuf( fp, 0 );
+  setbuf( fp, nullptr );
   // try to get end of file
   if ( fseeko( fp, 0, SEEK_END ) ) {
     return EFAULT;

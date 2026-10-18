@@ -28,7 +28,7 @@
 #include <fat/type.h>
 #include <fat/bfsfat_export.h>
 
-#define SECTOR_BITS (512 * 8)
+#define SECTOR_BITS ( 512 * 8 )
 
 /**
  * @brief Load fat cluster chain
@@ -57,7 +57,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
     sector_count++;
     // get next cluster
     uint64_t next;
-    int result = fat_cluster_next( fs, cluster, &previous_sector, &buffer, &next );
+    const int result = fat_cluster_next( fs, cluster, &previous_sector, &buffer, &next );
     if ( EOK != result ) {
       return result;
     }
@@ -116,7 +116,7 @@ BFSFAT_NO_EXPORT int fat_cluster_load( fat_fs_t* fs, fat_file_t* file ) {
  */
 BFSFAT_NO_EXPORT int fat_cluster_to_lba(
   fat_fs_t* fs,
-  uint64_t cluster,
+  const uint64_t cluster,
   uint64_t* lba
 ) {
   // validate parameter
@@ -141,8 +141,8 @@ BFSFAT_NO_EXPORT int fat_cluster_to_lba(
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_cluster_next(
-  fat_fs_t* fs,
-  uint64_t current,
+  const fat_fs_t* fs,
+  const uint64_t current,
   uint64_t* previous_sector,
   uint8_t** buffer,
   uint64_t* next
@@ -159,13 +159,13 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     fat_bit_offset %= SECTOR_BITS;
     fat_index = fat_bit_offset / 8;
   } else if ( FAT_FAT16 == fs->type ) {
-    uint64_t cluster_size = fs->superblock.bytes_per_sector
+    const uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     fat_sector = ( current * sizeof( uint16_t ) ) / cluster_size
       + fs->first_fat_sector;
     fat_index = ( current * sizeof( uint16_t ) ) % cluster_size;
   } else if ( FAT_FAT32 == fs->type ) {
-    uint64_t cluster_size = fs->superblock.bytes_per_sector
+    const uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     fat_sector = ( current * sizeof( uint32_t ) ) / cluster_size
       + fs->first_fat_sector;
@@ -218,7 +218,7 @@ BFSFAT_NO_EXPORT int fat_cluster_next(
     }
   } else if ( FAT_FAT16 == fs->type ) {
     // read fat entry
-    uint16_t value = *( uint16_t* )&(*buffer)[ fat_index ];
+    const uint16_t value = *( uint16_t* )&(*buffer)[ fat_index ];
     // push to target
     if ( 0xfff5 < value ) {
       *next = ( uint64_t )value | 0xffff0000;
@@ -256,7 +256,7 @@ BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
   for ( index = 0; index < fs->data_sectors; index++ ) {
     uint64_t internal_cluster;
     // get next cluster
-    int result = fat_cluster_next( fs, index, &previous_sector, &buffer, &internal_cluster );
+    const int result = fat_cluster_next( fs, index, &previous_sector, &buffer, &internal_cluster );
     if ( EOK != result ) {
       return result;
     }
@@ -287,9 +287,9 @@ BFSFAT_NO_EXPORT int fat_cluster_get_free( fat_fs_t* fs, uint64_t* cluster ) {
  * @return int
  */
 BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
-  fat_fs_t* fs,
-  uint64_t cluster,
-  uint64_t value
+  const fat_fs_t* fs,
+  const uint64_t cluster,
+  const uint64_t value
 ) {
   // allocate buffer
   uint8_t* buffer = malloc( fs->superblock.bytes_per_sector );
@@ -308,13 +308,13 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
     fat_bit_offset %= SECTOR_BITS;
     fat_index = fat_bit_offset / 8;
   } else if ( FAT_FAT16 == fs->type ) {
-    uint64_t cluster_size = fs->superblock.bytes_per_sector
+    const uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     fat_sector = ( cluster * sizeof( uint16_t ) ) / cluster_size
       + fs->first_fat_sector;
     fat_index = ( cluster * sizeof( uint16_t ) ) % cluster_size;
   } else if ( FAT_FAT32 == fs->type ) {
-    uint64_t cluster_size = fs->superblock.bytes_per_sector
+    const uint64_t cluster_size = fs->superblock.bytes_per_sector
       * fs->superblock.sectors_per_cluster;
     fat_sector = ( cluster * sizeof( uint32_t ) ) / cluster_size
       + fs->first_fat_sector;
@@ -336,8 +336,8 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
   }
   if ( FAT_FAT12 == fs->type ) {
     // read fat entry
-    uint16_t* pvalue = ( uint16_t* )&buffer[ fat_index ];
-    uint16_t rvalue = ( uint16_t )value & 0xFFF;
+    auto const pvalue = ( uint16_t* )&buffer[ fat_index ];
+    const uint16_t rvalue = ( uint16_t )value & 0xFFF;
     // adjust value if necessary
     if ( 0 == ( fat_bit_offset & 7 ) ) {
       *pvalue &= ( uint16_t )~0x0FFF;
@@ -348,11 +348,11 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
     }
   } else if ( FAT_FAT16 == fs->type ) {
     // read fat entry
-    uint16_t* pvalue = ( uint16_t* )&buffer[ fat_index ];
+    auto const pvalue = ( uint16_t* )&buffer[ fat_index ];
     *pvalue = ( uint16_t )value;
   } else if ( FAT_FAT32 == fs->type ) {
     // read fat entry
-    uint32_t* pvalue = ( uint32_t* )&buffer[ fat_index ];
+    auto const pvalue = ( uint32_t* )&buffer[ fat_index ];
     *pvalue = ( uint32_t )value;
   } else {
     free( buffer );
@@ -386,8 +386,8 @@ BFSFAT_NO_EXPORT int fat_cluster_set_cluster(
  */
 BFSFAT_NO_EXPORT int fat_cluster_get_by_num(
   fat_fs_t* fs,
-  uint64_t cluster,
-  uint64_t num,
+  const uint64_t cluster,
+  const uint64_t num,
   uint64_t* target
 ) {
   // validate parameter
